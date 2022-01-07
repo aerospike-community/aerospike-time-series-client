@@ -1,0 +1,10 @@
+Benchmarking tool for time series
+	control rate, no of series, frequency, average, variance, correlation, different distributions
+Control block size
+Moving to a new block
+Need to deal with tags
+
+Done
+====
+
+Instead of lists, k ordered maps?
