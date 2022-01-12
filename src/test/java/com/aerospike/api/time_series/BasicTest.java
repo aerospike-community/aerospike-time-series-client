@@ -25,6 +25,8 @@ public class BasicTest {
     // Name of test time series
     private static final String TEST_TIME_SERIES_NAME = "TimeSeriesExample";
 
+    // Utility variable to control whether teardown occurs. Use when developing tests
+    boolean doTeardown = true;
 
     @Before
     // An index on the Metadata map is required
@@ -149,9 +151,11 @@ public class BasicTest {
     // Check that block creation happens correctly
     // Do we get n blocks when no of data points is n * m, where m is allowed entries per block
     public void blockTest() throws Exception{
-        int entriesPerBlock = 10;
-        int requiredBlocks = 3;
-        createTimeSeries(TEST_TIME_SERIES_NAME,60,requiredBlocks * entriesPerBlock,entriesPerBlock);
+        teardown();
+        doTeardown = false;
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
 
         Statement stmt = new Statement();
         stmt.setNamespace(TestConstants.AEROSPIKE_NAMESPACE);
@@ -163,8 +167,62 @@ public class BasicTest {
         int count = 0;
         while(rs.next()) count++;
         Assert.assertEquals(count,requiredBlocks);
+        timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,
+                DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +30),
+                DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + 90)
+        );
     }
 
+    @Test
+    /**
+     * Check correct blocks are retrieved for query intervals
+     * There are number of cases to consider
+     * i) start time / end time does not coincide with a block start time
+     * ii) start time coincides with a block start time, end time does not
+     * iii) start time does not coincide with a block start time but end time does not
+     * iv) start time coincides with start time for time series, end time does not coincide with a block start time
+     * v) start time precedes start time for time series, end time does not coincide with a block start time
+     * vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
+     * vii end time is coincides with a block start time - get an extra block
+     */
+    public void correctBlocksForTimeRange() throws Exception{
+        teardown();
+        doTeardown = false;
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
+
+        checkCorrectBlocksForTimeRange(30,90,2);
+        checkCorrectBlocksForTimeRange(60,150,2);
+        checkCorrectBlocksForTimeRange(90,179 ,2);
+        checkCorrectBlocksForTimeRange(0,150,3);
+        checkCorrectBlocksForTimeRange(-100,150,3);
+        checkCorrectBlocksForTimeRange(90,700,10);
+        checkCorrectBlocksForTimeRange(30,60,2);
+    }
+
+    /*
+        This function to be used in conjunction with correctBlocksForTimeRange only
+        Checks that the start times for the time series blocks we retrieve obey the following rules
+        1)  First timestamp is
+            i)  equal to expected timestamp or
+            ii) the earliest timestamp available for the series or
+            iii) first timestamp is less than the required timestamp and second one is greater
+        2)  End timestamp is greater than the last timestamp
+        3)  The number of blocks retrieved is the expected number
+     */
+    private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks) throws Exception{
+        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +startTimeOffsetInSeconds);
+        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()+endTimeOffsetInSeconds);
+        long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
+
+        Assert.assertTrue(timestamps.length == expectedBlocks);
+        Assert.assertTrue(timestamps[0] == startTimeAsTimestamp || timestamps[0] == DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()) ||
+                (timestamps[1] > startTimeAsTimestamp && timestamps[0] < startTimeAsTimestamp));
+        Assert.assertTrue(timestamps[timestamps.length - 1] <= endTimeAsTimestamp);
+        Assert.assertTrue(timestamps.length == expectedBlocks);
+
+    }
     /**
      * Utility method to create time series
      * Returns an array of the random values generated
@@ -206,10 +264,13 @@ public class BasicTest {
         return DATE_FORMATTER.parse(BASE_DATE);
     }
 
-    //@After
+    @After
     // Truncate the time series set
     public void teardown(){
-        timeSeriesClient.asClient.truncate(new InfoPolicy(),TestConstants.AEROSPIKE_NAMESPACE,Constants.AS_TIME_SERIES_SET,null);
+        if(doTeardown) {
+            timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_SET, null);
+            timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_INDEX_SET, null);
+        }
     }
 
 }

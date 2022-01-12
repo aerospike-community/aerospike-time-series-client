@@ -15,7 +15,6 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     MapPolicy insertMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteMode.UPDATE);
     MapPolicy createOnlyMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteFlags.CREATE_ONLY + MapWriteFlags.NO_FAIL);
 
-
     public TimeSeriesClient(String asHostName, String asNamespace) {
         asClient = new AerospikeClient(asHostName, Constants.DEFAULT_AEROSPIKE_PORT);
         this.asNamespace = asNamespace;
@@ -49,7 +48,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // Put operation returns map size by default
         long mapSize = r.getLong(Constants.TIME_SERIES_BIN_NAME);
         // If it is greater than the required size, save a copy of the block with key TimeSeries-StartTime
-        if (mapSize > maxEntryCount) {
+        if (mapSize >= maxEntryCount) {
             // Copy of record, with key timeSeriesName-StartTime
             Record r2 = asClient.get(null, asCurrentKeyForTimeSeries(timeSeriesName));
             Bin[] bins = new Bin[2];
@@ -177,14 +176,46 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_INDEX_BIN_NAME,
                         new Value.LongValue(startTime), new Value.StringValue(asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime).userKey.toString()))
         );
-        getTimestampsForTimeSeries(timeSeriesName);
+
     }
 
-    private void getTimestampsForTimeSeries(String timeSeriesName){
-        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForTimeSeriesIndexes(timeSeriesName),
-                MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME,null,null,MapReturnType.KEY));
-        System.out.println(r.getList(Constants.TIME_SERIES_INDEX_BIN_NAME));
+    /**
+     * Internal method to calculate the start times of the blocks we need to retrieve for time range represented by
+     * timestamps startTime and endTime
+     * @param timeSeriesName
+     * @param startTime
+     * @param endTime
+     * @return
+     */
+    long[] getTimestampsForTimeSeries(String timeSeriesName,long startTime,long endTime){
+        List<Long> timestampList = (List<Long>)asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForTimeSeriesIndexes(timeSeriesName),
+                MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME,null,null,MapReturnType.KEY)).getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
+        int indexOfFirstTimestamp = 0;
+        int indexOfLastTimestamp = timestampList.size() - 1;
+        while(timestampList.get(indexOfFirstTimestamp) < startTime) indexOfFirstTimestamp++;
+        if(timestampList.get(indexOfFirstTimestamp) > startTime) indexOfFirstTimestamp = Math.max(0,indexOfFirstTimestamp - 1);
+        while(timestampList.get(indexOfLastTimestamp) > endTime) indexOfLastTimestamp--;
+        // If we are bringing back the most recent block available we might need the current block - need a special way of indicating this
+        int extraTimestampSlot = indexOfLastTimestamp == timestampList.size() -1 ? 1 : 0;
+        long[] timestamps = new long[indexOfLastTimestamp - indexOfFirstTimestamp + 1 + extraTimestampSlot];
+        for(int i=0;i<timestamps.length - extraTimestampSlot;i++){
+            timestamps[i] = timestampList.get(i+indexOfFirstTimestamp);
+        }
+        if(extraTimestampSlot ==1) timestamps[timestamps.length -1] = 0;
+        return timestamps;
     }
 
+    Key[] getKeysForQuery(String timeSeriesName, long startTime, long endTime){
+        long[] startTimesForBlocks = getTimestampsForTimeSeries(timeSeriesName, startTime, endTime);
+        Key[] keysForQuery = new Key[startTimesForBlocks.length - 1];
+        for(int i=0;i<startTimesForBlocks.length -2;i++) keysForQuery[i] = asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTimesForBlocks[i]);
+        if((startTimesForBlocks.length > 0)){
+            if(startTimesForBlocks[startTimesForBlocks.length -1] == 0){
+                keysForQuery[startTimesForBlocks.length -1] = asCurrentKeyForTimeSeries(timeSeriesName)
+            }
+            else{
+                keysForQuery[startTimesForBlocks.length -1] = asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTimesForBlocks[startTimesForBlocks.length -1]);
+            }
+    }
 
 }
