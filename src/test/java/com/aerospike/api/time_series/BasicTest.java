@@ -2,6 +2,7 @@ package com.aerospike.api.time_series;
 
 import com.aerospike.client.AerospikeException;
 import com.aerospike.client.ResultCode;
+import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.query.*;
 import com.aerospike.client.task.IndexTask;
 import org.junit.*;
@@ -11,8 +12,8 @@ import java.util.Date;
 import java.util.Random;
 
 public class BasicTest {
-    // Client object used for testing
-    private static Client timeSeriesClient;
+    // TimeSeriesClient object used for testing
+    private static TimeSeriesClient timeSeriesClient;
     // Reference base data for creating test time series
     private static final String BASE_DATE = "2022-01-02";
     // Used to parse BASE_DATE
@@ -45,7 +46,7 @@ public class BasicTest {
     @BeforeClass
     // Get a time series client
     public static void init(){
-        timeSeriesClient = new Client(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
+        timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
     }
 
     @Test
@@ -164,15 +165,6 @@ public class BasicTest {
         Assert.assertEquals(count,requiredBlocks);
     }
 
-    @After
-    // Truncate the time series set
-    public void teardown(){
-      // timeSeriesClient.asClient.truncate(new InfoPolicy(),TestConstants.AEROSPIKE_NAMESPACE,Constants.AS_TIME_SERIES_SET,null);
-    }
-
-    //
-    //
-
     /**
      * Utility method to create time series
      * Returns an array of the random values generated
@@ -212,6 +204,12 @@ public class BasicTest {
     // Utility method - we need a base date for our time series generation
     private Date getTestBaseDate() throws Exception{
         return DATE_FORMATTER.parse(BASE_DATE);
+    }
+
+    //@After
+    // Truncate the time series set
+    public void teardown(){
+        timeSeriesClient.asClient.truncate(new InfoPolicy(),TestConstants.AEROSPIKE_NAMESPACE,Constants.AS_TIME_SERIES_SET,null);
     }
 
 }

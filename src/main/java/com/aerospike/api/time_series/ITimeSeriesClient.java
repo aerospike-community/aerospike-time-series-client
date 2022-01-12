@@ -2,7 +2,7 @@ package com.aerospike.api.time_series;
 
 import java.util.Date;
 
-public interface IClient {
+public interface ITimeSeriesClient {
     /**
      * Put a data point for time series timeSeriesName into the database
      * A datapoint is a structure containing a timestamp and a floating point value
