@@ -4,6 +4,9 @@ Control block size
 Moving to a new block
 Need to deal with tags
 
+Keeping track of blocks - use SIndexes
+When copying, create a KV map
+
 Done
 ====
 
