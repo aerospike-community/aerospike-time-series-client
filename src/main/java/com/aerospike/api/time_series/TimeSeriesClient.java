@@ -15,6 +15,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     MapPolicy insertMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteMode.UPDATE);
     MapPolicy createOnlyMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteFlags.CREATE_ONLY + MapWriteFlags.NO_FAIL);
 
+    // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
+    static final long CURRENT_RECORD_TIMESTAMP = 0;
+
     public TimeSeriesClient(String asHostName, String asNamespace) {
         asClient = new AerospikeClient(asHostName, Constants.DEFAULT_AEROSPIKE_PORT);
         this.asNamespace = asNamespace;
@@ -101,7 +104,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         }
     }
 
-    ;
+
 
     /**
      * Retrieve a specific data point for a named time series
@@ -187,35 +190,87 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param endTime
      * @return
      */
+    /*
+        Algorithm is, to find first block, go forward until we find the first start time after startTime then go back one
+        and for endTime, go back until we find the first start time that is after the end time
+
+        Doesn't work if endTime / startTime are inverted so require specific logic for that
+     */
     long[] getTimestampsForTimeSeries(String timeSeriesName,long startTime,long endTime){
-        List<Long> timestampList = (List<Long>)asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForTimeSeriesIndexes(timeSeriesName),
-                MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME,null,null,MapReturnType.KEY)).getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
-        int indexOfFirstTimestamp = 0;
-        int indexOfLastTimestamp = timestampList.size() - 1;
-        while(timestampList.get(indexOfFirstTimestamp) < startTime) indexOfFirstTimestamp++;
-        if(timestampList.get(indexOfFirstTimestamp) > startTime) indexOfFirstTimestamp = Math.max(0,indexOfFirstTimestamp - 1);
-        while(timestampList.get(indexOfLastTimestamp) > endTime) indexOfLastTimestamp--;
-        // If we are bringing back the most recent block available we might need the current block - need a special way of indicating this
-        int extraTimestampSlot = indexOfLastTimestamp == timestampList.size() -1 ? 1 : 0;
-        long[] timestamps = new long[indexOfLastTimestamp - indexOfFirstTimestamp + 1 + extraTimestampSlot];
-        for(int i=0;i<timestamps.length - extraTimestampSlot;i++){
-            timestamps[i] = timestampList.get(i+indexOfFirstTimestamp);
+        if(endTime >= startTime) {
+            List<Long> timestampList = (List<Long>) asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
+                    MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY)).getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
+            int indexOfFirstTimestamp = 0;
+            int indexOfLastTimestamp = timestampList.size() - 1;
+            while ((indexOfFirstTimestamp <= timestampList.size() -2) && (timestampList.get(indexOfFirstTimestamp) < startTime)) indexOfFirstTimestamp++;
+            if (timestampList.get(indexOfFirstTimestamp) > startTime)
+                indexOfFirstTimestamp = Math.max(0, indexOfFirstTimestamp - 1);
+            while (timestampList.get(indexOfLastTimestamp) > endTime) indexOfLastTimestamp--;
+            // If we are bringing back the most recent block available we might need the current block - need a special way of indicating this
+            int extraTimestampSlot = indexOfLastTimestamp == timestampList.size() - 1 ? 1 : 0;
+            long[] timestamps = new long[indexOfLastTimestamp - indexOfFirstTimestamp + 1 + extraTimestampSlot];
+            for (int i = 0; i < timestamps.length - extraTimestampSlot; i++) {
+                timestamps[i] = timestampList.get(i + indexOfFirstTimestamp);
+            }
+            if (extraTimestampSlot == 1) timestamps[timestamps.length - 1] = CURRENT_RECORD_TIMESTAMP;
+            return timestamps;
         }
-        if(extraTimestampSlot ==1) timestamps[timestamps.length -1] = 0;
-        return timestamps;
+        else
+            return new long[0];
     }
 
-    Key[] getKeysForQuery(String timeSeriesName, long startTime, long endTime){
+    Key[] getKeysForQuery(String timeSeriesName, long startTime, long endTime) {
         long[] startTimesForBlocks = getTimestampsForTimeSeries(timeSeriesName, startTime, endTime);
-        Key[] keysForQuery = new Key[startTimesForBlocks.length - 1];
-        for(int i=0;i<startTimesForBlocks.length -2;i++) keysForQuery[i] = asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTimesForBlocks[i]);
-        if((startTimesForBlocks.length > 0)){
-            if(startTimesForBlocks[startTimesForBlocks.length -1] == 0){
-                keysForQuery[startTimesForBlocks.length -1] = asCurrentKeyForTimeSeries(timeSeriesName)
+        Key[] keysForQuery = new Key[startTimesForBlocks.length];
+        for (int i = 0; i < startTimesForBlocks.length - 1; i++)
+            keysForQuery[i] = asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTimesForBlocks[i]);
+        if ((startTimesForBlocks.length > 0)) {
+            if (startTimesForBlocks[startTimesForBlocks.length - 1] == CURRENT_RECORD_TIMESTAMP) {
+                keysForQuery[startTimesForBlocks.length - 1] = asCurrentKeyForTimeSeries(timeSeriesName);
+            } else {
+                keysForQuery[startTimesForBlocks.length - 1] = asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTimesForBlocks[startTimesForBlocks.length - 1]);
             }
-            else{
-                keysForQuery[startTimesForBlocks.length -1] = asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTimesForBlocks[startTimesForBlocks.length -1]);
+        }
+        return keysForQuery;
+    }
+
+    DataPoint[] getPoints2(String timeSeriesName, long startTime, long endTime) {
+        Key[] keys = getKeysForQuery(timeSeriesName,startTime,endTime);
+        Record[] timeSeriesBlocks = asClient.get(null,keys,Constants.TIME_SERIES_BIN_NAME);
+        int recordCount = 0;
+        for(int i=0;i< timeSeriesBlocks.length;i++){
+            Record currentRecord = timeSeriesBlocks[i];
+            // Null record is a possibility if we have just made the current block a historic block
+            if(currentRecord != null) {
+                Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
+                Iterator<Long> timestamps = timeSeries.keySet().iterator();
+                while (timestamps.hasNext()) {
+                    long timestamp = timestamps.next();
+                    if (timestamp >= startTime && timestamp <= endTime) recordCount++;
+                }
             }
+        }
+
+        DataPoint[] dataPoints = new DataPoint[recordCount];
+        int index = 0;
+
+        for(int i=0;i< timeSeriesBlocks.length;i++) {
+            // Null record is a possibility if we have just made the current block a historic block
+            Record currentRecord = timeSeriesBlocks[i];
+            if(currentRecord != null) {
+                Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
+                List<Long> sortedList = new ArrayList<>(timeSeries.keySet());
+                Collections.sort(sortedList);
+                for (int j = 0; j < sortedList.size(); j++) {
+                    long timestamp = sortedList.get(j);
+                    if ((startTime <= timestamp) && (timestamp <= endTime)) {
+                        dataPoints[index] = new DataPoint(timestamp, timeSeries.get(timestamp));
+                        index++;
+                    }
+                }
+            }
+        }
+        return dataPoints;
     }
 
 }

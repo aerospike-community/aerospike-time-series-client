@@ -1,6 +1,8 @@
 package com.aerospike.api.time_series;
 
 import com.aerospike.client.AerospikeException;
+import com.aerospike.client.Key;
+import com.aerospike.client.Record;
 import com.aerospike.client.ResultCode;
 import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.query.*;
@@ -8,8 +10,7 @@ import com.aerospike.client.task.IndexTask;
 import org.junit.*;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
 public class BasicTest {
     // TimeSeriesClient object used for testing
@@ -171,8 +172,60 @@ public class BasicTest {
                 DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +30),
                 DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + 90)
         );
+
     }
 
+    @Test
+    /**
+     * Check correct time series points are retrieved
+     * There are number of cases to consider
+     * i) start time / end time does not coincide with a block start time
+     * ii) start time coincides with a block start time, end time does not
+     * iii) start time does not coincide with a block start time but end time does not
+     * iv) start time coincides with start time for time series, end time does not coincide with a block start time
+     * v) start time precedes start time for time series, end time does not coincide with a block start time
+     * vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
+     * vii end time is coincides with a block start time - get an extra block
+     * viii start time and end time are the same, do not coincide with start of a block
+     * ix start time and end time are the same, coincide with start of a block
+     * x start time and end time are beyond the last historic block
+     */
+    public void correctSeriesForTimeRange() throws Exception{
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
+        checkCorrectSeriesForTimeRange(30,90,90-30+1);
+        checkCorrectSeriesForTimeRange(60,150,150-60+1);
+        checkCorrectSeriesForTimeRange(90,179,179-90+1);
+        checkCorrectSeriesForTimeRange(0,150,150-0+1);
+        checkCorrectSeriesForTimeRange(-100,150,150+1);
+        checkCorrectSeriesForTimeRange(90,700,600-90);
+        checkCorrectSeriesForTimeRange(30,60,60-30+1);
+        checkCorrectSeriesForTimeRange(30,20,0);
+        checkCorrectSeriesForTimeRange(30,30,1);
+        checkCorrectSeriesForTimeRange(60,60,1);
+    }
+
+    /*
+        This function to be used in conjunction with correctSeriesForTimeRange only
+        Checks that the series retrieved obeys the following rules
+        1)  No of points is expected
+        2)  For each point
+                The timestamp is within the required time range
+                Each point's timestamp is greater than the one preceding it
+     */
+    private void checkCorrectSeriesForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedCount) throws Exception {
+        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
+        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
+
+        DataPoint[] dataPoints = timeSeriesClient.getPoints2(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
+        Assert.assertEquals(dataPoints.length,expectedCount);
+        for(int i=0;i<dataPoints.length;i++){
+            Assert.assertTrue(dataPoints[i].getTimestamp() >= startTimeAsTimestamp);
+            Assert.assertTrue(dataPoints[i].getTimestamp() <= endTimeAsTimestamp);
+            if(i>0) Assert.assertTrue(dataPoints[i].getTimestamp() > dataPoints[i-1].getTimestamp());
+        }
+    }
     @Test
     /**
      * Check correct blocks are retrieved for query intervals
@@ -184,21 +237,27 @@ public class BasicTest {
      * v) start time precedes start time for time series, end time does not coincide with a block start time
      * vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
      * vii end time is coincides with a block start time - get an extra block
+     * viii start time and end time are the same, do not coincide with start of a block
+     * ix start time and end time are the same, coincide with start of a block
+     * x start time and end time are beyond the last historic block
      */
     public void correctBlocksForTimeRange() throws Exception{
-        teardown();
-        doTeardown = false;
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
 
-        checkCorrectBlocksForTimeRange(30,90,2);
-        checkCorrectBlocksForTimeRange(60,150,2);
-        checkCorrectBlocksForTimeRange(90,179 ,2);
-        checkCorrectBlocksForTimeRange(0,150,3);
-        checkCorrectBlocksForTimeRange(-100,150,3);
-        checkCorrectBlocksForTimeRange(90,700,10);
-        checkCorrectBlocksForTimeRange(30,60,2);
+        checkCorrectBlocksForTimeRange(30,90,2,false);
+        checkCorrectBlocksForTimeRange(60,150,2,false);
+        checkCorrectBlocksForTimeRange(90,179 ,2,false);
+        checkCorrectBlocksForTimeRange(0,150,3,false);
+        checkCorrectBlocksForTimeRange(-100,150,3,false);
+        checkCorrectBlocksForTimeRange(90,700,10,true);
+        checkCorrectBlocksForTimeRange(30,60,2,false);
+        checkCorrectBlocksForTimeRange(30,20,0,false);
+        checkCorrectBlocksForTimeRange(30,30,1,false);
+        checkCorrectBlocksForTimeRange(60,60,1,false);
+        checkCorrectBlocksForTimeRange(600,650,2,true);
+
     }
 
     /*
@@ -208,19 +267,27 @@ public class BasicTest {
             i)  equal to expected timestamp or
             ii) the earliest timestamp available for the series or
             iii) first timestamp is less than the required timestamp and second one is greater
+            iv) there are only two timestamps and second one has CURRENT_RECORD_TIMESTAMP marker - means start timestamp is beyond last timestamp
         2)  End timestamp is greater than the last timestamp
         3)  The number of blocks retrieved is the expected number
+        4)  Whether the last timestamp has the special CURRENT_RECORD_TIMESTAMP marker
      */
-    private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks) throws Exception{
+    private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks, boolean lastBlockZero) throws Exception{
         long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +startTimeOffsetInSeconds);
         long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()+endTimeOffsetInSeconds);
         long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
-
-        Assert.assertTrue(timestamps.length == expectedBlocks);
-        Assert.assertTrue(timestamps[0] == startTimeAsTimestamp || timestamps[0] == DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()) ||
-                (timestamps[1] > startTimeAsTimestamp && timestamps[0] < startTimeAsTimestamp));
-        Assert.assertTrue(timestamps[timestamps.length - 1] <= endTimeAsTimestamp);
-        Assert.assertTrue(timestamps.length == expectedBlocks);
+        int indexOfLastRecord = timestamps.length - 1;
+        if(startTimeOffsetInSeconds <= endTimeOffsetInSeconds) {
+            Assert.assertTrue(timestamps.length == expectedBlocks);
+            Assert.assertTrue(timestamps[0] == startTimeAsTimestamp ||
+                    timestamps[0] == DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()) ||
+                    (timestamps[1] > startTimeAsTimestamp && timestamps[0] < startTimeAsTimestamp) ||
+                    ((timestamps.length ==2 ) && (timestamps[1] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP)));
+            Assert.assertTrue(timestamps[indexOfLastRecord] <= endTimeAsTimestamp);
+            Assert.assertTrue((timestamps[indexOfLastRecord] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP) == lastBlockZero);
+        }
+        else
+            Assert.assertTrue(timestamps.length ==0);
 
     }
     /**
