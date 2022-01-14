@@ -1,9 +1,6 @@
 package com.aerospike.api.time_series;
 
-import com.aerospike.client.AerospikeException;
-import com.aerospike.client.Key;
-import com.aerospike.client.Record;
-import com.aerospike.client.ResultCode;
+import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.query.*;
 import com.aerospike.client.task.IndexTask;
@@ -172,7 +169,6 @@ public class BasicTest {
                 DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +30),
                 DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + 90)
         );
-
     }
 
     @Test
@@ -215,14 +211,15 @@ public class BasicTest {
                 Each point's timestamp is greater than the one preceding it
      */
     private void checkCorrectSeriesForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedCount) throws Exception {
-        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
-        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
-
-        DataPoint[] dataPoints = timeSeriesClient.getPoints2(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
+//        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
+//        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
+        Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
+        Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,startTime,endTime);
         Assert.assertEquals(dataPoints.length,expectedCount);
         for(int i=0;i<dataPoints.length;i++){
-            Assert.assertTrue(dataPoints[i].getTimestamp() >= startTimeAsTimestamp);
-            Assert.assertTrue(dataPoints[i].getTimestamp() <= endTimeAsTimestamp);
+            Assert.assertTrue(dataPoints[i].getTimestamp() >= DataPoint.epochSecondsToTimestamp(startTime.getTime()));
+            Assert.assertTrue(dataPoints[i].getTimestamp() <= DataPoint.epochSecondsToTimestamp(endTime.getTime()));
             if(i>0) Assert.assertTrue(dataPoints[i].getTimestamp() > dataPoints[i-1].getTimestamp());
         }
     }

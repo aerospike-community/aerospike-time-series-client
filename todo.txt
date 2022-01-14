@@ -1,13 +1,16 @@
 Benchmarking tool for time series
 	control rate, no of series, frequency, average, variance, correlation, different distributions
-Control block size
-Moving to a new block
 Need to deal with tags
 
-Keeping track of blocks - use SIndexes
-When copying, create a KV map
+
+Replace getPoints with getPoints2
+
+When copying record can a subsequent setMapPolicy call be avoided?
 
 Done
 ====
 
 Instead of lists, k ordered maps?
+Once block has more than a specified number of entries, rename it to SeriesName-StartDate and remove block with key SeriesName
+Keeping track of blocks - use an index record
+When copying, make map kv ordered

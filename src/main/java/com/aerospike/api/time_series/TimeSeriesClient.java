@@ -60,6 +60,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
             addTimeSeriesIndexRecord(timeSeriesName,startTime);
             asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
+            // Make the time series a key ordered map
+            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
+                    MapOperation.setMapPolicy(new MapPolicy(MapOrder.KEY_ORDERED,MapWriteMode.UPDATE),Constants.TIME_SERIES_BIN_NAME));
             // and remove the current block
             if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
                 asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));
@@ -80,29 +83,29 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         put(timeSeriesName, dataPoint, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
-    /**
-     * Internal method - retrieve time series data points with start and end time expressed
-     * as unix epochs (seconds since 1st Jan 1970) multiplied by required resolution (10^Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND)
-     *
-     * @param timeSeriesName
-     * @param startTime
-     * @param endTime
-     * @return
-     */
-    private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
-        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),
-                MapOperation.getByKeyRange(Constants.TIME_SERIES_BIN_NAME, new Value.LongValue(startTime), new Value.LongValue(endTime + 1), MapReturnType.KEY_VALUE));
-        if (r != null) {
-            List<Map.Entry<Long, Double>> list = (List<Map.Entry<Long, Double>>) r.getList(Constants.TIME_SERIES_BIN_NAME);
-            DataPoint[] dataPointArray = new DataPoint[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                dataPointArray[i] = new DataPoint(list.get(i).getKey(), list.get(i).getValue());
-            }
-            return dataPointArray;
-        } else {
-            return new DataPoint[0];
-        }
-    }
+//    /**
+//     * Internal method - retrieve time series data points with start and end time expressed
+//     * as unix epochs (seconds since 1st Jan 1970) multiplied by required resolution (10^Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND)
+//     *
+//     * @param timeSeriesName
+//     * @param startTime
+//     * @param endTime
+//     * @return
+//     */
+//    private DataPoint[] getPoints2(String timeSeriesName, long startTime, long endTime) {
+//        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),
+//                MapOperation.getByKeyRange(Constants.TIME_SERIES_BIN_NAME, new Value.LongValue(startTime), new Value.LongValue(endTime + 1), MapReturnType.KEY_VALUE));
+//        if (r != null) {
+//            List<Map.Entry<Long, Double>> list = (List<Map.Entry<Long, Double>>) r.getList(Constants.TIME_SERIES_BIN_NAME);
+//            DataPoint[] dataPointArray = new DataPoint[list.size()];
+//            for (int i = 0; i < list.size(); i++) {
+//                dataPointArray[i] = new DataPoint(list.get(i).getKey(), list.get(i).getValue());
+//            }
+//            return dataPointArray;
+//        } else {
+//            return new DataPoint[0];
+//        }
+//    }
 
 
 
@@ -198,22 +201,29 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     long[] getTimestampsForTimeSeries(String timeSeriesName,long startTime,long endTime){
         if(endTime >= startTime) {
-            List<Long> timestampList = (List<Long>) asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
-                    MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY)).getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
-            int indexOfFirstTimestamp = 0;
-            int indexOfLastTimestamp = timestampList.size() - 1;
-            while ((indexOfFirstTimestamp <= timestampList.size() -2) && (timestampList.get(indexOfFirstTimestamp) < startTime)) indexOfFirstTimestamp++;
-            if (timestampList.get(indexOfFirstTimestamp) > startTime)
-                indexOfFirstTimestamp = Math.max(0, indexOfFirstTimestamp - 1);
-            while (timestampList.get(indexOfLastTimestamp) > endTime) indexOfLastTimestamp--;
-            // If we are bringing back the most recent block available we might need the current block - need a special way of indicating this
-            int extraTimestampSlot = indexOfLastTimestamp == timestampList.size() - 1 ? 1 : 0;
-            long[] timestamps = new long[indexOfLastTimestamp - indexOfFirstTimestamp + 1 + extraTimestampSlot];
-            for (int i = 0; i < timestamps.length - extraTimestampSlot; i++) {
-                timestamps[i] = timestampList.get(i + indexOfFirstTimestamp);
+            Record indexListRecord = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
+                    MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY));
+            if(indexListRecord != null) {
+                List<Long> timestampList = (List<Long>) indexListRecord.getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
+                int indexOfFirstTimestamp = 0;
+                int indexOfLastTimestamp = timestampList.size() - 1;
+                while ((indexOfFirstTimestamp <= timestampList.size() - 2) && (timestampList.get(indexOfFirstTimestamp) < startTime))
+                    indexOfFirstTimestamp++;
+                if (timestampList.get(indexOfFirstTimestamp) > startTime)
+                    indexOfFirstTimestamp = Math.max(0, indexOfFirstTimestamp - 1);
+                while (timestampList.get(indexOfLastTimestamp) > endTime) indexOfLastTimestamp--;
+                // If we are bringing back the most recent block available we might need the current block - need a special way of indicating this
+                int extraTimestampSlot = indexOfLastTimestamp == timestampList.size() - 1 ? 1 : 0;
+                long[] timestamps = new long[indexOfLastTimestamp - indexOfFirstTimestamp + 1 + extraTimestampSlot];
+                for (int i = 0; i < timestamps.length - extraTimestampSlot; i++) {
+                    timestamps[i] = timestampList.get(i + indexOfFirstTimestamp);
+                }
+                if (extraTimestampSlot == 1) timestamps[timestamps.length - 1] = CURRENT_RECORD_TIMESTAMP;
+                return timestamps;
             }
-            if (extraTimestampSlot == 1) timestamps[timestamps.length - 1] = CURRENT_RECORD_TIMESTAMP;
-            return timestamps;
+            // If there's no index records, could be in the current block
+            else
+                return new long[]{CURRENT_RECORD_TIMESTAMP};
         }
         else
             return new long[0];
@@ -233,8 +243,16 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         }
         return keysForQuery;
     }
-
-    DataPoint[] getPoints2(String timeSeriesName, long startTime, long endTime) {
+    /**
+     * Internal method - retrieve time series data points with start and end time expressed
+     * as unix epochs (seconds since 1st Jan 1970) multiplied by required resolution (10^Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND)
+     *
+     * @param timeSeriesName
+     * @param startTime
+     * @param endTime
+     * @return
+     */
+    private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
         Key[] keys = getKeysForQuery(timeSeriesName,startTime,endTime);
         Record[] timeSeriesBlocks = asClient.get(null,keys,Constants.TIME_SERIES_BIN_NAME);
         int recordCount = 0;
