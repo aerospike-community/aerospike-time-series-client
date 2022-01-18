@@ -1,4 +1,4 @@
-package com.aerospike.api.time_series;
+package io.github.ken_tune.time_series;
 
 import org.junit.Assert;
 import org.junit.Test;
