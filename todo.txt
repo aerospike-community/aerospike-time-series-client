@@ -14,3 +14,9 @@ Instead of lists, k ordered maps?
 Once block has more than a specified number of entries, rename it to SeriesName-StartDate and remove block with key SeriesName
 Keeping track of blocks - use an index record
 When copying, make map kv ordered
+
+Notes
+=====
+
+How to publish your artefacts - https://dzone.com/articles/publish-your-artifacts-to-maven-central
+If gpg: signing failed: Inappropriate ioctl for device then export GPG_TTY=$(tty)
