@@ -2,6 +2,34 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <name>Aerospike Time Series Client API</name>
+    <description>Time series client API for Aerospike database</description>
+    <url>https://github.com/ken-tune/aero-time-series-client</url>
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>Developer information missing
+
+    <developers>
+        <developer>
+            <id>ktune</id>
+            <name>Ken Tune</name>
+            <email>ktune@aerospike.com</email>
+            <url>http://github.com/ken-tune</url>
+            <organization>Aerospike</organization>
+            <organizationUrl>http://www.aerospike.com</organizationUrl>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/London </timezone>
+        </developer>
+    </developers>
+
     <groupId>io.github.ken-tune</groupId>
     <artifactId>aero-time-series-client</artifactId>
     <version>0.18-SNAPSHOT</version>
