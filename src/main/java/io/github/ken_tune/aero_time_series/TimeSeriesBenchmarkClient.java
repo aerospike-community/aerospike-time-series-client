@@ -1,5 +1,8 @@
 package io.github.ken_tune.aero_time_series;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Random;
 
 public class TimeSeriesBenchmarkClient {
@@ -19,7 +22,26 @@ public class TimeSeriesBenchmarkClient {
 
     public static void main(String[] args){
         TimeSeriesBenchmarkClient timeSeriesBenchmarkClient = new TimeSeriesBenchmarkClient();
-        for(int i=0;i<100;i++) System.out.println(timeSeriesBenchmarkClient.randomTimeSeriesName());
+    }
+
+    public void run(){
+        Map<String,Long> lastObservation = new HashMap<>();
+        long now = System.currentTimeMillis();
+        for(int i=0;i<timeSeriesCount;i++){
+            lastObservation.put(randomTimeSeriesName(),nextObservationTime());
+        }
+        while(true){
+            Iterator<String> timeSeriesNames = lastObservation.keySet().iterator();
+            while(timeSeriesNames.hasNext()){
+
+            }
+
+        }
+
+    }
+
+    private long nextObservationTime(){
+        return System.currentTimeMillis() + (int)(averageObservationIntervalSeconds*(1000+(0.1*randomNumberGenerator.nextInt(1000))));
     }
 
     public int getTimeSeriesNameLength() {
