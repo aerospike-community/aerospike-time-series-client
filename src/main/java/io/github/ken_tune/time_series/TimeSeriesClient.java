@@ -4,6 +4,7 @@ import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TimeSeriesClient implements ITimeSeriesClient {
     // Aerospike Client required
@@ -55,14 +56,19 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             // Copy of record, with key timeSeriesName-StartTime
             Record r2 = asClient.get(null, asCurrentKeyForTimeSeries(timeSeriesName));
             Bin[] bins = new Bin[2];
-            bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME, r2.getValue(Constants.TIME_SERIES_BIN_NAME));
-            bins[1] = new Bin(Constants.METADATA_BIN_NAME, r2.getValue(Constants.METADATA_BIN_NAME));
+            // Copying of bin requires slightly convoluted approach below
+            bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
+                    ((Map<Long,Double>)r2.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                    MapOrder.KEY_ORDERED);
+            bins[1] = new Bin(Constants.METADATA_BIN_NAME,
+                    ((Map<Long,Double>)r2.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                    MapOrder.KEY_ORDERED);
             long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
             addTimeSeriesIndexRecord(timeSeriesName,startTime);
             asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
             // Make the time series a key ordered map
-            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
-                    MapOperation.setMapPolicy(new MapPolicy(MapOrder.KEY_ORDERED,MapWriteMode.UPDATE),Constants.TIME_SERIES_BIN_NAME));
+//            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
+//                    MapOperation.setMapPolicy(new MapPolicy(MapOrder.KEY_ORDERED,MapWriteMode.UPDATE),Constants.TIME_SERIES_BIN_NAME));
             // and remove the current block
             if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
                 asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));

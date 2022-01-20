@@ -6,8 +6,8 @@ public class Constants {
     public final static int DEFAULT_AEROSPIKE_PORT = 3000;
 
     /* Accessible within package */
-    final static String AS_TIME_SERIES_SET = "TS";
-    final static String AS_TIME_SERIES_INDEX_SET = "TimeSeriesIndexes";
+    public final static String AS_TIME_SERIES_SET = "TS";
+    public final static String AS_TIME_SERIES_INDEX_SET = "TimeSeriesIndexes";
     final static WritePolicy DEFAULT_WRITE_POLICY = new WritePolicy();
     final static String TIME_SERIES_BIN_NAME = "tsSeries";
     final static String TIME_SERIES_INDEX_BIN_NAME = "tsIndex";
