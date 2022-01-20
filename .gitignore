@@ -1,2 +1,5 @@
 pom.xml.releaseBackup
 release.properties
+.idea
+apitimeseries.iml
+target
