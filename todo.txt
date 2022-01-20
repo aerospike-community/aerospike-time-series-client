@@ -2,10 +2,13 @@ Benchmarking tool for time series
 	control rate, no of series, frequency, average, variance, correlation, different distributions
 Need to deal with tags
 
-
-Replace getPoints with getPoints2
-
-When copying record can a subsequent setMapPolicy call be avoided?
+Benchmark client - multi thread
+Benchmark client - batch puts
+Benchmark client - simulate queries
+Wrap client so it can be run from cmd line
+mvn magic allowing separate build of benchmark client
+Hotkey warning message
+Underflow message
 
 Done
 ====
@@ -14,6 +17,8 @@ Instead of lists, k ordered maps?
 Once block has more than a specified number of entries, rename it to SeriesName-StartDate and remove block with key SeriesName
 Keeping track of blocks - use an index record
 When copying, make map kv ordered
+GetPoints for time range outside a single block
+When copying record can a subsequent setMapPolicy call be avoided?
 
 Notes
 =====

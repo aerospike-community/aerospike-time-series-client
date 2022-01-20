@@ -66,9 +66,6 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
             addTimeSeriesIndexRecord(timeSeriesName,startTime);
             asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
-            // Make the time series a key ordered map
-//            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
-//                    MapOperation.setMapPolicy(new MapPolicy(MapOrder.KEY_ORDERED,MapWriteMode.UPDATE),Constants.TIME_SERIES_BIN_NAME));
             // and remove the current block
             if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
                 asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));
