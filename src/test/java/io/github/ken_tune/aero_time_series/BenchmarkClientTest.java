@@ -12,9 +12,13 @@ public class BenchmarkClientTest {
      * Check that the randomly generated time series name is of the expected length
      */
     public void checkTimeSeriesNameGeneration(){
-        TimeSeriesBenchmarkClient t = new TimeSeriesBenchmarkClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TimeSeriesBenchmarkClient.DEFAULT_TIME_SERIES_COUNT);
-        String timeSeriesName = t.randomTimeSeriesName();
-        Assert.assertTrue(timeSeriesName.length() == t.getTimeSeriesNameLength());
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS,
+                        TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR,
+                        TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
+        TimeSeriesBenchmarkRunnable benchmarkRunnable = new TimeSeriesBenchmarkRunnable(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,1,benchmarker);
+        String timeSeriesName = benchmarkRunnable.randomTimeSeriesName();
+        Assert.assertTrue(timeSeriesName.length() == benchmarker.timeSeriesNameLength);
     }
 
     @Test
@@ -23,11 +27,15 @@ public class BenchmarkClientTest {
      * 10,000 samples - are any identical
      */
     public void checkTimeSeriesNamesUnique(){
-        TimeSeriesBenchmarkClient t = new TimeSeriesBenchmarkClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TimeSeriesBenchmarkClient.DEFAULT_TIME_SERIES_COUNT);
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS,
+                        TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR,
+                        TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
+        TimeSeriesBenchmarkRunnable benchmarkRunnable = new TimeSeriesBenchmarkRunnable(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,1,benchmarker);
 
         int randomSampleCount = 10000;
         Set<String> s = new HashSet<>();
-        for(int i=0;i<randomSampleCount;i++) s.add(t.randomTimeSeriesName());
+        for(int i=0;i<randomSampleCount;i++) s.add(benchmarkRunnable.randomTimeSeriesName());
         Assert.assertTrue(s.size() == randomSampleCount);
     }
 }

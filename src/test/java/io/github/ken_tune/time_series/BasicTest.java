@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class BasicTest {
-    // TimeSeriesBenchmarkClient object used for testing
+    // TimeSeriesBenchmarker object used for testing
     private static TimeSeriesClient timeSeriesClient;
     // Reference base data for creating test time series
     private static final String BASE_DATE = "2022-01-02";
