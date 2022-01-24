@@ -28,8 +28,8 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     // Average time interval in seconds between successive each time series observation
     private int observationIntervalSeconds;
     // In the simulation we introduce variability into the time of observations
-    // The actual interval is +/- observationVariabilityPct and the simulation distributes actual time intervals uniformly across this range
-    private double observationVariabilityPct = 5;
+    // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
+    private double observationIntervalVariabilityPct = 5;
 
     public TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
         timeSeriesClient = new TimeSeriesClient(asHost,asNamespace);
@@ -38,6 +38,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         this.accelerationFactor = benchmarkClient.accelerationFactor;
         this.timeSeriesNameLength = benchmarkClient.timeSeriesNameLength;
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
+        this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
     }
 
     /**
@@ -103,10 +104,10 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
      */
     private long nextObservationTime(){
         int intervalSamplingGranularity = 1000;
-        // Randomly vary the observation interval by +/- observationVariabilityPct
+        // Randomly vary the observation interval by +/- observationIntervalVariabilityPct
         // First generate the variability
-        double observationVariationPct = (intervalSamplingGranularity * (100 - observationVariabilityPct )
-                + 2 *observationVariabilityPct  * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1)) / intervalSamplingGranularity;
+        double observationVariationPct = (intervalSamplingGranularity * (100 - observationIntervalVariabilityPct)
+                + 2 * observationIntervalVariabilityPct * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1)) / intervalSamplingGranularity;
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
         return getSimulationTime() + (int)(observationVariationPct * observationIntervalSeconds * 1000)/100;
     }

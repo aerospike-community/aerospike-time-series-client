@@ -9,6 +9,7 @@ Wrap client so it can be run from cmd line
 mvn magic allowing separate build of benchmark client
 Hotkey warning message
 Underflow message
+Factor out printstream so it can be assigned to by unit tests
 
 Done
 ====

@@ -13,6 +13,9 @@ public class TimeSeriesBenchmarker {
     public static final int DEFAULT_ACCELERATION_FACTOR = 10;
     public static final int DEFAULT_RUN_DURATION_SECONDS = 10;
     public static final int DEFAULT_THREAD_COUNT = 10;
+    // In the simulation we introduce variability into the time of observations
+    // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
+    public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
 
     // Variables controlling the simulation
     // Those with package level visibility need to be visible to the benchmark threads
@@ -72,7 +75,7 @@ public class TimeSeriesBenchmarker {
         long nextOutputTime = System.currentTimeMillis();
         while(isRunning()){
             if(System.currentTimeMillis() > nextOutputTime) {
-                if(averageThreadRunTime() >0) outputStatus();
+                if(averageThreadRunTimeMs() >0) outputStatus();
                 nextOutputTime+=1000;
                 try {
                     Thread.sleep(50);
@@ -84,8 +87,8 @@ public class TimeSeriesBenchmarker {
     }
 
     private void outputStatus(){
-        System.out.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTime() / 1000,
-                totalUpdateCount(), (double)1000 * totalUpdateCount()/averageThreadRunTime()));
+        System.out.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / 1000,
+                totalUpdateCount(), (double)1000 * totalUpdateCount()/ averageThreadRunTimeMs()));
     }
 
     /**
@@ -103,9 +106,10 @@ public class TimeSeriesBenchmarker {
     /**
      * Compute the simulation duration by looking at the average thread run time
      * Return value is in milliseconds
+     * Package level visibility for testing purposes
      * @return
      */
-    private long averageThreadRunTime(){
+    long averageThreadRunTimeMs(){
         long runTime = 0;
         for(int i=0;i<benchmarkClientObjects.length;i++){
             runTime += benchmarkClientObjects[i].runTime();
@@ -116,9 +120,10 @@ public class TimeSeriesBenchmarker {
     /**
      * Compute the total number of inserts for the simulation
      * Do this by aggregating inserts per thread
+     * Package level visibility for testing purposes*
      * @return
      */
-    private int totalUpdateCount(){
+    int totalUpdateCount(){
         int totalUpdateCount = 0;
         for(int i=0;i<benchmarkClientObjects.length;i++){
             totalUpdateCount += benchmarkClientObjects[i].getUpdateCount();
