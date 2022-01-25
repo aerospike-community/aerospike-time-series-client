@@ -1,5 +1,6 @@
 Benchmarking tool for time series
-	control rate, no of series, frequency, average, variance, correlation, different distributions
+	start value
+	variance
 Need to deal with tags
 
 Benchmark client - batch puts
@@ -20,6 +21,10 @@ Benchmark client - multi thread
 Factor out printstream so it can be assigned to by unit tests
 Hotkey warning message
 Underflow message
+Benchmarking Tool
+	- control rate
+	- no of series
+	- frequency
 
 Notes
 =====
