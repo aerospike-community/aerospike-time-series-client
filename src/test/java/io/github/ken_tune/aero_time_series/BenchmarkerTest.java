@@ -2,9 +2,6 @@ package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
-import io.github.ken_tune.time_series.Constants;
-import io.github.ken_tune.time_series.TestConstants;
-import io.github.ken_tune.time_series.Utilities;
 import org.junit.*;
 
 import java.io.*;

@@ -1,5 +1,7 @@
-package io.github.ken_tune.time_series;
+package io.github.ken_tune.aero_time_series;
 
+import io.github.ken_tune.aero_time_series.Constants;
+import io.github.ken_tune.aero_time_series.DataPoint;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package io.github.ken_tune.time_series;
+package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.policy.WritePolicy;
 

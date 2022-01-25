@@ -1,8 +1,5 @@
 package io.github.ken_tune.aero_time_series;
 
-import io.github.ken_tune.time_series.DataPoint;
-import io.github.ken_tune.time_series.TimeSeriesClient;
-
 import java.util.*;
 
 // Implementation of individual runnable TimeSeriesBenchmark object

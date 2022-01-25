@@ -1,4 +1,4 @@
-package io.github.ken_tune.time_series;
+package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
@@ -9,8 +9,8 @@ import org.junit.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class BasicTest {
-    // TimeSeriesBenchmarker object used for testing
+public class TimeSeriesClientTest {
+    // TimeSeriesClient object used for testing
     private static TimeSeriesClient timeSeriesClient;
     // Reference base data for creating test time series
     private static final String BASE_DATE = "2022-01-02";
