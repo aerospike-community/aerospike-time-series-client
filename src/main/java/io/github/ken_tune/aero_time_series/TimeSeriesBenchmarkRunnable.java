@@ -72,7 +72,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
             nextObservationTimes.put(randomTimeSeriesName(),0L);
         }
         isRunning = true;
-        while(getSimulationTime() - startTime < runDurationSeconds * 1000 * accelerationFactor){
+        while(getSimulationTime() - startTime < runDurationSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND * accelerationFactor){
             Iterator<String> timeSeriesNames = nextObservationTimes.keySet().iterator();
             while(timeSeriesNames.hasNext()){
                 String timeSeriesName = timeSeriesNames.next();
@@ -109,7 +109,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         double observationVariationPct = (intervalSamplingGranularity * (100 - observationIntervalVariabilityPct)
                 + 2 * observationIntervalVariabilityPct * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1)) / intervalSamplingGranularity;
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
-        return getSimulationTime() + (int)(observationVariationPct * observationIntervalSeconds * 1000)/100;
+        return getSimulationTime() + (int)(observationVariationPct * observationIntervalSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND)/100;
     }
 
     /**

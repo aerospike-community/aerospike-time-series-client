@@ -4,6 +4,7 @@ import com.aerospike.client.policy.WritePolicy;
 
 public class Constants {
     public final static int DEFAULT_AEROSPIKE_PORT = 3000;
+    public final static int SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC = 100;
 
     /* Accessible within package */
     public final static String AS_TIME_SERIES_SET = "TS";

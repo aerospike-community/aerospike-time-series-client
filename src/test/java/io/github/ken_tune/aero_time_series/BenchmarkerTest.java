@@ -4,13 +4,19 @@ import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
 import io.github.ken_tune.time_series.Constants;
 import io.github.ken_tune.time_series.TestConstants;
+import io.github.ken_tune.time_series.Utilities;
 import org.junit.*;
 
+import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Vector;
 
 public class BenchmarkerTest {
     private boolean doTeardown = false;
+
+    // For the avoidance of doubt and clarity
+    int MILLISECONDS_IN_SECOND = 1000;
 
     @Test
     /**
@@ -44,26 +50,26 @@ public class BenchmarkerTest {
         Assert.assertTrue(s.size() == randomSampleCount);
     }
 
-    @Test
     /**
      * Basic test to make sure that the benchmarker runs for the expected amount of time and delivers expected updates
      */
+    @Test
     public void checkVanillaBenchmarkDurationAndUpdates(){
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 1;
         int threadCount = 1;
         int timeSeriesCount = 1;
-        // Set test tolerance to 10% as we are only expecting 10 updates and could get 9 or 11
-        int testTolerancePct = 10;
+        // Set test tolerance to 20% as we are using small numbers - variability could be slightly higher than 10% at any given time
+        int testTolerancePct = 20;
         TimeSeriesBenchmarker benchmarker =
                 new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
                         threadCount,timeSeriesCount);
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(valueInTolerance(runDurationSeconds * 1000,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
 
     /**
@@ -83,9 +89,9 @@ public class BenchmarkerTest {
                         threadCount,timeSeriesCount);
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(valueInTolerance(runDurationSeconds * 1000,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
 
     /**
@@ -93,7 +99,7 @@ public class BenchmarkerTest {
      * This can be seen via the number of updates
      */
     @Test
-    public void checkTimeSeriesFactorObserved(){
+    public void checkTimeSeriesCountObserved(){
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -105,9 +111,9 @@ public class BenchmarkerTest {
                         threadCount,timeSeriesCount);
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(valueInTolerance(runDurationSeconds * 1000,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
 
     /**
@@ -127,9 +133,9 @@ public class BenchmarkerTest {
                         threadCount,timeSeriesCount);
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(valueInTolerance(runDurationSeconds * 1000,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
     /**
      * Check that the interval between updates is observed
@@ -148,11 +154,55 @@ public class BenchmarkerTest {
                         threadCount,timeSeriesCount);
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(valueInTolerance(runDurationSeconds * 1000,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount / intervalBetweenUpdates,
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount / intervalBetweenUpdates,
                 benchmarker.totalUpdateCount(),testTolerancePct));
     }
+
+    /**
+     * If we exceed the number of key updates we can accommodate per second, is there a warning message?
+     */
+    @Test
+    public void checkHotKeyCheck() throws Exception{
+        int intervalBetweenUpdates = 1;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 101;
+        int threadCount = 1;
+        int timeSeriesCount = 1;
+        double updatesPerSecond = (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates;
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount);
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
+        Assert.assertTrue(consoleOutput.get(2).equals(
+                String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",updatesPerSecond,Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC)));
+    }
+
+    @Test
+    /**
+     * Check that we get a warning message if the simulation is underflowing the expected rate
+     */
+    public void checkUnderflowCheck() throws Exception{
+        int intervalBetweenUpdates = 1;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 100;
+        int threadCount = 1;
+        int timeSeriesCount = 100;
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount);
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
+        int warningCount = 0;
+        for(int i=0;i<consoleOutput.size();i++){
+            System.out.println(consoleOutput.get(i));
+            if(consoleOutput.get(i).startsWith(
+                    String.format("!!!Update rate should be %.3f, actually",benchmarker.expectedUpdatesPerSecond())) && consoleOutput.get(i).endsWith(" - underflow")) warningCount++;
+        }
+        // We should get a warning on every second, for rounding reasons the first two may not happen
+        Assert.assertTrue(warningCount >= runDurationSeconds -2);
+    }
+
 
     @After
     // Truncate the time series set
@@ -164,7 +214,19 @@ public class BenchmarkerTest {
         }
     }
 
-    private static boolean valueInTolerance(double expectedValue, double actualValue,double tolerancePct){
-        return Math.abs((expectedValue - actualValue)/actualValue) < tolerancePct / 100;
+    private static Vector<String> runBenchmarkerGetOutput(TimeSeriesBenchmarker benchmarker) throws IOException{
+        // Swap stdout for an internal stream
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        benchmarker.output = new PrintStream(bStream);
+        // Run the benchmarker
+        System.out.println("This test requires console output to be captured. Running ....");
+        benchmarker.run();
+        System.out.println("Run complete");
+        // Get the output
+        ByteArrayInputStream binStream = new ByteArrayInputStream(bStream.toByteArray());
+        BufferedReader reader =  new BufferedReader(new InputStreamReader(binStream));
+        Vector<String> consoleOutput = new Vector<>();
+        while(reader.ready()) consoleOutput.addElement(reader.readLine());
+        return consoleOutput;
     }
 }

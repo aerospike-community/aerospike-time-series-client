@@ -2,14 +2,10 @@ Benchmarking tool for time series
 	control rate, no of series, frequency, average, variance, correlation, different distributions
 Need to deal with tags
 
-Benchmark client - multi thread
 Benchmark client - batch puts
 Benchmark client - simulate queries
 Wrap client so it can be run from cmd line
 mvn magic allowing separate build of benchmark client
-Hotkey warning message
-Underflow message
-Factor out printstream so it can be assigned to by unit tests
 
 Done
 ====
@@ -20,6 +16,10 @@ Keeping track of blocks - use an index record
 When copying, make map kv ordered
 GetPoints for time range outside a single block
 When copying record can a subsequent setMapPolicy call be avoided?
+Benchmark client - multi thread
+Factor out printstream so it can be assigned to by unit tests
+Hotkey warning message
+Underflow message
 
 Notes
 =====

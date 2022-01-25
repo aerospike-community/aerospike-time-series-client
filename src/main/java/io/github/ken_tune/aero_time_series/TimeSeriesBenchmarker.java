@@ -3,6 +3,9 @@ package io.github.ken_tune.aero_time_series;
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
 import io.github.ken_tune.time_series.Constants;
+import io.github.ken_tune.time_series.Utilities;
+
+import java.io.PrintStream;
 
 public class TimeSeriesBenchmarker {
 
@@ -34,6 +37,12 @@ public class TimeSeriesBenchmarker {
     private AerospikeClient aerospikeClient;
     // Underlying runnable objects for the benchmark
     private TimeSeriesBenchmarkRunnable[] benchmarkClientObjects;
+    // Output Stream
+    // Give it package protection so it can be modified by unit tests
+    PrintStream output= System.out;
+
+    // For the avoidance of doubt and clarity
+    static int MILLISECONDS_IN_SECOND = 1000;
 
     TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount, int timeSeriesCount){
         this.asHost = asHost;
@@ -56,8 +65,11 @@ public class TimeSeriesBenchmarker {
     }
 
     void run(){
-        System.out.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
-        System.out.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
+        output.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
+        output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
+        if(updatesPerTimeSeriesPerSecond() > Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC){
+            output.println(String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",updatesPerTimeSeriesPerSecond(),Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
+        }
 
         // Initialisation
         aerospikeClient = new AerospikeClient(asHost,3000);
@@ -76,7 +88,7 @@ public class TimeSeriesBenchmarker {
         while(isRunning()){
             if(System.currentTimeMillis() > nextOutputTime) {
                 if(averageThreadRunTimeMs() >0) outputStatus();
-                nextOutputTime+=1000;
+                nextOutputTime+=MILLISECONDS_IN_SECOND;
                 try {
                     Thread.sleep(50);
                 }
@@ -87,8 +99,18 @@ public class TimeSeriesBenchmarker {
     }
 
     private void outputStatus(){
-        System.out.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / 1000,
-                totalUpdateCount(), (double)1000 * totalUpdateCount()/ averageThreadRunTimeMs()));
+        output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / MILLISECONDS_IN_SECOND,
+                totalUpdateCount(), (double)MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
+        // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
+        // And we are beyond the first second (can produce anomalous results )
+        // show a warning message to that effect
+        double actualUpdateRate = (double) MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs();
+        if((averageThreadRunTimeMs() >= MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > actualUpdateRate)) {
+            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), actualUpdateRate, 10)) {
+                output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
+                        expectedUpdatesPerSecond(), actualUpdateRate));
+            }
+        }
     }
 
     /**
@@ -134,9 +156,10 @@ public class TimeSeriesBenchmarker {
 
     /**
      * Work out the actual number of updates per second for the simulation - allowing for the acceleration
+     * Package level access to allow for testing
      * @return
      */
-    private double expectedUpdatesPerSecond(){
+    double expectedUpdatesPerSecond(){
         return (double)accelerationFactor * timeSeriesCount / averageObservationIntervalSeconds;
     }
 
