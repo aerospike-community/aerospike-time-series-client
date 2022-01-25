@@ -5,15 +5,17 @@ import com.aerospike.client.policy.InfoPolicy;
 
 import java.io.PrintStream;
 
+import org.apache.commons.cli.*;
+
 public class TimeSeriesBenchmarker {
 
     // Simulation Defaults
     public static final int DEFAULT_TIME_SERIES_NAME_LENGTH = 10;
     public static final int DEFAULT_TIME_SERIES_COUNT = 100;
     public static final int DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS = 1;
-    public static final int DEFAULT_ACCELERATION_FACTOR = 10;
+    public static final int DEFAULT_ACCELERATION_FACTOR = 1;
     public static final int DEFAULT_RUN_DURATION_SECONDS = 10;
-    public static final int DEFAULT_THREAD_COUNT = 10;
+    public static final int DEFAULT_THREAD_COUNT = 1;
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
@@ -52,14 +54,26 @@ public class TimeSeriesBenchmarker {
         this.timeSeriesCount = timeSeriesCount;
     }
 
-    public static void main(String[] args){
-        String AEROSPIKE_HOST="172.28.128.7";
-        String AEROSPIKE_NAMESPACE="test";
+    public static void main(String[] args) throws ParseException{
+        try {
+            CommandLine cmd = OptionsHelper.getArguments(args);
+            TimeSeriesBenchmarker benchmarker = new TimeSeriesBenchmarker(
+                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.HOST_FLAG),
+                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG))
 
-        TimeSeriesBenchmarker benchmarker =
-                new TimeSeriesBenchmarker(AEROSPIKE_HOST,AEROSPIKE_NAMESPACE,DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS,
-                        DEFAULT_RUN_DURATION_SECONDS,DEFAULT_ACCELERATION_FACTOR,DEFAULT_THREAD_COUNT,DEFAULT_TIME_SERIES_COUNT);
-        benchmarker.run();
+            );
+            benchmarker.run();
+        }
+        catch(Utilities.ParseException e){
+            System.out.println(e.getMessage());
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.cmdLineOptions());
+        }
     }
 
     void run(){

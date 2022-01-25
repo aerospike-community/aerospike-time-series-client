@@ -2,6 +2,8 @@ package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.ParseException;
 import org.junit.*;
 
 import java.io.*;
@@ -201,6 +203,41 @@ public class BenchmarkerTest {
     }
 
 
+    @Test
+    /**
+     * Check output is as expected for a test case
+     */
+    public void correctMainOutput() {
+        int intervalBetweenUpdates = 2;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 5;
+        int threadCount = 1;
+        int timeSeriesCount = 10;
+
+        String formatString = String.format("-%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+
+        System.out.println(formatString);
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, intervalBetweenUpdates,
+                        runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
+        System.out.println(commandLineArguments);
+        //CommandLine cmdLine = commandLineObjectFromString(commandLineArguments);
+        try {
+            //CommandLine cmd = OptionsHelper.getArguments(commandLineArguments.split(" "));
+            TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+        }
+        catch (ParseException e) {
+            System.out.println(e.getMessage());
+            Assert.fail("This should not happen");
+        } catch(Exception e){
+            System.out.println(e.getMessage());
+            Assert.fail("This should not happen");
+        }
+    }
+
     @After
     // Truncate the time series set
     public void teardown(){
@@ -226,4 +263,22 @@ public class BenchmarkerTest {
         while(reader.ready()) consoleOutput.addElement(reader.readLine());
         return consoleOutput;
     }
+
+    /**
+     * Utility testing method - return a CommandLine object based on command line arguments
+     *
+     * @param argsString
+     * @return CommandLine object
+     */
+    private static CommandLine commandLineObjectFromString(String argsString) {
+        String[] args = argsString.split(" ");
+        CommandLine cmdLine = null;
+        try {
+            cmdLine = OptionsHelper.getArguments(args);
+        } catch (ParseException e) {
+            Assert.fail("Shouldn't throw a parse exception");
+        }
+        return cmdLine;
+    }
+
 }

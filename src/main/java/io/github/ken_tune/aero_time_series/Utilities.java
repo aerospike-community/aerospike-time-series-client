@@ -15,4 +15,13 @@ public class Utilities {
         return Math.abs((actualValue - expectedValue)/expectedValue) < tolerancePct / 100;
     }
 
+    /**
+     * Throw this error if we have parsing exceptions
+     */
+    public static class ParseException extends Exception{
+        ParseException(String message){
+            super(message);
+        }
+    }
+
 }
