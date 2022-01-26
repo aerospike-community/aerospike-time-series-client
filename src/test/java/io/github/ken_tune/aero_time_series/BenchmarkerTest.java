@@ -326,21 +326,4 @@ public class BenchmarkerTest {
     }
 
 
-    /**
-     * Utility testing method - return a CommandLine object based on command line arguments
-     *
-     * @param argsString
-     * @return CommandLine object
-     */
-    private static CommandLine commandLineObjectFromString(String argsString) {
-        String[] args = argsString.split(" ");
-        CommandLine cmdLine = null;
-        try {
-            cmdLine = OptionsHelper.getArguments(args);
-        } catch (ParseException e) {
-            Assert.fail("Shouldn't throw a parse exception");
-        }
-        return cmdLine;
-    }
-
 }
