@@ -44,6 +44,14 @@ public class TimeSeriesBenchmarker {
     // For the avoidance of doubt and clarity
     static int MILLISECONDS_IN_SECOND = 1000;
 
+    // Status thread related
+    private static int STATUS_UPDATE_PERIOD_SECS = 1;
+    // How frequently do we check to see if a status update is needed
+    private static int STATUS_TIMER_CHECK_PERIOD_MS = 50;
+    // How much throughput under-performance is tolerated w/out warning
+    private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
+
+
     TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount, int timeSeriesCount){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
@@ -56,17 +64,7 @@ public class TimeSeriesBenchmarker {
 
     public static void main(String[] args) throws ParseException{
         try {
-            CommandLine cmd = OptionsHelper.getArguments(args);
-            TimeSeriesBenchmarker benchmarker = new TimeSeriesBenchmarker(
-                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.HOST_FLAG),
-                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG))
-
-            );
+            TimeSeriesBenchmarker benchmarker = initBenchmarkerFromStringArgs(args);
             benchmarker.run();
         }
         catch(Utilities.ParseException e){
@@ -74,6 +72,24 @@ public class TimeSeriesBenchmarker {
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.cmdLineOptions());
         }
+    }
+
+    /**
+     *     Helper method allowing a TimeSeriesBenchmarker to be initialised from an array of Strings - as per main method
+     *     Protected visibility to allow testing use
+     */
+    static TimeSeriesBenchmarker initBenchmarkerFromStringArgs(String[] args) throws ParseException, Utilities.ParseException{
+        CommandLine cmd = OptionsHelper.getArguments(args);
+        TimeSeriesBenchmarker benchmarker = new TimeSeriesBenchmarker(
+                OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.HOST_FLAG),
+                OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG))
+        );
+        return benchmarker;
     }
 
     void run(){
@@ -84,7 +100,7 @@ public class TimeSeriesBenchmarker {
         }
 
         // Initialisation
-        aerospikeClient = new AerospikeClient(asHost,3000);
+        aerospikeClient = new AerospikeClient(asHost,Constants.DEFAULT_AEROSPIKE_PORT);
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_SET,null);
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_INDEX_SET,null);
 
@@ -100,9 +116,9 @@ public class TimeSeriesBenchmarker {
         while(isRunning()){
             if(System.currentTimeMillis() > nextOutputTime) {
                 if(averageThreadRunTimeMs() >0) outputStatus();
-                nextOutputTime+=MILLISECONDS_IN_SECOND;
+                nextOutputTime+=MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(STATUS_TIMER_CHECK_PERIOD_MS);
                 }
                 catch(InterruptedException e){}
             }
@@ -110,6 +126,10 @@ public class TimeSeriesBenchmarker {
         outputStatus();
     }
 
+    /**
+     * Output current status of simulation
+     * Will give a warning if it is running slower than expected
+     */
     private void outputStatus(){
         output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / MILLISECONDS_IN_SECOND,
                 totalUpdateCount(), (double)MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
@@ -118,7 +138,7 @@ public class TimeSeriesBenchmarker {
         // show a warning message to that effect
         double actualUpdateRate = (double) MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs();
         if((averageThreadRunTimeMs() >= MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > actualUpdateRate)) {
-            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), actualUpdateRate, 10)) {
+            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), actualUpdateRate, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
                 output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
                         expectedUpdatesPerSecond(), actualUpdateRate));
             }

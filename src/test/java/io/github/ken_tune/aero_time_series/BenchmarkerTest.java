@@ -10,6 +10,8 @@ import java.io.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BenchmarkerTest {
     private boolean doTeardown = false;
@@ -206,36 +208,47 @@ public class BenchmarkerTest {
     @Test
     /**
      * Check output is as expected for a test case
+     * Should see updates per second / updates per second per time series header
+     * Should see a status message every second plus an initial status message
      */
-    public void correctMainOutput() {
+    public void correctMainOutput() throws IOException, ParseException, Utilities.ParseException{
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
         int threadCount = 1;
         int timeSeriesCount = 10;
 
+        // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
                 OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
-        System.out.println(formatString);
         String commandLineArguments =
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, intervalBetweenUpdates,
                         runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
-        System.out.println(commandLineArguments);
-        //CommandLine cmdLine = commandLineObjectFromString(commandLineArguments);
-        try {
-            //CommandLine cmd = OptionsHelper.getArguments(commandLineArguments.split(" "));
-            TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+
+        // Initialise the benchmarker using the String[]
+        TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
+        // Capture the console output
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
+
+        // Check the two header messages
+        Assert.assertTrue(consoleOutput.get(0).equals(
+                String.format("Updates per second : %.3f",(double)accelerationFactor * timeSeriesCount / intervalBetweenUpdates)));
+        Assert.assertTrue(consoleOutput.get(1).equals(
+                String.format("Updates per second per time series : %.3f",(double)accelerationFactor * timeSeriesCount / intervalBetweenUpdates / timeSeriesCount)));
+
+        // Check we get the expected number of status messages
+        Pattern pattern = Pattern.compile("Run time :  \\d+ seconds, Update count : \\d+, Actual updates per second : \\d+.\\d{3}", Pattern.CASE_INSENSITIVE);
+
+        int runTimeMessageCount = 0;
+        for(int i=0;i<consoleOutput.size();i++){
+            Matcher matcher = pattern.matcher(consoleOutput.get(i));
+            if(matcher.find()) runTimeMessageCount++;
         }
-        catch (ParseException e) {
-            System.out.println(e.getMessage());
-            Assert.fail("This should not happen");
-        } catch(Exception e){
-            System.out.println(e.getMessage());
-            Assert.fail("This should not happen");
-        }
+
+        Assert.assertTrue(runTimeMessageCount >= runDurationSeconds+1);
     }
 
     @After

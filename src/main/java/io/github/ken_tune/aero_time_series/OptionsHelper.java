@@ -2,7 +2,13 @@ package io.github.ken_tune.aero_time_series;
 
 import org.apache.commons.cli.*;
 
+/**
+ * Help with command line processing
+ */
 public class OptionsHelper {
+    /**
+     * Flags used at the command line
+     */
     static class BenchmarkerFlags{
         static final String HOST_FLAG = "h";
         static final String NAMESPACE_FLAG = "n";
