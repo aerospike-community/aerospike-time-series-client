@@ -6,7 +6,6 @@ Need to deal with tags
 Benchmark client - batch puts
 Benchmark client - simulate queries
 mvn magic allowing separate build of benchmark client
-Better handling for ParseException (Integer.parseInt)
 
 Done
 ====
@@ -27,7 +26,7 @@ Benchmarking Tool
 	- frequency
 Wrap client so it can be run from cmd line
 Tests for command line run - check correctMainOutput function
-
+Better handling for ParseException (Integer.parseInt)
 
 
 Notes

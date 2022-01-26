@@ -251,6 +251,48 @@ public class BenchmarkerTest {
         Assert.assertTrue(runTimeMessageCount >= runDurationSeconds+1);
     }
 
+    @Test
+    /**
+     * Check parse exception is well handled
+     */
+    public void cmdLineParseExceptionHandled() throws IOException, ParseException, Utilities.ParseException{
+        int intervalBetweenUpdates = 2;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 5;
+        String badThreadCount = "x";
+        int timeSeriesCount = 10;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, intervalBetweenUpdates,
+                        runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
+
+        // Capture existing stdout
+        PrintStream oldSout = System.out;
+        // Create new stdout
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(bStream));
+
+        // Run benchmarker
+        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+
+        // Convert stdout into a vector of strings
+        ByteArrayInputStream binStream = new ByteArrayInputStream(bStream.toByteArray());
+        BufferedReader reader =  new BufferedReader(new InputStreamReader(binStream));
+        Vector<String> consoleOutput = new Vector<>();
+        while(reader.ready()) consoleOutput.addElement(reader.readLine());
+
+        // Check the first one is as expected
+        System.setOut(oldSout);
+        Assert.assertTrue(consoleOutput.get(0).equals(
+                String.format("-%s flag should have an integer argument. Argument supplied is %s",OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,badThreadCount)));
+    }
+
     @After
     // Truncate the time series set
     public void teardown(){
@@ -261,6 +303,12 @@ public class BenchmarkerTest {
         }
     }
 
+    /**
+     * Private method allowing console output to be grabbed after a benchmarker run
+     * @param benchmarker
+     * @return Console output as a vector of strings
+     * @throws IOException
+     */
     private static Vector<String> runBenchmarkerGetOutput(TimeSeriesBenchmarker benchmarker) throws IOException{
         // Swap stdout for an internal stream
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
@@ -276,6 +324,7 @@ public class BenchmarkerTest {
         while(reader.ready()) consoleOutput.addElement(reader.readLine());
         return consoleOutput;
     }
+
 
     /**
      * Utility testing method - return a CommandLine object based on command line arguments

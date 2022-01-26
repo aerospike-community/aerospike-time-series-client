@@ -96,7 +96,7 @@ public class OptionsHelper {
                     Integer.parseInt(value);
                 }
                 catch(NumberFormatException e){
-                    throw new Utilities.ParseException(String.format("-%s flag should have an integer argument. Argument supplied is  %s",flag,value));
+                    throw new Utilities.ParseException(String.format("-%s flag should have an integer argument. Argument supplied is %s",flag,value));
                 }
                 break;
         }
