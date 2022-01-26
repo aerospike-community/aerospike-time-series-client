@@ -32,7 +32,7 @@
 
     <groupId>io.github.ken-tune</groupId>
     <artifactId>aero-time-series-client</artifactId>
-    <version>0.22-SNAPSHOT</version>
+    <version>0.22</version>
     <profiles>
         <!-- GPG Signature on release -->
         <profile>
@@ -161,6 +161,6 @@
         <connection>scm:git:git://github.com/dexecutor/dependent-tasks-executor.git</connection>
         <developerConnection>scm:git:git@github.com:dexecutor/dexecutor.git</developerConnection>
         <url>https://github.com/dexecutor/dependent-tasks-executor</url>
-        <tag>HEAD</tag>
+        <tag>aero-time-series-client-0.22</tag>
     </scm>
 </project>
