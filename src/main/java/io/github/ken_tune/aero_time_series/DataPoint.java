@@ -12,7 +12,7 @@ public class DataPoint {
     }
 
     public DataPoint(Date date, double value){
-        this(epochSecondsToTimestamp(date.getTime()),value);
+        this(date.getTime(),value);
     }
 
     public long getTimestamp() {
@@ -30,9 +30,5 @@ public class DataPoint {
 
     public boolean equals(DataPoint d){
         return timestamp == d.timestamp && value == d.value;
-    }
-
-    static long epochSecondsToTimestamp(long epochSeconds){
-        return epochSeconds * (long)Math.pow(10,Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND);
     }
 }

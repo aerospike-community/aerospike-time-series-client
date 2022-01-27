@@ -137,7 +137,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @return Datapoints - array of DataPoint objects
      */
     public DataPoint[] getPoints(String timeSeriesName, Date fromDateTime, Date toDateTime) {
-        return getPoints(timeSeriesName, DataPoint.epochSecondsToTimestamp(fromDateTime.getTime()), DataPoint.epochSecondsToTimestamp(toDateTime.getTime()));
+        return getPoints(timeSeriesName, fromDateTime.getTime(), toDateTime.getTime());
     }
 
     /**

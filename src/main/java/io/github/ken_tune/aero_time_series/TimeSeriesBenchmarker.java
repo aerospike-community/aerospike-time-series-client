@@ -19,6 +19,8 @@ public class TimeSeriesBenchmarker {
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
+    public static final int DAILY_VOLATILITY_PCT = 10;
+    public static final int DAILY_DRIFT_PCT = 10;
 
     // Variables controlling the simulation
     // Those with package level visibility need to be visible to the benchmark threads

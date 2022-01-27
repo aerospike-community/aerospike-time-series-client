@@ -17,6 +17,5 @@ public class Constants {
     final static String METADATA_BIN_NAME = "Metadata";
     final static String MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME = "maxTSEntries";
 
-    final static int TIMESTAMP_DECIMAL_PLACES_PER_SECOND = 3;
     final static int DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK = 1000;
 }

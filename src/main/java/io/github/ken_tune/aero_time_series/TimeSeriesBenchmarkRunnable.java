@@ -26,7 +26,9 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     private int observationIntervalSeconds;
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
-    private double observationIntervalVariabilityPct = 5;
+    private double observationIntervalVariabilityPct;
+
+    private TimeSeriesSimulator simulator = new TimeSeriesSimulator(TimeSeriesBenchmarker.DAILY_DRIFT_PCT,TimeSeriesBenchmarker.DAILY_VOLATILITY_PCT);
 
     public TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
         timeSeriesClient = new TimeSeriesClient(asHost,asNamespace);
@@ -64,9 +66,17 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
 
     public void run(){
         startTime = System.currentTimeMillis();
+        Map<String,Long> lastObservationTimes = new HashMap<>();
         Map<String,Long> nextObservationTimes = new HashMap<>();
+        Map<String,Double> lastObservationValues = new HashMap<>();
+
         for(int i = 0; i< timeSeriesCountPerObject; i++){
-            nextObservationTimes.put(randomTimeSeriesName(),0L);
+            String timeSeriesName = randomTimeSeriesName();
+            double observationValue = initTimeSeriesValue();
+            lastObservationTimes.put(timeSeriesName,startTime);
+            lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
+            nextObservationTimes.put(timeSeriesName,nextObservationTime());
         }
         isRunning = true;
         while(getSimulationTime() - startTime < runDurationSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND * accelerationFactor){
@@ -76,7 +86,11 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);
                 if(nextObservationTime < getSimulationTime()) {
                     updateCount++;
-                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),randomNumberGenerator.nextDouble()));
+                    double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
+                    double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName),timeIncrement);
+                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
+                    lastObservationValues.put(timeSeriesName,observationValue);
+                    lastObservationTimes.put(timeSeriesName,nextObservationTime);
                     nextObservationTimes.put(timeSeriesName,nextObservationTime());
                 }
             }
@@ -120,6 +134,12 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         char[] timeSeriesName = new char[timeSeriesNameLength];
         for(int i=0;i<timeSeriesNameLength;i++) timeSeriesName[i] = availableCharacters[randomNumberGenerator.nextInt(availableCharacters.length)];
         return String.valueOf(timeSeriesName);
+    }
+
+    public static double initTimeSeriesValue(){
+        double TIME_SERIES_MIN_START_VALUE = 10.0;
+        double TIME_SERIES_MAX_START_VALUE = 100.0;
+        return TIME_SERIES_MIN_START_VALUE + randomNumberGenerator.nextDouble() * (TIME_SERIES_MAX_START_VALUE - TIME_SERIES_MIN_START_VALUE);
     }
 
 }

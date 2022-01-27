@@ -2,12 +2,16 @@ package io.github.ken_tune.aero_time_series;
 
 import java.util.Random;
 
+/**
+ * Purpose of the class is to allow simulation of a time series where
+ * (X(T2) - X(T1))/X(T1) ~ drift rate * (T2 - T1) + variance * sqrt(T1- T1) * N(0,1)
+ * where N(0,1) is a Gaussian distribution
+ *
+ * i.e. the fractional differences have a linear drift rate & a noise factor that correctly scales with time
+ */
 public class TimeSeriesSimulator {
     private static Random random = new Random();
     private static int SECONDS_IN_A_DAY = 24 * 60 * 60;
-    private static double DEFAULT_INITIAL_VALUE = 10;
-
-    private static double DEFAULT_DAILY_VARIANCE_PCT = 5;
     private double dailyDriftPct;
     // Strictly speaking this is the square root of the variance. It will be used to simulate daily differences as if
     // (X(T+1) - X(T))/ X(T) ~ N(initialValue,dailyVariancePct) i.e. the daily variation in value is normally distributed
@@ -16,21 +20,40 @@ public class TimeSeriesSimulator {
     public static void main(String[] args){
         for(int i=0;i<1000;i++) System.out.println(normallyDistributedSample());
     }
+
+    /**
+     * Randomly sample from a normal distribution with mean zero and variance 1
+     * Used as the basis for generating noise in the simulation
+     * @return
+     */
     private static double normallyDistributedSample(){
         return inverseCumulativeNormalDistPoints[random.nextInt(inverseCumulativeNormalDistPoints.length )];
     }
 
+    /**
+     * Initialise the simulator - this means specifying the drift and variance that is required
+     * @param dailyDriftPct
+     * @param dailyVariancePct
+     */
     public TimeSeriesSimulator(double dailyDriftPct,double dailyVariancePct){
         this.dailyDriftPct = dailyDriftPct;
         this.dailyVariancePct = dailyVariancePct;
     }
 
+
+    /**
+     * Assuming the current value, randomly generate the next value timeIncrementSeconds
+     * @param currentValue
+     * @param timeIncrementSeconds
+     * @return
+     */
     public double getNextValue(double currentValue, double timeIncrementSeconds){
         double timeIncrementInDays = timeIncrementSeconds / SECONDS_IN_A_DAY;
         return currentValue * (
                 1 + (dailyDriftPct * timeIncrementInDays)/100
                         + (dailyVariancePct * normallyDistributedSample() * Math.sqrt(timeIncrementInDays)/100));
     }
+
     /**
      * The array below is used to simulate the inverse cumulative normal distribution function
      */
