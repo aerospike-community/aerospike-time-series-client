@@ -24,7 +24,8 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     private double observationIntervalVariabilityPct;
-    private static final Random randomNumberGenerator = new Random(Constants.RANDOM_SEED);
+    // Randomness generation
+    private Random random;
 
 
     // The simulator is used for generating the time series values
@@ -61,6 +62,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
         this.simulator = new TimeSeriesSimulator(benchmarkClient.dailyDriftPct,benchmarkClient.dailyVolatilityPct,randomSeed);
+        this.random = new Random(randomSeed);
     }
 
     /**
@@ -141,7 +143,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         // Randomly vary the observation interval by +/- observationIntervalVariabilityPct
         // First generate the variability
         double observationVariationPct = 100  - observationIntervalVariabilityPct
-                + (2 * observationIntervalVariabilityPct * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1) / intervalSamplingGranularity);
+                + (2 * observationIntervalVariabilityPct * random.nextInt(intervalSamplingGranularity + 1) / intervalSamplingGranularity);
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
         return lastObservationTime + (long)(observationVariationPct * observationIntervalSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND/100);
     }
@@ -155,14 +157,14 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     String randomTimeSeriesName(){
         char[] availableCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         char[] timeSeriesName = new char[timeSeriesNameLength];
-        for(int i=0;i<timeSeriesNameLength;i++) timeSeriesName[i] = availableCharacters[randomNumberGenerator.nextInt(availableCharacters.length)];
+        for(int i=0;i<timeSeriesNameLength;i++) timeSeriesName[i] = availableCharacters[random.nextInt(availableCharacters.length)];
         return String.valueOf(timeSeriesName);
     }
 
-    public static double initTimeSeriesValue(){
+    public double initTimeSeriesValue(){
         double TIME_SERIES_MIN_START_VALUE = 10.0;
         double TIME_SERIES_MAX_START_VALUE = 100.0;
-        return TIME_SERIES_MIN_START_VALUE + randomNumberGenerator.nextDouble() * (TIME_SERIES_MAX_START_VALUE - TIME_SERIES_MIN_START_VALUE);
+        return TIME_SERIES_MIN_START_VALUE + random.nextDouble() * (TIME_SERIES_MAX_START_VALUE - TIME_SERIES_MIN_START_VALUE);
     }
 
 }
