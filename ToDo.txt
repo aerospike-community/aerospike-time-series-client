@@ -1,11 +1,8 @@
-Benchmarking tool for time series
-	start value
-	variance
+Make start value range configurable
 Need to deal with tags
 
 Benchmark client - batch puts
 Benchmark client - simulate queries
-mvn magic allowing separate build of benchmark client
 
 Done
 ====
@@ -27,6 +24,8 @@ Benchmarking Tool
 Wrap client so it can be run from cmd line
 Tests for command line run - check correctMainOutput function
 Better handling for ParseException (Integer.parseInt)
+mvn magic allowing separate build of benchmark client
+Gaussian randomness generation built in with drift and volatility
 
 
 Notes
