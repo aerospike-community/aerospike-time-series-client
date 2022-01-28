@@ -5,7 +5,6 @@ import java.util.*;
 // Implementation of individual runnable TimeSeriesBenchmark object
 // Not intended for direct use - hence package level visibility
 class TimeSeriesBenchmarkRunnable implements Runnable {
-    private static final Random randomNumberGenerator = new Random(Constants.RANDOM_SEED);
 
     // Member variables
     private TimeSeriesClient timeSeriesClient;
@@ -25,11 +24,35 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     private double observationIntervalVariabilityPct;
+    private static final Random randomNumberGenerator = new Random(Constants.RANDOM_SEED);
+
 
     // The simulator is used for generating the time series values
     private TimeSeriesSimulator simulator;
 
-    public TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
+    /**
+     * Constructor for a runnable that will generate timeSeriesCount time series for us
+     * Package level visibility as this will not be used in isolation
+     * @param asHost - Aerospike Host
+     * @param asNamespace - Aerospike Namespace
+     * @param timeSeriesCountPerObject - No of timeseries to generate
+     * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
+     */
+    TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
+        this(asHost,asNamespace,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
+    }
+
+
+    /**
+     * Constructor for a runnable that will generate timeSeriesCount time series for us
+     * Package level visibility as this will not be used in isolation
+     * @param asHost - Aerospike Host
+     * @param asNamespace - Aerospike Namespace
+     * @param timeSeriesCountPerObject - No of timeseries to generate
+     * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
+     * @param randomSeed - initialise with a specific seed for deterministic results
+     */
+    TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         timeSeriesClient = new TimeSeriesClient(asHost,asNamespace);
         this.timeSeriesCountPerObject = timeSeriesCountPerObject;
         this.runDurationSeconds = benchmarkClient.runDuration;
@@ -37,7 +60,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         this.timeSeriesNameLength = benchmarkClient.timeSeriesNameLength;
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
-        this.simulator = new TimeSeriesSimulator(benchmarkClient.dailyDriftPct,benchmarkClient.dailyVolatilityPct);
+        this.simulator = new TimeSeriesSimulator(benchmarkClient.dailyDriftPct,benchmarkClient.dailyVolatilityPct,randomSeed);
     }
 
     /**

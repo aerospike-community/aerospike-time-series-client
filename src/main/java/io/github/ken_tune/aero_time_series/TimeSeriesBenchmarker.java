@@ -4,6 +4,7 @@ import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
 
 import java.io.PrintStream;
+import java.util.Random;
 
 import org.apache.commons.cli.*;
 
@@ -33,6 +34,9 @@ public class TimeSeriesBenchmarker {
     private final int timeSeriesCount;
     final int dailyDriftPct;
     final int dailyVolatilityPct;
+    // Seed for initialising sources of randomness
+    // If a seed is supplied in the constructor this will be used else a random seed is selected
+    private final long randomSeed;
 
     // Specify Aerospike cluster and namespace
     private final String asHost;
@@ -58,7 +62,7 @@ public class TimeSeriesBenchmarker {
 
 
     TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
-                          int timeSeriesCount,int dailyDriftPct, int dailyVolatilityPct){
+                          int timeSeriesCount,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
         this.averageObservationIntervalSeconds = observationIntervalSeconds;
@@ -68,6 +72,7 @@ public class TimeSeriesBenchmarker {
         this.timeSeriesCount = timeSeriesCount;
         this.dailyDriftPct = dailyDriftPct;
         this.dailyVolatilityPct = dailyVolatilityPct;
+        this.randomSeed = randomSeed;
     }
 
     /**
@@ -82,7 +87,8 @@ public class TimeSeriesBenchmarker {
      */
     TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
                           int timeSeriesCount){
-        this(asHost,asNamespace,observationIntervalSeconds,runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT);
+        this(asHost,asNamespace,observationIntervalSeconds,runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,
+                DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT,new Random().nextLong());
     }
 
     public static void main(String[] args){
@@ -114,7 +120,8 @@ public class TimeSeriesBenchmarker {
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG)),
                     DEFAULT_DAILY_DRIFT_PCT,
-                    DEFAULT_DAILY_VOLATILITY_PCT
+                    DEFAULT_DAILY_VOLATILITY_PCT,
+                    new Random().nextLong()
             );
         }
         catch(ParseException e){
@@ -142,7 +149,7 @@ public class TimeSeriesBenchmarker {
         for(int i=0;i<threadCount;i++){
             int timeSeriesCountForThread = timeSeriesCount /  threadCount;
             if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
-            benchmarkClientObjects[i] = new TimeSeriesBenchmarkRunnable(asHost,asNamespace,timeSeriesCountForThread,this);
+            benchmarkClientObjects[i] = new TimeSeriesBenchmarkRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
             Thread t = new Thread(benchmarkClientObjects[i]);
             t.start();
         }

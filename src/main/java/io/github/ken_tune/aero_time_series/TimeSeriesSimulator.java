@@ -10,13 +10,14 @@ import java.util.Random;
  * i.e. the fractional differences have a linear drift rate & a noise factor that correctly scales with time
  */
 public class TimeSeriesSimulator {
-    private static Random random = new Random(Constants.RANDOM_SEED);
     private static int SECONDS_IN_A_DAY = 24 * 60 * 60;
     private double dailyDriftPct;
     private double dailyVolatilityPct;
+    private Random random;
 
     public static void main(String[] args){
-        for(int i=0;i<1000;i++) System.out.println(normallyDistributedSample());
+        TimeSeriesSimulator simulator = new TimeSeriesSimulator(0,0);
+        for(int i=0;i<1000;i++) System.out.println(simulator.normallyDistributedSample());
     }
 
     /**
@@ -24,7 +25,7 @@ public class TimeSeriesSimulator {
      * Used as the basis for generating noise in the simulation
      * @return
      */
-    private static double normallyDistributedSample(){
+    private double normallyDistributedSample(){
         return inverseCumulativeNormalDistPoints[random.nextInt(inverseCumulativeNormalDistPoints.length )];
     }
 
@@ -34,8 +35,21 @@ public class TimeSeriesSimulator {
      * @param dailyVolatilityPct
      */
     public TimeSeriesSimulator(double dailyDriftPct,double dailyVolatilityPct){
+        this(dailyDriftPct,dailyVolatilityPct,new Random().nextLong());
+    }
+
+    /**
+     * Initialise the simulator - this means specifying the drift and volatility that is required
+     * This constructor allows the Random object to be initialised with a fixed seed so we always get the same output
+     * useful for testing
+     * @param dailyDriftPct
+     * @param dailyVolatilityPct
+     * @param randomSeed
+     */
+    TimeSeriesSimulator(double dailyDriftPct,double dailyVolatilityPct, long randomSeed){
         this.dailyDriftPct = dailyDriftPct;
         this.dailyVolatilityPct = dailyVolatilityPct;
+        this.random = new Random(randomSeed);
     }
 
 
