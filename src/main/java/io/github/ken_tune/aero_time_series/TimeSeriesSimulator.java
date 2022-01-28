@@ -4,18 +4,16 @@ import java.util.Random;
 
 /**
  * Purpose of the class is to allow simulation of a time series where
- * (X(T2) - X(T1))/X(T1) ~ drift rate * (T2 - T1) + variance * sqrt(T1- T1) * N(0,1)
+ * (X(T2) - X(T1))/X(T1) ~ drift rate * (T2 - T1) + volatility * sqrt(T1- T1) * N(0,1)
  * where N(0,1) is a Gaussian distribution
  *
  * i.e. the fractional differences have a linear drift rate & a noise factor that correctly scales with time
  */
 public class TimeSeriesSimulator {
-    private static Random random = new Random();
+    private static Random random = new Random(Constants.RANDOM_SEED);
     private static int SECONDS_IN_A_DAY = 24 * 60 * 60;
     private double dailyDriftPct;
-    // Strictly speaking this is the square root of the variance. It will be used to simulate daily differences as if
-    // (X(T+1) - X(T))/ X(T) ~ N(initialValue,dailyVariancePct) i.e. the daily variation in value is normally distributed
-    private double dailyVariancePct;
+    private double dailyVolatilityPct;
 
     public static void main(String[] args){
         for(int i=0;i<1000;i++) System.out.println(normallyDistributedSample());
@@ -31,13 +29,13 @@ public class TimeSeriesSimulator {
     }
 
     /**
-     * Initialise the simulator - this means specifying the drift and variance that is required
+     * Initialise the simulator - this means specifying the drift and volatility that is required
      * @param dailyDriftPct
-     * @param dailyVariancePct
+     * @param dailyVolatilityPct
      */
-    public TimeSeriesSimulator(double dailyDriftPct,double dailyVariancePct){
+    public TimeSeriesSimulator(double dailyDriftPct,double dailyVolatilityPct){
         this.dailyDriftPct = dailyDriftPct;
-        this.dailyVariancePct = dailyVariancePct;
+        this.dailyVolatilityPct = dailyVolatilityPct;
     }
 
 
@@ -51,7 +49,7 @@ public class TimeSeriesSimulator {
         double timeIncrementInDays = timeIncrementSeconds / SECONDS_IN_A_DAY;
         return currentValue * (
                 1 + (dailyDriftPct * timeIncrementInDays)/100
-                        + (dailyVariancePct * normallyDistributedSample() * Math.sqrt(timeIncrementInDays)/100));
+                        + (dailyVolatilityPct * normallyDistributedSample() * Math.sqrt(timeIncrementInDays)/100));
     }
 
     /**

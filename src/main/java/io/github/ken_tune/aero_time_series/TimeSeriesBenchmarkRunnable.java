@@ -5,9 +5,7 @@ import java.util.*;
 // Implementation of individual runnable TimeSeriesBenchmark object
 // Not intended for direct use - hence package level visibility
 class TimeSeriesBenchmarkRunnable implements Runnable {
-    // Seed for randomiser
-    private static final long RANDOM_SEED = 6760187239798559903L;
-    private static final Random randomNumberGenerator = new Random(RANDOM_SEED);
+    private static final Random randomNumberGenerator = new Random(Constants.RANDOM_SEED);
 
     // Member variables
     private TimeSeriesClient timeSeriesClient;
@@ -28,7 +26,8 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     private double observationIntervalVariabilityPct;
 
-    private TimeSeriesSimulator simulator = new TimeSeriesSimulator(TimeSeriesBenchmarker.DAILY_DRIFT_PCT,TimeSeriesBenchmarker.DAILY_VOLATILITY_PCT);
+    // The simulator is used for generating the time series values
+    private TimeSeriesSimulator simulator;
 
     public TimeSeriesBenchmarkRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
         timeSeriesClient = new TimeSeriesClient(asHost,asNamespace);
@@ -38,6 +37,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         this.timeSeriesNameLength = benchmarkClient.timeSeriesNameLength;
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
+        this.simulator = new TimeSeriesSimulator(benchmarkClient.dailyDriftPct,benchmarkClient.dailyVolatilityPct);
     }
 
     /**
@@ -74,12 +74,12 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
             String timeSeriesName = randomTimeSeriesName();
             double observationValue = initTimeSeriesValue();
             lastObservationTimes.put(timeSeriesName,startTime);
-            lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
+            lastObservationValues.put(timeSeriesName,observationValue);
             timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
-            nextObservationTimes.put(timeSeriesName,nextObservationTime());
+            nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
         }
         isRunning = true;
-        while(getSimulationTime() - startTime < runDurationSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND * accelerationFactor){
+        while(getSimulationTime() - startTime < (long)runDurationSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND * accelerationFactor){
             Iterator<String> timeSeriesNames = nextObservationTimes.keySet().iterator();
             while(timeSeriesNames.hasNext()){
                 String timeSeriesName = timeSeriesNames.next();
@@ -91,7 +91,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
                     timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
                     lastObservationValues.put(timeSeriesName,observationValue);
                     lastObservationTimes.put(timeSeriesName,nextObservationTime);
-                    nextObservationTimes.put(timeSeriesName,nextObservationTime());
+                    nextObservationTimes.put(timeSeriesName,nextObservationTime(nextObservationTime));
                 }
             }
         }
@@ -113,14 +113,14 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
      * Randomly generate the next observation time for a time series observation
      * @return
      */
-    private long nextObservationTime(){
+    private long nextObservationTime(long lastObservationTime){
         int intervalSamplingGranularity = 1000;
         // Randomly vary the observation interval by +/- observationIntervalVariabilityPct
         // First generate the variability
-        double observationVariationPct = (intervalSamplingGranularity * (100 - observationIntervalVariabilityPct)
-                + 2 * observationIntervalVariabilityPct * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1)) / intervalSamplingGranularity;
+        double observationVariationPct = 100  - observationIntervalVariabilityPct
+                + (2 * observationIntervalVariabilityPct * randomNumberGenerator.nextInt(intervalSamplingGranularity + 1) / intervalSamplingGranularity);
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
-        return getSimulationTime() + (int)(observationVariationPct * observationIntervalSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND)/100;
+        return lastObservationTime + (long)(observationVariationPct * observationIntervalSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND/100);
     }
 
     /**

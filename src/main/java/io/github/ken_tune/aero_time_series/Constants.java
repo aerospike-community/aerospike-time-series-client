@@ -18,4 +18,7 @@ public class Constants {
     final static String MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME = "maxTSEntries";
 
     final static int DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK = 1000;
+
+    // Seed for randomiser
+    static final long RANDOM_SEED = 6760187239798559903L;
 }

@@ -16,11 +16,12 @@ public class TimeSeriesBenchmarker {
     public static final int DEFAULT_ACCELERATION_FACTOR = 1;
     public static final int DEFAULT_RUN_DURATION_SECONDS = 10;
     public static final int DEFAULT_THREAD_COUNT = 1;
+    public static final int DEFAULT_DAILY_VOLATILITY_PCT = 10;
+    public static final int DEFAULT_DAILY_DRIFT_PCT = 10;
+
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
-    public static final int DAILY_VOLATILITY_PCT = 10;
-    public static final int DAILY_DRIFT_PCT = 10;
 
     // Variables controlling the simulation
     // Those with package level visibility need to be visible to the benchmark threads
@@ -30,6 +31,8 @@ public class TimeSeriesBenchmarker {
     final int timeSeriesNameLength = DEFAULT_TIME_SERIES_NAME_LENGTH;
     private final int threadCount;
     private final int timeSeriesCount;
+    final int dailyDriftPct;
+    final int dailyVolatilityPct;
 
     // Specify Aerospike cluster and namespace
     private final String asHost;
@@ -54,7 +57,8 @@ public class TimeSeriesBenchmarker {
     private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
-    TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount, int timeSeriesCount){
+    TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
+                          int timeSeriesCount,int dailyDriftPct, int dailyVolatilityPct){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
         this.averageObservationIntervalSeconds = observationIntervalSeconds;
@@ -62,6 +66,23 @@ public class TimeSeriesBenchmarker {
         this.accelerationFactor = accelerationFactor;
         this.threadCount = threadCount;
         this.timeSeriesCount = timeSeriesCount;
+        this.dailyDriftPct = dailyDriftPct;
+        this.dailyVolatilityPct = dailyVolatilityPct;
+    }
+
+    /**
+     * Utility constructor where we use the default drift and volatility values
+     * @param asHost
+     * @param asNamespace
+     * @param observationIntervalSeconds
+     * @param runDurationSeconds
+     * @param accelerationFactor
+     * @param threadCount
+     * @param timeSeriesCount
+     */
+    TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
+                          int timeSeriesCount){
+        this(asHost,asNamespace,observationIntervalSeconds,runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT);
     }
 
     public static void main(String[] args){
@@ -91,7 +112,9 @@ public class TimeSeriesBenchmarker {
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG))
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG)),
+                    DEFAULT_DAILY_DRIFT_PCT,
+                    DEFAULT_DAILY_VOLATILITY_PCT
             );
         }
         catch(ParseException e){
