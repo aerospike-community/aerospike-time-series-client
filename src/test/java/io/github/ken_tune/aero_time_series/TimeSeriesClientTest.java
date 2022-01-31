@@ -81,9 +81,11 @@ public class TimeSeriesClientTest {
         int dataPointCount = 10;
         int timeIncrementInSeconds = 15;
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
-        DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),new Date(getTestBaseDate().getTime() + (dataPointCount - 1) * timeIncrementInSeconds));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),
+                new Date(getTestBaseDate().getTime() + (dataPointCount - 1) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
         for(int i=0;i<dataPointCount;i++){
-            DataPoint shouldBeDataPoint = new DataPoint(new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds),values[i]);
+            DataPoint shouldBeDataPoint = new DataPoint(
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i].equals(shouldBeDataPoint));
         }
     }
@@ -115,12 +117,14 @@ public class TimeSeriesClientTest {
         int timeIncrementInSeconds = 15;
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
         // Should only get first five data points
-        DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),new Date(getTestBaseDate().getTime() + (dataPointCount/2 - 1) * timeIncrementInSeconds));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),
+                new Date(getTestBaseDate().getTime() + (dataPointCount/2 - 1) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
         // Check the count is correct
         Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
         // and the points are the ones we expect
         for(int i=0;i<dataPointCount/2 ;i++){
-            DataPoint shouldBeDataPoint = new DataPoint(new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds),values[i]);
+            DataPoint shouldBeDataPoint = new DataPoint(
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i].equals(shouldBeDataPoint));
         }
     }
@@ -134,13 +138,14 @@ public class TimeSeriesClientTest {
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
         // Should only get second five data points
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,
-                new Date(getTestBaseDate().getTime() + (dataPointCount / 2) * timeIncrementInSeconds),
-                new Date(getTestBaseDate().getTime() + dataPointCount * timeIncrementInSeconds));
+                new Date(getTestBaseDate().getTime() + (dataPointCount / 2) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),
+                new Date(getTestBaseDate().getTime() + dataPointCount * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
         // Check the count is correct
         Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
         // and the points are the ones we expect
         for(int i=dataPointCount / 2;i<dataPointCount ;i++){
-            DataPoint shouldBeDataPoint = new DataPoint(new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds),values[i]);
+            DataPoint shouldBeDataPoint = new DataPoint(
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i - dataPointCount/2].equals(shouldBeDataPoint));
         }
     }
@@ -166,8 +171,8 @@ public class TimeSeriesClientTest {
         while(rs.next()) count++;
         Assert.assertEquals(count,requiredBlocks);
         timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,
-                DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +30),
-                DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + 90)
+                getTestBaseDate().getTime() +30 * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND,
+                getTestBaseDate().getTime() + 90 * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND
         );
     }
 
@@ -211,15 +216,13 @@ public class TimeSeriesClientTest {
                 Each point's timestamp is greater than the one preceding it
      */
     private void checkCorrectSeriesForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedCount) throws Exception {
-//        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
-//        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
-        Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds);
-        Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds);
+        Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND);
+        Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND);
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,startTime,endTime);
         Assert.assertEquals(dataPoints.length,expectedCount);
         for(int i=0;i<dataPoints.length;i++){
-            Assert.assertTrue(dataPoints[i].getTimestamp() >= DataPoint.epochSecondsToTimestamp(startTime.getTime()));
-            Assert.assertTrue(dataPoints[i].getTimestamp() <= DataPoint.epochSecondsToTimestamp(endTime.getTime()));
+            Assert.assertTrue(dataPoints[i].getTimestamp() >= startTime.getTime());
+            Assert.assertTrue(dataPoints[i].getTimestamp() <= endTime.getTime());
             if(i>0) Assert.assertTrue(dataPoints[i].getTimestamp() > dataPoints[i-1].getTimestamp());
         }
     }
@@ -242,7 +245,7 @@ public class TimeSeriesClientTest {
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
-
+//        doTeardown = false;
         checkCorrectBlocksForTimeRange(30,90,2,false);
         checkCorrectBlocksForTimeRange(60,150,2,false);
         checkCorrectBlocksForTimeRange(90,179 ,2,false);
@@ -270,14 +273,14 @@ public class TimeSeriesClientTest {
         4)  Whether the last timestamp has the special CURRENT_RECORD_TIMESTAMP marker
      */
     private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks, boolean lastBlockZero) throws Exception{
-        long startTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime() +startTimeOffsetInSeconds);
-        long endTimeAsTimestamp = DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()+endTimeOffsetInSeconds);
+        long startTimeAsTimestamp = getTestBaseDate().getTime() +startTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
+        long endTimeAsTimestamp = getTestBaseDate().getTime()+endTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
         long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
         int indexOfLastRecord = timestamps.length - 1;
         if(startTimeOffsetInSeconds <= endTimeOffsetInSeconds) {
             Assert.assertTrue(timestamps.length == expectedBlocks);
             Assert.assertTrue(timestamps[0] == startTimeAsTimestamp ||
-                    timestamps[0] == DataPoint.epochSecondsToTimestamp(getTestBaseDate().getTime()) ||
+                    timestamps[0] == getTestBaseDate().getTime() ||
                     (timestamps[1] > startTimeAsTimestamp && timestamps[0] < startTimeAsTimestamp) ||
                     ((timestamps.length ==2 ) && (timestamps[1] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP)));
             Assert.assertTrue(timestamps[indexOfLastRecord] <= endTimeAsTimestamp);
@@ -303,7 +306,7 @@ public class TimeSeriesClientTest {
         for(int i=0;i<iterations;i++){
             double value = RANDOM.nextDouble();
             values[i] = value;
-            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(getTestBaseDate().getTime() + i * intervalInSeconds ),value),recordsPerBlock);
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(getTestBaseDate().getTime() + i * intervalInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),value),recordsPerBlock);
         }
         return values;
     }

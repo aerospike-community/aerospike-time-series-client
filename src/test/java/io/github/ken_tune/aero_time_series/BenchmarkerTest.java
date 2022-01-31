@@ -7,6 +7,7 @@ import org.apache.commons.cli.ParseException;
 import org.junit.*;
 
 import java.io.*;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
@@ -178,6 +179,60 @@ public class BenchmarkerTest {
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
         Assert.assertTrue(consoleOutput.get(2).equals(
                 String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",updatesPerSecond,Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC)));
+    }
+
+    /**
+     * Check drift is simulated correctly
+     */
+    @Test
+    public void checkDriftSimulatedCorrectly(){
+        // Generate 500 observations via acceleration
+        int intervalBetweenUpdates = 60;
+        int runDurationSeconds = 10;
+        int accelerationFactor = intervalBetweenUpdates * 50;
+        int threadCount = 1;
+        int timeSeriesCount = 1;
+        // Set volatility to zero
+        int dailyDriftPct = 10;
+        int dailyVolatilityPct = 0;
+        // Check the simulation generates drift correctly when volatility is zero
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+        long startTime = System.currentTimeMillis();
+        benchmarker.run();
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
+        DataPoint[] dataPoints = timeSeriesClient.getPoints("BPGREBWPRB",new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        double[] values = new double[dataPoints.length];
+        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
+        TimeSeriesSimulatorTest.checkDailyDriftPct(values,dailyDriftPct,intervalBetweenUpdates,10);
+    }
+
+    /**
+     * Check volatility is simulated correctly
+     */
+    @Test
+    public void checkVolatilitySimulatedCorrectly(){
+        // Generate 500 observations via acceleration
+        int intervalBetweenUpdates = 60;
+        int runDurationSeconds = 10;
+        int accelerationFactor = intervalBetweenUpdates *50;
+        int threadCount = 1;
+        int timeSeriesCount = 1;
+        // Set drift to zero so we can focus on volatility
+        int dailyDriftPct = 0;
+        int dailyVolatilityPct = 10;
+        // Check the simulation generates drift correctly when volatility is zero
+        TimeSeriesBenchmarker benchmarker =
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+        long startTime = System.currentTimeMillis();
+        benchmarker.run();
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
+        DataPoint[] dataPoints = timeSeriesClient.getPoints("BPGREBWPRB",new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        double[] values = new double[dataPoints.length];
+        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
+        TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,dailyVolatilityPct,intervalBetweenUpdates,10);
     }
 
     @Test

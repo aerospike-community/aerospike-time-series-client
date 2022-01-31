@@ -28,12 +28,4 @@ public class DataPointTest {
         Assert.assertFalse(d.equals(new DataPoint(t2,v2)));
 
     }
-
-    @Test
-    // Test that dates are converted to timestamps as expected
-    public void testDateToTimestampConversion(){
-        Date now = new Date();
-        DataPoint d = new DataPoint(now,0);
-        Assert.assertEquals(d.getTimestamp(),now.getTime() * (long)Math.pow(10,Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND));
-    }
 }
