@@ -156,8 +156,6 @@ public class TimeSeriesClientTest {
     // Check that block creation happens correctly
     // Do we get n blocks when no of data points is n * m, where m is allowed entries per block
     public void blockTest() throws Exception{
-        teardown();
-        doTeardown = false;
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
@@ -247,7 +245,7 @@ public class TimeSeriesClientTest {
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
-//        doTeardown = false;
+
         checkCorrectBlocksForTimeRange(30,90,2,false);
         checkCorrectBlocksForTimeRange(60,150,2,false);
         checkCorrectBlocksForTimeRange(90,179 ,2,false);
@@ -356,8 +354,6 @@ public class TimeSeriesClientTest {
         3) Should be able to handle a zero length data point array without exception
      */
     public void bulkLoadTest() throws Exception{
-        teardown();
-        doTeardown = false;
         long startTime = getTestBaseDate().getTime();
         DataPoint[] dataPoints = createDataPoints(startTime,1,1);
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints,3);

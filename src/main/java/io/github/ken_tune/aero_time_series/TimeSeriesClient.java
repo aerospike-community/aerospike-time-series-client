@@ -136,7 +136,6 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         while(lastRecordLoaded < dataPoints.length){
             // Load records remaining or whatever we have space for, whichever is the smaller
             int numberOfRecordsToLoad = Math.min(dataPoints.length - lastRecordLoaded,maxEntryCount - existingRecordCount);
-            System.out.println(String.format("Number of records to load %d",numberOfRecordsToLoad));
             // Insert metadata - may not be needed, but will be ignored if it already exists
             Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoints[lastRecordLoaded].getTimestamp(),maxEntryCount);
             // Batch inserting datapoints is done via an array of operations
