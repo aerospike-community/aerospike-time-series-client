@@ -50,9 +50,6 @@ public class TimeSeriesBenchmarker {
     // Give it package protection so it can be modified by unit tests
     PrintStream output= System.out;
 
-    // For the avoidance of doubt and clarity
-    static int MILLISECONDS_IN_SECOND = 1000;
-
     // Status thread related
     private static int STATUS_UPDATE_PERIOD_SECS = 1;
     // How frequently do we check to see if a status update is needed
@@ -157,7 +154,7 @@ public class TimeSeriesBenchmarker {
         while(isRunning()){
             if(System.currentTimeMillis() > nextOutputTime) {
                 if(averageThreadRunTimeMs() >0) outputStatus();
-                nextOutputTime+=MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
+                nextOutputTime+= Constants.MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
                 try {
                     Thread.sleep(STATUS_TIMER_CHECK_PERIOD_MS);
                 }
@@ -172,13 +169,13 @@ public class TimeSeriesBenchmarker {
      * Will give a warning if it is running slower than expected
      */
     private void outputStatus(){
-        output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / MILLISECONDS_IN_SECOND,
-                totalUpdateCount(), (double)MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
+        output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                totalUpdateCount(), (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
         // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
         // And we are beyond the first second (can produce anomalous results )
         // show a warning message to that effect
-        double actualUpdateRate = (double) MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs();
-        if((averageThreadRunTimeMs() >= MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > actualUpdateRate)) {
+        double actualUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs();
+        if((averageThreadRunTimeMs() >= Constants.MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > actualUpdateRate)) {
             if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), actualUpdateRate, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
                 output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
                         expectedUpdatesPerSecond(), actualUpdateRate));

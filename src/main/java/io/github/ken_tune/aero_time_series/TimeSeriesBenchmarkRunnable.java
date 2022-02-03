@@ -104,14 +104,14 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
             nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
         }
         isRunning = true;
-        while(getSimulationTime() - startTime < (long)runDurationSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND * accelerationFactor){
+        while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
             Iterator<String> timeSeriesNames = nextObservationTimes.keySet().iterator();
             while(timeSeriesNames.hasNext()){
                 String timeSeriesName = timeSeriesNames.next();
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);
                 if(nextObservationTime < getSimulationTime()) {
                     updateCount++;
-                    double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
+                    double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/ Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName),timeIncrement);
                     timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
                     lastObservationValues.put(timeSeriesName,observationValue);
@@ -145,7 +145,7 @@ class TimeSeriesBenchmarkRunnable implements Runnable {
         double observationVariationPct = 100  - observationIntervalVariabilityPct
                 + (2 * observationIntervalVariabilityPct * random.nextInt(intervalSamplingGranularity + 1) / intervalSamplingGranularity);
         // then apply it to the average interval. Convert to milliseconds and divide by 100 as we were working in pct terms
-        return lastObservationTime + (long)(observationVariationPct * observationIntervalSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND/100);
+        return lastObservationTime + (long)(observationVariationPct * observationIntervalSeconds * Constants.MILLISECONDS_IN_SECOND/100);
     }
 
     /**

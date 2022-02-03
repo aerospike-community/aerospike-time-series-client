@@ -21,4 +21,7 @@ public class Constants {
 
     // Seed for randomiser
     static final long RANDOM_SEED = 6760187239798559903L;
+
+    // For the avoidance of doubt and clarity
+    static int MILLISECONDS_IN_SECOND = 1000;
 }
