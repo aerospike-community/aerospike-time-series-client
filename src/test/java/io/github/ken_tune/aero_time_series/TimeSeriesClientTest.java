@@ -2,7 +2,9 @@ package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
+import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.*;
+import com.aerospike.client.cdt.MapOperation;
 import com.aerospike.client.task.IndexTask;
 import org.junit.*;
 
@@ -82,10 +84,10 @@ public class TimeSeriesClientTest {
         int timeIncrementInSeconds = 15;
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),
-                new Date(getTestBaseDate().getTime() + (dataPointCount - 1) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
+                new Date(getTestBaseDate().getTime() + (dataPointCount - 1) * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND));
         for(int i=0;i<dataPointCount;i++){
             DataPoint shouldBeDataPoint = new DataPoint(
-                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i].equals(shouldBeDataPoint));
         }
     }
@@ -118,13 +120,13 @@ public class TimeSeriesClientTest {
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
         // Should only get first five data points
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),
-                new Date(getTestBaseDate().getTime() + (dataPointCount/2 - 1) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
+                new Date(getTestBaseDate().getTime() + (dataPointCount/2 - 1) * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND));
         // Check the count is correct
         Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
         // and the points are the ones we expect
         for(int i=0;i<dataPointCount/2 ;i++){
             DataPoint shouldBeDataPoint = new DataPoint(
-                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i].equals(shouldBeDataPoint));
         }
     }
@@ -138,14 +140,14 @@ public class TimeSeriesClientTest {
         double[] values = createTimeSeries(TEST_TIME_SERIES_NAME,timeIncrementInSeconds,dataPointCount);
         // Should only get second five data points
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,
-                new Date(getTestBaseDate().getTime() + (dataPointCount / 2) * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),
-                new Date(getTestBaseDate().getTime() + dataPointCount * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND));
+                new Date(getTestBaseDate().getTime() + (dataPointCount / 2) * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND),
+                new Date(getTestBaseDate().getTime() + dataPointCount * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND));
         // Check the count is correct
         Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
         // and the points are the ones we expect
         for(int i=dataPointCount / 2;i<dataPointCount ;i++){
             DataPoint shouldBeDataPoint = new DataPoint(
-                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),values[i]);
+                    new Date(getTestBaseDate().getTime() + i * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND),values[i]);
             Assert.assertTrue(dataPoints[i - dataPointCount/2].equals(shouldBeDataPoint));
         }
     }
@@ -171,8 +173,8 @@ public class TimeSeriesClientTest {
         while(rs.next()) count++;
         Assert.assertEquals(count,requiredBlocks);
         timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,
-                getTestBaseDate().getTime() +30 * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND,
-                getTestBaseDate().getTime() + 90 * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND
+                getTestBaseDate().getTime() +30 * Constants.MILLISECONDS_IN_SECOND,
+                getTestBaseDate().getTime() + 90 * Constants.MILLISECONDS_IN_SECOND
         );
     }
 
@@ -216,8 +218,8 @@ public class TimeSeriesClientTest {
                 Each point's timestamp is greater than the one preceding it
      */
     private void checkCorrectSeriesForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedCount) throws Exception {
-        Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND);
-        Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND);
+        Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND);
+        Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND);
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,startTime,endTime);
         Assert.assertEquals(dataPoints.length,expectedCount);
         for(int i=0;i<dataPoints.length;i++){
@@ -273,11 +275,12 @@ public class TimeSeriesClientTest {
         4)  Whether the last timestamp has the special CURRENT_RECORD_TIMESTAMP marker
      */
     private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks, boolean lastBlockZero) throws Exception{
-        long startTimeAsTimestamp = getTestBaseDate().getTime() +startTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
-        long endTimeAsTimestamp = getTestBaseDate().getTime()+endTimeOffsetInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND;
+        long startTimeAsTimestamp = getTestBaseDate().getTime() +startTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND;
+        long endTimeAsTimestamp = getTestBaseDate().getTime()+endTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND;
         long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
         int indexOfLastRecord = timestamps.length - 1;
         if(startTimeOffsetInSeconds <= endTimeOffsetInSeconds) {
+            System.out.println(timestamps.length);
             Assert.assertTrue(timestamps.length == expectedBlocks);
             Assert.assertTrue(timestamps[0] == startTimeAsTimestamp ||
                     timestamps[0] == getTestBaseDate().getTime() ||
@@ -306,7 +309,7 @@ public class TimeSeriesClientTest {
         for(int i=0;i<iterations;i++){
             double value = RANDOM.nextDouble();
             values[i] = value;
-            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(getTestBaseDate().getTime() + i * intervalInSeconds * TimeSeriesBenchmarker.MILLISECONDS_IN_SECOND),value),recordsPerBlock);
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(getTestBaseDate().getTime() + i * intervalInSeconds * Constants.MILLISECONDS_IN_SECOND),value),recordsPerBlock);
         }
         return values;
     }
@@ -338,6 +341,64 @@ public class TimeSeriesClientTest {
             timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_SET, null);
             timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_INDEX_SET, null);
         }
+    }
+
+    @Test
+    /*
+        Insert one record, so we have some pre-existing records for the series
+        Then insert 10 records with maxEntryCount = 3
+        In aggregate we should have 11 records, spread across four blocks
+
+        1) Check that we have four blocks and the last block is a current block. Should have two records in the current block.
+            Full time range query should retrieve 11 points
+        2) Add one more data point - should have at least four blocks (note checkCurrentBlocks will return 5 here). Should have zero records in current block
+            Full time range query should retrieve 12 points
+        3) Should be able to handle a zero length data point array without exception
+     */
+    public void bulkLoadTest() throws Exception{
+        teardown();
+        doTeardown = false;
+        long startTime = getTestBaseDate().getTime();
+        DataPoint[] dataPoints = createDataPoints(startTime,1,1);
+        timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints,3);
+
+        // Test 1
+        startTime += 1 * Constants.MILLISECONDS_IN_SECOND;
+        dataPoints = createDataPoints(startTime,1,10);
+        timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints,3);
+
+        checkCorrectBlocksForTimeRange(0, 11,4,true);
+        checkCorrectSeriesForTimeRange(0,11,11);
+        Assert.assertTrue(checkCurrentRecordCount(timeSeriesClient,TEST_TIME_SERIES_NAME) == 2);
+
+        // Test 2
+        startTime += 10 * Constants.MILLISECONDS_IN_SECOND;
+        dataPoints = createDataPoints(startTime,1,1);
+        timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints,3);
+
+        checkCorrectBlocksForTimeRange(0, 12,5,true);
+        checkCorrectSeriesForTimeRange(0,12,12);
+        Assert.assertTrue(checkCurrentRecordCount(timeSeriesClient,TEST_TIME_SERIES_NAME) == 0);
+
+        // Test 3
+        timeSeriesClient.put(TEST_TIME_SERIES_NAME,new DataPoint[0],3);
+    }
+
+    private static int checkCurrentRecordCount(TimeSeriesClient timeSeriesClient, String timeSeriesName){
+        int currentRecordCount = 0;
+        Record r = timeSeriesClient.asClient.operate(new WritePolicy(),timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName),
+                MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
+        if(r != null) currentRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
+        return currentRecordCount;
+    }
+    private DataPoint[] createDataPoints(long startTime,int intervalInSeconds,int iterations) {
+        DataPoint[] dataPoints = new DataPoint[iterations];
+        for(int i=0;i<iterations;i++){
+            long timestamp  = startTime + i * intervalInSeconds * Constants.MILLISECONDS_IN_SECOND;
+            double value = RANDOM.nextDouble();
+            dataPoints[i] = new DataPoint(new Date(timestamp),value);
+        }
+        return dataPoints;
     }
 
 }

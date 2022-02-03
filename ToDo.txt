@@ -1,8 +1,10 @@
 Make start value range configurable
 Need to deal with tags
 
-Benchmark client - batch puts
+Benchmark client - bulk insert
 Benchmark client - simulate queries
+
+Put in optimistic locking for creation of time series blocks to avoid concurrency issues
 
 Done
 ====
@@ -26,7 +28,7 @@ Tests for command line run - check correctMainOutput function
 Better handling for ParseException (Integer.parseInt)
 mvn magic allowing separate build of benchmark client
 Gaussian randomness generation built in with drift and volatility
-
+Benchmark client - batch puts
 
 Notes
 =====

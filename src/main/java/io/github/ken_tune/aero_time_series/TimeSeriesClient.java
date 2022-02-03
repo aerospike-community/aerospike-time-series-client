@@ -37,41 +37,69 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     public void put(String timeSeriesName, DataPoint dataPoint, int maxEntryCount) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
-        // createOnlyMapPolicy ensures we are not over-writing the start time for the block
-        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),
-                // Inserts data point
-                MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_BIN_NAME,
-                        new Value.LongValue(dataPoint.getTimestamp()), new Value.DoubleValue(dataPoint.getValue())),
-                // Store time series name at time of creation
-                MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.TIME_SERIES_NAME_FIELD_NAME), new Value.StringValue(timeSeriesName)),
-                // Start time for block
-                MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.START_TIME_FIELD_NAME), new Value.LongValue(dataPoint.getTimestamp())),
-                // Max entries for block
-                MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME), new Value.LongValue(maxEntryCount))
-        );
+        // Need to put the metadata ops and the insert together in one array
+        Operation[] ops = new Operation[4];
+        // Data point put operation
+        ops[0] = MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_BIN_NAME, new Value.LongValue(dataPoint.getTimestamp()), new Value.DoubleValue(dataPoint.getValue()));
+        // Metadata operations
+        Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoint.getTimestamp(),maxEntryCount);
+        // Add to the actual operations list
+        ops[1] = metadataOps[0]; ops[2]=metadataOps[1]; ops[3]=metadataOps[2];
+        // and execute
+        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),ops);
         // Put operation returns map size by default
         long mapSize = r.getLong(Constants.TIME_SERIES_BIN_NAME);
         // If it is greater than the required size, save a copy of the block with key TimeSeries-StartTime
         if (mapSize >= maxEntryCount) {
-            // Copy of record, with key timeSeriesName-StartTime
-            Record r2 = asClient.get(null, asCurrentKeyForTimeSeries(timeSeriesName));
-            Bin[] bins = new Bin[2];
-            // Copying of bin requires slightly convoluted approach below
-            bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
-                    ((Map<Long,Double>)r2.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
-                    MapOrder.KEY_ORDERED);
-            bins[1] = new Bin(Constants.METADATA_BIN_NAME,
-                    ((Map<Long,Double>)r2.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
-                    MapOrder.KEY_ORDERED);
-            long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
-            addTimeSeriesIndexRecord(timeSeriesName,startTime);
-            asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
-            // and remove the current block
-            if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
-                asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));
+            copyCurrentDataToHistoricBlock(timeSeriesName);
         }
     }
 
+    /**
+     * Private method to create the operations needed to insert the metadata for a time series block
+     * Breaking out as a separate method as we use in more than one place
+     * @param timeSeriesName
+     * @param timestamp
+     * @param maxEntryCount
+     * @return
+     */
+    private Operation[] opsForMetadataCreation(String timeSeriesName,long timestamp,long maxEntryCount){
+        // createOnlyMapPolicy ensures we are not over-writing the start time for the block
+        Operation[] opsForMetadataCreation = new Operation[3];
+        // Store time series name at time of creation
+        opsForMetadataCreation[0] =
+                MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.TIME_SERIES_NAME_FIELD_NAME), new Value.StringValue(timeSeriesName));
+        // Start time for block
+        opsForMetadataCreation[1] =
+            MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.START_TIME_FIELD_NAME), new Value.LongValue(timestamp));
+        // Max entries for block
+        opsForMetadataCreation[2] =
+            MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME), new Value.LongValue(maxEntryCount));
+        return opsForMetadataCreation;
+    }
+    /**
+     * Take current block for timeSeriesName and copy it to a historic block
+     * Remove the current block when done
+     *
+     * @param timeSeriesName
+     */
+    private void copyCurrentDataToHistoricBlock(String timeSeriesName){
+        Record r2 = asClient.get(null, asCurrentKeyForTimeSeries(timeSeriesName));
+        Bin[] bins = new Bin[2];
+        // Copying of bin requires slightly convoluted approach below
+        bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
+                ((Map<Long,Double>)r2.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                MapOrder.KEY_ORDERED);
+        bins[1] = new Bin(Constants.METADATA_BIN_NAME,
+                ((Map<Long,Double>)r2.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                MapOrder.KEY_ORDERED);
+        long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
+        addTimeSeriesIndexRecord(timeSeriesName,startTime);
+        asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
+        // and remove the current block
+        if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
+            asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));
+    }
     /**
      * Saves data point to the database
      * <p>
@@ -86,31 +114,49 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         put(timeSeriesName, dataPoint, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
-//    /**
-//     * Internal method - retrieve time series data points with start and end time expressed
-//     * as unix epochs (seconds since 1st Jan 1970) multiplied by required resolution (10^Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND)
-//     *
-//     * @param timeSeriesName
-//     * @param startTime
-//     * @param endTime
-//     * @return
-//     */
-//    private DataPoint[] getPoints2(String timeSeriesName, long startTime, long endTime) {
-//        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),
-//                MapOperation.getByKeyRange(Constants.TIME_SERIES_BIN_NAME, new Value.LongValue(startTime), new Value.LongValue(endTime + 1), MapReturnType.KEY_VALUE));
-//        if (r != null) {
-//            List<Map.Entry<Long, Double>> list = (List<Map.Entry<Long, Double>>) r.getList(Constants.TIME_SERIES_BIN_NAME);
-//            DataPoint[] dataPointArray = new DataPoint[list.size()];
-//            for (int i = 0; i < list.size(); i++) {
-//                dataPointArray[i] = new DataPoint(list.get(i).getKey(), list.get(i).getValue());
-//            }
-//            return dataPointArray;
-//        } else {
-//            return new DataPoint[0];
-//        }
-//    }
+    /**
+     * Save data points to the database
+     * <p>
+     * Inserts always go to the current block for the time series which has key TimeSeriesName
+     *
+     * @param timeSeriesName - time series name
+     * @param dataPoints - data points as an array
+     * @param maxEntryCount - max number of data points to keep in a block
+     */
+    public void put(String timeSeriesName, DataPoint[] dataPoints, int maxEntryCount) {
+        // First of all need to find out how much 'room' is available
+        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY,asCurrentKeyForTimeSeries(timeSeriesName),MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
+        int existingRecordCount = 0;
+        if(r != null) existingRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
 
+        // We will be working through the data points iteratively, so we need to keep track of where we are
+        int lastRecordLoaded = 0;
 
+        // Stop when all records have been 'put'
+        while(lastRecordLoaded < dataPoints.length){
+            // Load records remaining or whatever we have space for, whichever is the smaller
+            int numberOfRecordsToLoad = Math.min(dataPoints.length - lastRecordLoaded,maxEntryCount - existingRecordCount);
+            System.out.println(String.format("Number of records to load %d",numberOfRecordsToLoad));
+            // Insert metadata - may not be needed, but will be ignored if it already exists
+            Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoints[lastRecordLoaded].getTimestamp(),maxEntryCount);
+            // Batch inserting datapoints is done via an array of operations
+            Operation[] ops  = new Operation[numberOfRecordsToLoad + metadataOps.length];
+            // Construct the array of operations
+            for(int i=lastRecordLoaded;i<lastRecordLoaded+numberOfRecordsToLoad;i++) ops[i - lastRecordLoaded] = MapOperation.put(insertMapPolicy,Constants.TIME_SERIES_BIN_NAME,
+                    Value.get(dataPoints[i].getTimestamp()),Value.get(dataPoints[i].getValue()));
+            // and add the metadata
+            for(int i=0;i<metadataOps.length;i++) ops[numberOfRecordsToLoad + i] = metadataOps[i];
+            // Put to the database
+            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asCurrentKeyForTimeSeries(timeSeriesName),ops);
+            // If the block is full, 'archive' it
+            if(numberOfRecordsToLoad  + existingRecordCount == maxEntryCount) copyCurrentDataToHistoricBlock(timeSeriesName);
+            // If we're at this point in the code we know we'll be inserting to an empty block
+            existingRecordCount = 0;
+            // Update the running total of records we've inserted
+            lastRecordLoaded += numberOfRecordsToLoad;
+        }
+
+    }
 
     /**
      * Retrieve a specific data point for a named time series
@@ -142,11 +188,12 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * Aerospike Key for a given time series name
+     * Package level visibility to allow testing
      *
      * @param timeSeriesName
      * @return
      */
-    private Key asCurrentKeyForTimeSeries(String timeSeriesName) {
+    Key asCurrentKeyForTimeSeries(String timeSeriesName) {
         return new Key(asNamespace, Constants.AS_TIME_SERIES_SET, timeSeriesName);
     }
 
