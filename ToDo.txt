@@ -10,6 +10,15 @@ Do I need tests to check what happens when generating multiple time series
 Deal with retrospective inserts
 End times as part of the metadata - might simplify things?
 
+BatchInsert
+-----------
+
+Check good/bad modes are tested this means values for the -m parameter
+Show recordsInBlock
+Count records better when doing batch insert
+Allow 1D,1H values for batch insert
+Test records per block option
+
 Done
 ====
 

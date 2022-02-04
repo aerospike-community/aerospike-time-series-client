@@ -10,6 +10,11 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
     protected double observationIntervalVariabilityPct;
+    // Data points per Aerospike object
+    protected int recordsPerBlock;
+
+
+
 
     // The simulator is used for generating the time series values
     protected TimeSeriesSimulator simulator;
@@ -27,6 +32,7 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
         super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
+        this.recordsPerBlock = benchmarkClient.recordsPerBlock;
         this.simulator = new TimeSeriesSimulator(benchmarkClient.dailyDriftPct,benchmarkClient.dailyVolatilityPct,randomSeed);
     }
 

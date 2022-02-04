@@ -51,7 +51,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
             double observationValue = initTimeSeriesValue();
             lastObservationTimes.put(timeSeriesName,startTime);
             lastObservationValues.put(timeSeriesName,observationValue);
-            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue),recordsPerBlock);
             nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
         }
         isRunning = true;
@@ -64,7 +64,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
                     updateCount++;
                     double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/ Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName),timeIncrement);
-                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
+                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue),recordsPerBlock);
                     lastObservationValues.put(timeSeriesName,observationValue);
                     lastObservationTimes.put(timeSeriesName,nextObservationTime);
                     nextObservationTimes.put(timeSeriesName,nextObservationTime(nextObservationTime));

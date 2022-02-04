@@ -4,7 +4,6 @@ import java.util.*;
 
 public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     private int requiredTimeSeriesRangeSeconds;
-    private int recordsPerBlock;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
@@ -30,6 +29,7 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
      */
     BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+        recordsPerBlock = benchmarkClient.recordsPerBlock;
     }
 
     public void run(){

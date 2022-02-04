@@ -196,8 +196,10 @@ public class BenchmarkerTest {
         int dailyVolatilityPct = 0;
         // Check the simulation generates drift correctly when volatility is zero
         TimeSeriesBenchmarker benchmarker =
-                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
-                        threadCount,timeSeriesCount,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,
+                        0,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
@@ -223,8 +225,9 @@ public class BenchmarkerTest {
         int dailyVolatilityPct = 10;
         // Check the simulation generates drift correctly when volatility is zero
         TimeSeriesBenchmarker benchmarker =
-                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
-                        threadCount,timeSeriesCount,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
+                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
@@ -273,14 +276,15 @@ public class BenchmarkerTest {
         int timeSeriesCount = 10;
 
         // Create the string argument array
-        String formatString = String.format("-%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, intervalBetweenUpdates,
-                        runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
 
         // Initialise the benchmarker using the String[]
         TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
@@ -306,6 +310,30 @@ public class BenchmarkerTest {
     }
 
     @Test
+    public void batchModeCheck() throws IOException, ParseException, Utilities.ParseException {
+        int intervalBetweenUpdates = 2;
+        int threadCount = 1;
+        int timeSeriesCount = 10;
+        int recordsPerBlock = 100;
+        int timeSeriesRangeSeconds = 86400;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
+                OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, recordsPerBlock,timeSeriesRangeSeconds, threadCount, timeSeriesCount);
+        System.out.println(commandLineArguments);
+        // Initialise the benchmarker using the String[]
+        TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
+    }
+        @Test
     /**
      * Check parse exception is well handled
      */
@@ -317,14 +345,14 @@ public class BenchmarkerTest {
         int timeSeriesCount = 10;
 
         // Create the string argument array
-        String formatString = String.format("-%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
-                OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
-                OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, intervalBetweenUpdates,
-                        runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
 
         // Capture existing stdout
         PrintStream oldSout = System.out;

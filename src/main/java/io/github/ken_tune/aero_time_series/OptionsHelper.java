@@ -12,11 +12,20 @@ public class OptionsHelper {
     static class BenchmarkerFlags{
         static final String HOST_FLAG = "h";
         static final String NAMESPACE_FLAG = "n";
+        static final String MODE_FLAG = "m";
         static final String RUN_DURATION_FLAG = "d";
         static final String ACCELERATION_FLAG = "a";
+        static final String RECORDS_PER_BLOCK_FLAG = "b";
         static final String THREAD_COUNT_FLAG = "z";
         static final String TIME_SERIES_COUNT_FLAG = "c";
         static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
+        static final String TIME_SERIES_RANGE_FLAG = "r";
+    }
+
+    static class BenchmarkModes{
+        static final String REAL_TIME_INSERT = "realTimeWrite";
+        static final String BATCH_INSERT = "batchInsert";
+        static final String QUERY = "query";
     }
     
     /**
@@ -28,24 +37,33 @@ public class OptionsHelper {
 
         Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host");
         Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace");
+        Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,"Benchmark mode");
         Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,"Simulation duration in seconds");
         Option accelerationOption = new Option(BenchmarkerFlags.ACCELERATION_FLAG,"acceleration",true,"Simulation acceleration factor (clock speed multiplier)");
+        Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,"data points per Aerospike object");
+        Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,"period to be spanned by time series");
         Option threadCountOption = new Option(BenchmarkerFlags.THREAD_COUNT_FLAG,"threads",true,"Thread count required");
         Option timeSeriesCountOption = new Option(BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,"timeSeriesCount",true,"No of time series to simulate");
         Option intervalOption = new Option(BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,"interval",true,"Average interval between observations");
 
         hostOption.setRequired(true);
         namespaceOption.setRequired(true);
-        runDurationOption.setRequired(true);
+        modeOption.setRequired(true);
+        runDurationOption.setRequired(false);
         accelerationOption.setRequired(false);
+        recordsPerBlockOption.setRequired(false);
+        timeSeriesRangeOption.setRequired(false);
         threadCountOption.setRequired(false);
         timeSeriesCountOption.setRequired(true);
         intervalOption.setRequired(true);
 
         cmdLineOptions.addOption(hostOption);
         cmdLineOptions.addOption(namespaceOption);
+        cmdLineOptions.addOption(modeOption);
         cmdLineOptions.addOption(runDurationOption);
         cmdLineOptions.addOption(accelerationOption);
+        cmdLineOptions.addOption(recordsPerBlockOption);
+        cmdLineOptions.addOption(timeSeriesRangeOption);
         cmdLineOptions.addOption(threadCountOption);
         cmdLineOptions.addOption(timeSeriesCountOption);
         cmdLineOptions.addOption(intervalOption);
@@ -72,6 +90,12 @@ public class OptionsHelper {
                 return Integer.toString(TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT);
             case BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG:
                 return Integer.toString(TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS);
+            case BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG:
+                return Integer.toString(Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+            case BenchmarkerFlags.TIME_SERIES_RANGE_FLAG:
+                return Integer.toString(0);
+            case BenchmarkerFlags.RUN_DURATION_FLAG:
+                return Integer.toString(0);
             default:
                 return null;
         }
@@ -99,6 +123,16 @@ public class OptionsHelper {
                     throw new Utilities.ParseException(String.format("-%s flag should have an integer argument. Argument supplied is %s",flag,value));
                 }
                 break;
+            case BenchmarkerFlags.MODE_FLAG:
+                switch(value){
+                    case BenchmarkModes.BATCH_INSERT:
+                    case BenchmarkModes.REAL_TIME_INSERT:
+                    case BenchmarkModes.QUERY:
+                        break;
+                    default:
+                        throw new Utilities.ParseException(String.format("-%s flag should take one of %s,%s,%s values. Argument supplied is %s",
+                                flag,BenchmarkModes.BATCH_INSERT,BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.QUERY,value));
+                }
         }
     }
 

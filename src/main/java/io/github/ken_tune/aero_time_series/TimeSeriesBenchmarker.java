@@ -32,8 +32,11 @@ public class TimeSeriesBenchmarker {
     final int timeSeriesNameLength = DEFAULT_TIME_SERIES_NAME_LENGTH;
     private final int threadCount;
     private final int timeSeriesCount;
+    final int recordsPerBlock;
+    final int timeSeriesRangeSeconds;
     final int dailyDriftPct;
     final int dailyVolatilityPct;
+    private final String runMode;
     // Seed for initialising sources of randomness
     // If a seed is supplied in the constructor this will be used else a random seed is selected
     private final long randomSeed;
@@ -45,7 +48,7 @@ public class TimeSeriesBenchmarker {
     // Aerospike client
     private AerospikeClient aerospikeClient;
     // Underlying runnable objects for the benchmark
-    private RealTimeInsertTimeSeriesRunnable[] benchmarkClientObjects;
+    private TimeSeriesRunnable[] benchmarkClientObjects;
     // Output Stream
     // Give it package protection so it can be modified by unit tests
     PrintStream output= System.out;
@@ -58,15 +61,18 @@ public class TimeSeriesBenchmarker {
     private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
-    TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
-                          int timeSeriesCount,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
+    TimeSeriesBenchmarker(String asHost, String asNamespace, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
+                          int timeSeriesCount,int recordsPerBlock, int timeSeriesRangeSeconds,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
+        this.runMode = runMode;
         this.averageObservationIntervalSeconds = observationIntervalSeconds;
         this.runDuration = runDurationSeconds;
         this.accelerationFactor = accelerationFactor;
         this.threadCount = threadCount;
         this.timeSeriesCount = timeSeriesCount;
+        this.recordsPerBlock = recordsPerBlock;
+        this.timeSeriesRangeSeconds = timeSeriesRangeSeconds;
         this.dailyDriftPct = dailyDriftPct;
         this.dailyVolatilityPct = dailyVolatilityPct;
         this.randomSeed = randomSeed;
@@ -84,7 +90,8 @@ public class TimeSeriesBenchmarker {
      */
     TimeSeriesBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
                           int timeSeriesCount){
-        this(asHost,asNamespace,observationIntervalSeconds,runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,
+        this(asHost,asNamespace,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,observationIntervalSeconds,
+                runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,
                 DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT,new Random().nextLong());
     }
 
@@ -111,11 +118,14 @@ public class TimeSeriesBenchmarker {
             benchmarker = new TimeSeriesBenchmarker(
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
+                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.MODE_FLAG),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
                     Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG)),
+                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG)),
                     DEFAULT_DAILY_DRIFT_PCT,
                     DEFAULT_DAILY_VOLATILITY_PCT,
                     new Random().nextLong()
@@ -142,11 +152,18 @@ public class TimeSeriesBenchmarker {
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_SET,null);
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_INDEX_SET,null);
 
-        benchmarkClientObjects = new RealTimeInsertTimeSeriesRunnable[threadCount];
+        benchmarkClientObjects = new TimeSeriesRunnable[threadCount];
         for(int i=0;i<threadCount;i++){
             int timeSeriesCountForThread = timeSeriesCount /  threadCount;
             if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
-            benchmarkClientObjects[i] = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
+            TimeSeriesRunnable runnable = null; // Keep the compiler happy with null assignment
+            switch(runMode){
+                case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
+                    runnable = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed); break;
+                case OptionsHelper.BenchmarkModes.BATCH_INSERT:
+                    runnable = new BatchInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
+            }
+            benchmarkClientObjects[i] = runnable;
             Thread t = new Thread(benchmarkClientObjects[i]);
             t.start();
         }
