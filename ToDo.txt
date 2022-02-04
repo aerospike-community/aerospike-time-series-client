@@ -5,6 +5,10 @@ Benchmark client - bulk insert
 Benchmark client - simulate queries
 
 Put in optimistic locking for creation of time series blocks to avoid concurrency issues
+Do I need tests to check what happens when generating multiple time series
+
+Deal with retrospective inserts
+End times as part of the metadata - might simplify things?
 
 Done
 ====

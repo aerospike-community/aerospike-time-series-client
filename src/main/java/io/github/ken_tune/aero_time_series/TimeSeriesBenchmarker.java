@@ -45,7 +45,7 @@ public class TimeSeriesBenchmarker {
     // Aerospike client
     private AerospikeClient aerospikeClient;
     // Underlying runnable objects for the benchmark
-    private TimeSeriesBenchmarkRunnable[] benchmarkClientObjects;
+    private RealTimeInsertTimeSeriesRunnable[] benchmarkClientObjects;
     // Output Stream
     // Give it package protection so it can be modified by unit tests
     PrintStream output= System.out;
@@ -142,11 +142,11 @@ public class TimeSeriesBenchmarker {
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_SET,null);
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_INDEX_SET,null);
 
-        benchmarkClientObjects = new TimeSeriesBenchmarkRunnable[threadCount];
+        benchmarkClientObjects = new RealTimeInsertTimeSeriesRunnable[threadCount];
         for(int i=0;i<threadCount;i++){
             int timeSeriesCountForThread = timeSeriesCount /  threadCount;
             if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
-            benchmarkClientObjects[i] = new TimeSeriesBenchmarkRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
+            benchmarkClientObjects[i] = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
             Thread t = new Thread(benchmarkClientObjects[i]);
             t.start();
         }
