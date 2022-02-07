@@ -481,6 +481,35 @@ public class BenchmarkerTest {
                         OptionsHelper.BenchmarkModes.BATCH_INSERT)));
     }
 
+    @Test
+    /**
+     * Check bad run modes are handled well
+     */
+    public void badModeHandling() throws IOException, ParseException, Utilities.ParseException{
+        int intervalBetweenUpdates = 2;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 5;
+        int threadCount = 5;
+        int timeSeriesCount = 10;
+        String badMode = "badMode";
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,badMode,
+                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
+
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+
+        Assert.assertTrue(consoleOutput.get(0).equals(
+                String.format("%s is an invalid run mode. Please use %s or %s",badMode,
+                        OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,OptionsHelper.BenchmarkModes.BATCH_INSERT)));
+    }
+
     @After
     // Truncate the time series set
     public void teardown(){

@@ -206,6 +206,10 @@ public class OptionsHelper {
                             OptionsHelper.cmdLineOptionsForBatchInsert().getOption(BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
                             BenchmarkModes.BATCH_INSERT));
                 break;
+            default:
+                throw new Utilities.ParseException(
+                    String.format("%s is an invalid run mode. Please use %s or %s",result.getOptionValue(BenchmarkerFlags.MODE_FLAG),
+                            BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
         }
         return result;
     }
