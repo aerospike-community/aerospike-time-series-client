@@ -14,8 +14,6 @@ Grep for the word 'test' in code - can some methods etc be moved to test classes
 BatchInsert
 -----------
 
-Check good/bad modes are tested this means values for the -m parameter
-Count records better when doing batch insert
 Allow 1D,1H values for batch insert
 
 Done
@@ -42,6 +40,8 @@ mvn magic allowing separate build of benchmark client
 Gaussian randomness generation built in with drift and volatility
 Benchmark client - batch puts
 Benchmark client - bulk insert
+Check good/bad run modes are tested this means values for the -m parameter
+Count records better when doing batch insert - keep inserting until the time range is exceeded, which allows for some randomness in time values, rather than inserting a set number of records
 
 Notes
 =====

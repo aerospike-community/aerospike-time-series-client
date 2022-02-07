@@ -51,27 +51,43 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
         }
         int recordsToInsertPerSeries = requiredTimeSeriesRangeSeconds / observationIntervalSeconds;
         int iterations = (int)Math.ceil(((double)requiredTimeSeriesRangeSeconds / observationIntervalSeconds) / recordsPerBlock);
+        long maxTimestamp = startTime + requiredTimeSeriesRangeSeconds * Constants.MILLISECONDS_IN_SECOND;
         isRunning = true;
 
         for(int iterationCount = 0;iterationCount < iterations;iterationCount++) {
             Iterator<String> timeSeriesNames = lastObservationTimes.keySet().iterator();
             while (timeSeriesNames.hasNext()) {
                 String timeSeriesName = timeSeriesNames.next();
-                int recordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
-                DataPoint[] dataPoints = new DataPoint[recordsToInsert];
-                for (int i = 0; i < recordsToInsert; i++) {
-                    long lastObservationTime = (i == 0) ? lastObservationTimes.get(timeSeriesName) : dataPoints[i - 1].getTimestamp();
-                    double lastObservationValue = (i == 0) ? lastObservationValues.get(timeSeriesName) : dataPoints[i - 1].getValue();
+                int maxRecordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
+                Vector<DataPoint> dataPointVector = new Vector<>();
+                int recordsInCurrentBatch = 0;
+                while(recordsInCurrentBatch < maxRecordsToInsert){
+                    long lastObservationTime = (recordsInCurrentBatch == 0) ? lastObservationTimes.get(timeSeriesName) : dataPointVector.get(recordsInCurrentBatch - 1).getTimestamp();
+                    double lastObservationValue = (recordsInCurrentBatch == 0) ? lastObservationValues.get(timeSeriesName) : dataPointVector.get(recordsInCurrentBatch - 1).getValue();
                     long observationTime = nextObservationTime(lastObservationTime);
+                    if(observationTime > maxTimestamp) break;
                     double timeIncrement = (double) (observationTime - lastObservationTime) / Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValue, timeIncrement);
-                    dataPoints[i] = new DataPoint(new Date(observationTime), observationValue);
+                    dataPointVector.add(new DataPoint(new Date(observationTime), observationValue));
+                    recordsInCurrentBatch++;
                 }
+//                DataPoint[] dataPoints = new DataPoint[recordsToInsert];
+//                for (int i = 0; i < recordsToInsert; i++) {
+//                    long lastObservationTime = (i == 0) ? lastObservationTimes.get(timeSeriesName) : dataPoints[i - 1].getTimestamp();
+//                    double lastObservationValue = (i == 0) ? lastObservationValues.get(timeSeriesName) : dataPoints[i - 1].getValue();
+//                    long observationTime = nextObservationTime(lastObservationTime);
+//                    double timeIncrement = (double) (observationTime - lastObservationTime) / Constants.MILLISECONDS_IN_SECOND;
+//                    double observationValue = simulator.getNextValue(lastObservationValue, timeIncrement);
+//                    dataPoints[i] = new DataPoint(new Date(observationTime), observationValue);
+//                }
+//                DataPoint[] dataPointArray = new DataPoint[dataPoints.size()];
+//                for(int i=0;i<dataPointArray.length;i++) dataPointArray[i] = dataPoints.get(i);
+                DataPoint[] dataPoints = dataPointVector.toArray(new DataPoint[dataPointVector.size()]);
                 timeSeriesClient.put(timeSeriesName, dataPoints, recordsPerBlock);
                 lastObservationTimes.put(timeSeriesName, dataPoints[dataPoints.length - 1].getTimestamp());
                 lastObservationValues.put(timeSeriesName, dataPoints[dataPoints.length - 1].getValue());
-                recordCountPerSeries.put(timeSeriesName,recordCountPerSeries.get(timeSeriesName) + recordsToInsert);
-                updateCount += recordsToInsert;
+                recordCountPerSeries.put(timeSeriesName,recordCountPerSeries.get(timeSeriesName) + recordsInCurrentBatch);
+                updateCount += recordsInCurrentBatch;
             }
         }
         isFinished = true;
