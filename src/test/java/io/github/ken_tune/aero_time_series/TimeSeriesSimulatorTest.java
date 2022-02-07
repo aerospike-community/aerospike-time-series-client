@@ -17,7 +17,7 @@ public class TimeSeriesSimulatorTest {
         int iterationCount = 100;
         int timeIncrementSeconds = 12*60*60;
         int tolerancePct = 10;
-        TimeSeriesSimulator simulator = new TimeSeriesSimulator(dailyDriftPct,dailyVariancePct,Constants.RANDOM_SEED);
+        TimeSeriesSimulator simulator = new TimeSeriesSimulator(dailyDriftPct,dailyVariancePct, TestConstants.RANDOM_SEED);
         double[] values = new double[iterationCount +1];
         values[0] = startingValue;
         for(int i=1;i<=iterationCount;i++){

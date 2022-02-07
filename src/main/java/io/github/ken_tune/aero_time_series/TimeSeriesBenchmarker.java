@@ -95,6 +95,23 @@ public class TimeSeriesBenchmarker {
                 DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT,new Random().nextLong());
     }
 
+    /**
+     * Convenience factory method to allow initiation of a Benchmarker object for test purposes
+     * @param asHost
+     * @param asNamespace
+     * @param observationIntervalSeconds
+     * @param timeSeriesRangeSeconds
+     * @param threadCount
+     * @param timeSeriesCount
+     * @return
+     */
+    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int timeSeriesRangeSeconds,
+                                                        int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){
+        return new TimeSeriesBenchmarker(asHost,asNamespace,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
+        timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds,DEFAULT_DAILY_DRIFT_PCT,DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
+    }
+
+
     public static void main(String[] args){
         try {
             TimeSeriesBenchmarker benchmarker = initBenchmarkerFromStringArgs(args);
@@ -141,8 +158,17 @@ public class TimeSeriesBenchmarker {
     }
 
     void run(){
-        output.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
-        output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
+        switch(runMode){
+            case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
+                output.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
+                output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
+                break;
+            case OptionsHelper.BenchmarkModes.BATCH_INSERT:
+                int recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
+                output.println(String.format("Inserting %d records over a period of %d seconds",recordCount,timeSeriesRangeSeconds));
+                break;
+
+        }
         if(updatesPerTimeSeriesPerSecond() > Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC){
             output.println(String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",updatesPerTimeSeriesPerSecond(),Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
         }
@@ -186,6 +212,18 @@ public class TimeSeriesBenchmarker {
      * Will give a warning if it is running slower than expected
      */
     private void outputStatus(){
+        switch (runMode){
+            case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
+                outputStatusForRealTimeInserts();
+                break;
+            case OptionsHelper.BenchmarkModes.BATCH_INSERT:
+                outputStatusForBatchInserts();
+                break;
+        }
+
+    }
+
+    private void outputStatusForRealTimeInserts(){
         output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
                 totalUpdateCount(), (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
         // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
@@ -198,6 +236,11 @@ public class TimeSeriesBenchmarker {
                         expectedUpdatesPerSecond(), actualUpdateRate));
             }
         }
+    }
+
+    private void outputStatusForBatchInserts(){
+        output.println(String.format("Run time :  %d seconds, Data point insert count : %d, Effective updates per second : %.3f", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
+                totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
     }
 
     /**

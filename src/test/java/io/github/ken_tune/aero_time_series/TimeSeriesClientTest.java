@@ -160,20 +160,7 @@ public class TimeSeriesClientTest {
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
 
-        Statement stmt = new Statement();
-        stmt.setNamespace(TestConstants.AEROSPIKE_NAMESPACE);
-        stmt.setSetName(Constants.AS_TIME_SERIES_SET);
-        stmt.setBinNames(Constants.METADATA_BIN_NAME);
-        stmt.setFilter(Filter.contains(Constants.METADATA_BIN_NAME, IndexCollectionType.MAPVALUES, TEST_TIME_SERIES_NAME));
-
-        RecordSet rs = timeSeriesClient.asClient.query(null, stmt);
-        int count = 0;
-        while(rs.next()) count++;
-        Assert.assertEquals(count,requiredBlocks);
-        timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,
-                getTestBaseDate().getTime() +30 * Constants.MILLISECONDS_IN_SECOND,
-                getTestBaseDate().getTime() + 90 * Constants.MILLISECONDS_IN_SECOND
-        );
+        Assert.assertEquals(TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient,TestConstants.AEROSPIKE_NAMESPACE,TEST_TIME_SERIES_NAME),requiredBlocks);
     }
 
     @Test
@@ -396,5 +383,4 @@ public class TimeSeriesClientTest {
         }
         return dataPoints;
     }
-
 }

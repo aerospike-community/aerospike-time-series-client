@@ -199,11 +199,11 @@ public class BenchmarkerTest {
                 new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
                         intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
                         threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,
-                        0,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+                        0,dailyDriftPct,dailyVolatilityPct, TestConstants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
-        DataPoint[] dataPoints = timeSeriesClient.getPoints("BPGREBWPRB",new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
         double[] values = new double[dataPoints.length];
         for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
         TimeSeriesSimulatorTest.checkDailyDriftPct(values,dailyDriftPct,intervalBetweenUpdates,10);
@@ -227,11 +227,11 @@ public class BenchmarkerTest {
         TimeSeriesBenchmarker benchmarker =
                 new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
                         intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
-                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,dailyDriftPct,dailyVolatilityPct,Constants.RANDOM_SEED);
+                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,dailyDriftPct,dailyVolatilityPct, TestConstants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
-        DataPoint[] dataPoints = timeSeriesClient.getPoints("BPGREBWPRB",new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
         double[] values = new double[dataPoints.length];
         for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
         TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,dailyVolatilityPct,intervalBetweenUpdates,10);
@@ -310,28 +310,52 @@ public class BenchmarkerTest {
     }
 
     @Test
+    /**
+     * Check that when running in batch mode
+     * 1) The expected number of data points are created
+     * 2) The number of 'blocks' is as expected
+     * 3) The drift and variance of the resulting series is as expected
+     */
     public void batchModeCheck() throws IOException, ParseException, Utilities.ParseException {
-        int intervalBetweenUpdates = 2;
+        doTeardown = false;
+        int intervalBetweenUpdates = 10;
         int threadCount = 1;
-        int timeSeriesCount = 10;
-        int recordsPerBlock = 100;
+        int timeSeriesCount = 1;
+        int recordsPerBlock = 500;
         int timeSeriesRangeSeconds = 86400;
 
-        // Create the string argument array
-        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
-                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
-                OptionsHelper.BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,
-                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
-                OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
-                OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+        // Keep track of the start time - useful when we retrieve the data points
+        long startTime = System.currentTimeMillis();
 
-        String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates, recordsPerBlock,timeSeriesRangeSeconds, threadCount, timeSeriesCount);
-        System.out.println(commandLineArguments);
-        // Initialise the benchmarker using the String[]
-        TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
+        TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,intervalBetweenUpdates,timeSeriesRangeSeconds,
+                threadCount,timeSeriesCount,recordsPerBlock, TestConstants.RANDOM_SEED);
+
+        benchmarker.run();
+
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
+        // Widen the range slightly to allow for the fact that the benchmarker introduces variability in the sample times of OBSERVATION_INTERVAL_VARIABILITY_PCT
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime - Constants.MILLISECONDS_IN_SECOND),
+                new Date(startTime + (1+ timeSeriesRangeSeconds)  * Constants.MILLISECONDS_IN_SECOND));
+
+        // Check that the number of points stored is as expected
+        Assert.assertTrue(timeSeriesRangeSeconds / intervalBetweenUpdates == dataPoints.length);
+
+        // Check that the number of blocks stored is as expected
+        int timeSeriesBlocks = TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.REFERENCE_TIME_SERIES_NAME);
+        int expectedTimeSeriesBlocks = (int)Math.ceil((double)timeSeriesRangeSeconds / (recordsPerBlock * intervalBetweenUpdates));
+        Assert.assertTrue(timeSeriesBlocks == expectedTimeSeriesBlocks);
+
+        // Check that the drift and variance are as expected
+        double[] values = new double[dataPoints.length];
+        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
+
+        TimeSeriesSimulatorTest.checkDailyDriftPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT,intervalBetweenUpdates,20);
+        TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,intervalBetweenUpdates,10);
+
+        /*
+        Check drift and variance are as expected
+         */
+
     }
         @Test
     /**

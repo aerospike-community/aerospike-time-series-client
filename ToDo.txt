@@ -10,14 +10,14 @@ Do I need tests to check what happens when generating multiple time series
 Deal with retrospective inserts
 End times as part of the metadata - might simplify things?
 
+Grep for the word 'test' in code - can some methods etc be moved to test classes - e.g. static factory method
+
 BatchInsert
 -----------
 
 Check good/bad modes are tested this means values for the -m parameter
-Show recordsInBlock
 Count records better when doing batch insert
 Allow 1D,1H values for batch insert
-Test records per block option
 
 Done
 ====

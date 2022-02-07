@@ -30,12 +30,14 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         recordsPerBlock = benchmarkClient.recordsPerBlock;
+        requiredTimeSeriesRangeSeconds = benchmarkClient.timeSeriesRangeSeconds;
     }
 
     public void run(){
         startTime = System.currentTimeMillis();
         Map<String,Long> lastObservationTimes = new HashMap<>();
         Map<String,Double> lastObservationValues = new HashMap<>();
+        Map<String,Integer> recordCountPerSeries = new HashMap<>();
 
         // Set up each time series. Given that observation times and values are bootstrapped from the previous value we
         // have to set up what happened at 'T-1'
@@ -45,17 +47,21 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
             lastObservationTimes.put(timeSeriesName,startTime + startTime - nextObservationTime(startTime));
             // Obseration at 'T-1' - time independent so can use initTimeSeriesValue
             lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
+            recordCountPerSeries.put(timeSeriesName,0);
         }
-        int iterations = (requiredTimeSeriesRangeSeconds / observationIntervalSeconds) / recordsPerBlock;
+        int recordsToInsertPerSeries = requiredTimeSeriesRangeSeconds / observationIntervalSeconds;
+        int iterations = (int)Math.ceil(((double)requiredTimeSeriesRangeSeconds / observationIntervalSeconds) / recordsPerBlock);
         isRunning = true;
+
         for(int iterationCount = 0;iterationCount < iterations;iterationCount++) {
             Iterator<String> timeSeriesNames = lastObservationTimes.keySet().iterator();
             while (timeSeriesNames.hasNext()) {
                 String timeSeriesName = timeSeriesNames.next();
-                DataPoint[] dataPoints = new DataPoint[recordsPerBlock];
-                for (int i = 0; i < recordsPerBlock; i++) {
+                int recordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
+                DataPoint[] dataPoints = new DataPoint[recordsToInsert];
+                for (int i = 0; i < recordsToInsert; i++) {
                     long lastObservationTime = (i == 0) ? lastObservationTimes.get(timeSeriesName) : dataPoints[i - 1].getTimestamp();
-                    double lastObservationValue = (i == 0) ? lastObservationValues.get(timeSeriesName) : dataPoints[i - 1].getTimestamp();
+                    double lastObservationValue = (i == 0) ? lastObservationValues.get(timeSeriesName) : dataPoints[i - 1].getValue();
                     long observationTime = nextObservationTime(lastObservationTime);
                     double timeIncrement = (double) (observationTime - lastObservationTime) / Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValue, timeIncrement);
@@ -64,8 +70,8 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
                 timeSeriesClient.put(timeSeriesName, dataPoints, recordsPerBlock);
                 lastObservationTimes.put(timeSeriesName, dataPoints[dataPoints.length - 1].getTimestamp());
                 lastObservationValues.put(timeSeriesName, dataPoints[dataPoints.length - 1].getValue());
-                updateCount += recordsPerBlock;
-
+                recordCountPerSeries.put(timeSeriesName,recordCountPerSeries.get(timeSeriesName) + recordsToInsert);
+                updateCount += recordsToInsert;
             }
         }
         isFinished = true;
