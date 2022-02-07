@@ -99,6 +99,9 @@ public class TimeSeriesBenchmarker {
         TimeSeriesBenchmarker benchmarker = null;
         try {
             CommandLine cmd = OptionsHelper.getArguments(args);
+            CommandLineParser parser = new DefaultParser();
+            parser.parse(OptionsHelper.cmdLineOptionsForRealTimeInsert(), args);
+
             benchmarker = new TimeSeriesBenchmarker(
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),

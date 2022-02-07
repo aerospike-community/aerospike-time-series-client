@@ -144,6 +144,7 @@ public class BenchmarkerTest {
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
+
     /**
      * Check that the interval between updates is observed
      * This can be seen via the number of updates
@@ -361,12 +362,9 @@ public class BenchmarkerTest {
         TimeSeriesSimulatorTest.checkDailyDriftPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT,intervalBetweenUpdates,20);
         TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,intervalBetweenUpdates,10);
 
-        /*
-        Check drift and variance are as expected
-         */
-
     }
-        @Test
+
+    @Test
     /**
      * Check parse exception is well handled
      */
@@ -387,25 +385,39 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
                         intervalBetweenUpdates, runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
 
-        // Capture existing stdout
-        PrintStream oldSout = System.out;
-        // Create new stdout
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(bStream));
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
 
-        // Run benchmarker
-        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
-
-        // Convert stdout into a vector of strings
-        ByteArrayInputStream binStream = new ByteArrayInputStream(bStream.toByteArray());
-        BufferedReader reader =  new BufferedReader(new InputStreamReader(binStream));
-        Vector<String> consoleOutput = new Vector<>();
-        while(reader.ready()) consoleOutput.addElement(reader.readLine());
-
-        // Check the first one is as expected
-        System.setOut(oldSout);
         Assert.assertTrue(consoleOutput.get(0).equals(
                 String.format("-%s flag should have an integer argument. Argument supplied is %s",OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,badThreadCount)));
+    }
+
+    @Test
+    /**
+     * Check time series range flag presence triggers an error if found in real time insert invocation
+     */
+    public void timeSeriesRangeFlagHandled() throws IOException, ParseException, Utilities.ParseException{
+        int intervalBetweenUpdates = 2;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 5;
+        int threadCount = 5;
+        int timeSeriesCount = 10;
+        int timeSeriesRange = 500;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+
+        Assert.assertTrue(consoleOutput.get(0).equals(
+                String.format("-%s flag should not be used in %s mode",OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT)));
     }
 
     @After
@@ -425,14 +437,45 @@ public class BenchmarkerTest {
      * @throws IOException
      */
     private static Vector<String> runBenchmarkerGetOutput(TimeSeriesBenchmarker benchmarker) throws IOException{
+        // Save the existing output stream
+        PrintStream currentOut = System.out;
         // Swap stdout for an internal stream
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        ByteArrayOutputStream bStream = setupForConsoleOutputParsing();
         benchmarker.output = new PrintStream(bStream);
         // Run the benchmarker
-        System.out.println("This test requires console output to be captured. Running ....");
         benchmarker.run();
+        // Capture the output
+        Vector<String> consoleOutput = getConsoleOutput(bStream);
+        // Replace the previous output stream
+        System.setOut(currentOut);
         System.out.println("Run complete");
-        // Get the output
+        return consoleOutput;
+    }
+
+    /**
+     * Private method for setting up environment so we can test the console output
+     * The returned stream is needed to process the console output
+     *
+     * @return ByteArrayOutputStream
+     */
+    private static ByteArrayOutputStream setupForConsoleOutputParsing(){
+        System.out.println("This test requires console output to be captured. Running ....");
+        // Capture existing stdout
+        PrintStream oldSout = System.out;
+        // Create new stdout
+        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(bStream));
+        return bStream;
+    }
+
+    /**
+     * Private method for getting the console output as a vector of strings
+     * Requires a previously defined output stream
+     * @param bStream
+     * @return
+     */
+    private static Vector<String> getConsoleOutput(ByteArrayOutputStream bStream) throws IOException{
+        // Convert stdout into a vector of strings
         ByteArrayInputStream binStream = new ByteArrayInputStream(bStream.toByteArray());
         BufferedReader reader =  new BufferedReader(new InputStreamReader(binStream));
         Vector<String> consoleOutput = new Vector<>();
@@ -440,5 +483,18 @@ public class BenchmarkerTest {
         return consoleOutput;
     }
 
-
+    private static Vector<String> runBenchmarkerGetOutput(String commandLineArguments) throws IOException{
+        // Save the existing output stream
+        PrintStream currentOut = System.out;
+        // Swap in a new output stream
+        ByteArrayOutputStream consoleOutputStream = setupForConsoleOutputParsing();
+        // Run benchmarker
+        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+        // Capture the output
+        Vector<String> consoleOutput = getConsoleOutput(consoleOutputStream);
+        // Replace the previous output stream
+        System.setOut(currentOut);
+        System.out.println("Run complete");
+        return consoleOutput;
+    }
 }

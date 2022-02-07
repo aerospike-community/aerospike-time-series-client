@@ -37,11 +37,16 @@ public class OptionsHelper {
 
         Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host");
         Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace");
-        Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,"Benchmark mode");
-        Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,"Simulation duration in seconds");
-        Option accelerationOption = new Option(BenchmarkerFlags.ACCELERATION_FLAG,"acceleration",true,"Simulation acceleration factor (clock speed multiplier)");
-        Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,"data points per Aerospike object");
-        Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,"period to be spanned by time series");
+        Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,
+                String.format("Benchmark mode - values allowed are %s and %s",BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
+        Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,
+                String.format("Simulation duration in seconds. Only valid in %s mode.",BenchmarkModes.REAL_TIME_INSERT));
+        Option accelerationOption = new Option(BenchmarkerFlags.ACCELERATION_FLAG,"acceleration",true,
+                String.format("Simulation acceleration factor (clock speed multiplier). Only valid in %s mode.",BenchmarkModes.REAL_TIME_INSERT));
+        Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,
+                "Max time series points in each Aerospike object");
+        Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,
+                String.format("period to be spanned by time series. Only valid in %s mode",BenchmarkModes.BATCH_INSERT));
         Option threadCountOption = new Option(BenchmarkerFlags.THREAD_COUNT_FLAG,"threads",true,"Thread count required");
         Option timeSeriesCountOption = new Option(BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,"timeSeriesCount",true,"No of time series to simulate");
         Option intervalOption = new Option(BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,"interval",true,"Average interval between observations");
@@ -71,6 +76,29 @@ public class OptionsHelper {
         return cmdLineOptions;
     }
 
+    /**
+     * Command line options for real time insert mode
+     * Allows us to check flags when this mode is used
+     * @return
+     */
+    static Options cmdLineOptionsForRealTimeInsert(){
+        Options options = cmdLineOptions();
+        options.getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+        options.getOption(BenchmarkerFlags.RUN_DURATION_FLAG).setRequired(true);
+        return options;
+    }
+
+    /**
+     * Command line options for batch insert mode
+     * Allows us to check flags when this mode is used
+     * @return
+     */
+
+    static Options cmdLineOptionsforBatchInsert(){
+        Options options = cmdLineOptions();
+        options.getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).setRequired(true);
+        return options;
+    }
 
     /**
      * Get default value for command line flags
@@ -154,9 +182,15 @@ public class OptionsHelper {
      * @return CommandLine object
      * @throws ParseException
      */
-    static CommandLine getArguments(String[] args) throws ParseException {
+    static CommandLine getArguments(String[] args) throws ParseException, Utilities.ParseException {
         CommandLineParser parser = new DefaultParser();
-        return parser.parse(cmdLineOptions(), args);
+        CommandLine result = parser.parse(cmdLineOptions(), args);
+        switch(result.getOptionValue(BenchmarkerFlags.MODE_FLAG)){
+            case BenchmarkModes.REAL_TIME_INSERT:
+                if(result.hasOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG))
+                    throw new Utilities.ParseException(String.format("-%s flag should not be used in %s mode",BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,BenchmarkModes.REAL_TIME_INSERT));
+        }
+        return result;
     }
 
 }
