@@ -395,7 +395,7 @@ public class BenchmarkerTest {
     /**
      * Check time series range flag presence triggers an error if found in real time insert invocation
      */
-    public void timeSeriesRangeFlagHandled() throws IOException, ParseException, Utilities.ParseException{
+    public void timeSeriesRangeFlagHandled() throws IOException{
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -416,8 +416,69 @@ public class BenchmarkerTest {
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
 
-        Assert.assertTrue(consoleOutput.get(0).equals(
-                String.format("-%s flag should not be used in %s mode",OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT)));
+        Assert.assertTrue(consoleOutput.get(0).equals(String.format("-%s flag (%s) should not be used in %s mode",OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
+                OptionsHelper.cmdLineOptionsForRealTimeInsert().getOption(OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
+                OptionsHelper.BenchmarkModes.REAL_TIME_INSERT)));
+    }
+
+    @Test
+    /**
+     * Check run duration flag presence triggers an error if found in batch insert invocation
+     */
+    public void runDurationFlagHandled() throws IOException{
+        int intervalBetweenUpdates = 2;
+        int runDurationSeconds = 10;
+        int accelerationFactor = 5;
+        int threadCount = 5;
+        int timeSeriesCount = 10;
+        int timeSeriesRange = 500;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+
+        Assert.assertTrue(consoleOutput.get(0).equals(String.format("-%s flag (%s) should not be used in %s mode",OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
+                OptionsHelper.cmdLineOptionsForBatchInsert().getOption(OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG).getLongOpt(),
+                OptionsHelper.BenchmarkModes.BATCH_INSERT)));
+    }
+
+    @Test
+    /**
+     * Check acceleration flag presence triggers an error if found in batch insert invocation
+     */
+    public void accelerationFlagHandled() throws IOException{
+        int intervalBetweenUpdates = 2;
+        int accelerationFactor = 5;
+        int threadCount = 5;
+        int timeSeriesCount = 10;
+        int timeSeriesRange = 500;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        System.out.println(consoleOutput.get(0));
+
+        Assert.assertTrue(consoleOutput.get(0).equals(String.format("-%s flag (%s) should not be used in %s mode",OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,
+                        OptionsHelper.cmdLineOptionsForBatchInsert().getOption(OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
+                        OptionsHelper.BenchmarkModes.BATCH_INSERT)));
     }
 
     @After

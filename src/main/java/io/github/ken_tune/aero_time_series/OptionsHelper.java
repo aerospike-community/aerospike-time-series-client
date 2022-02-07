@@ -1,5 +1,6 @@
 package io.github.ken_tune.aero_time_series;
 
+import com.oracle.javafx.jmx.SGMXBean;
 import org.apache.commons.cli.*;
 
 /**
@@ -83,8 +84,8 @@ public class OptionsHelper {
      */
     static Options cmdLineOptionsForRealTimeInsert(){
         Options options = cmdLineOptions();
-        options.getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
         options.getOption(BenchmarkerFlags.RUN_DURATION_FLAG).setRequired(true);
+        options.getOption(BenchmarkerFlags.ACCELERATION_FLAG).setRequired(false);
         return options;
     }
 
@@ -94,7 +95,7 @@ public class OptionsHelper {
      * @return
      */
 
-    static Options cmdLineOptionsforBatchInsert(){
+    static Options cmdLineOptionsForBatchInsert(){
         Options options = cmdLineOptions();
         options.getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).setRequired(true);
         return options;
@@ -188,9 +189,24 @@ public class OptionsHelper {
         switch(result.getOptionValue(BenchmarkerFlags.MODE_FLAG)){
             case BenchmarkModes.REAL_TIME_INSERT:
                 if(result.hasOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG))
-                    throw new Utilities.ParseException(String.format("-%s flag should not be used in %s mode",BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,BenchmarkModes.REAL_TIME_INSERT));
+                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
+                            BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
+                            OptionsHelper.cmdLineOptionsForRealTimeInsert().getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
+                            BenchmarkModes.REAL_TIME_INSERT));
+                break;
+            case BenchmarkModes.BATCH_INSERT:
+                if(result.hasOption(BenchmarkerFlags.RUN_DURATION_FLAG))
+                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
+                            BenchmarkerFlags.RUN_DURATION_FLAG,
+                            OptionsHelper.cmdLineOptionsForBatchInsert().getOption(BenchmarkerFlags.RUN_DURATION_FLAG).getLongOpt(),
+                            BenchmarkModes.BATCH_INSERT));
+                if(result.hasOption(BenchmarkerFlags.ACCELERATION_FLAG))
+                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
+                            BenchmarkerFlags.ACCELERATION_FLAG,
+                            OptionsHelper.cmdLineOptionsForBatchInsert().getOption(BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
+                            BenchmarkModes.BATCH_INSERT));
+                break;
         }
         return result;
     }
-
 }
