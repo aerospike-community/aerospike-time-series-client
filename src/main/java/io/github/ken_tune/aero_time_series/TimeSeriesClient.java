@@ -158,6 +158,19 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     }
 
     /**
+     * Save data points to the database
+     * <p>
+     * Inserts always go to the current block for the time series which has key TimeSeriesName
+     * Same as put(timeSeriesName,dataPoints,maxEntryCount) only it uses a default value for maxEntryCount - Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK
+     *
+     * @param timeSeriesName - time series name
+     * @param dataPoints - data points as an array
+     */
+    public void put(String timeSeriesName, DataPoint[] dataPoints) {
+        put(timeSeriesName, dataPoints,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+    }
+
+    /**
      * Retrieve a specific data point for a named time series
      *
      * @param timeSeriesName

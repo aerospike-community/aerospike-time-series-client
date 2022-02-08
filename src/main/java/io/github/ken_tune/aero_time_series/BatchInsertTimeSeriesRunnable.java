@@ -4,7 +4,7 @@ import java.util.*;
 
 public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     private long requiredTimeSeriesRangeSeconds;
-    
+
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
