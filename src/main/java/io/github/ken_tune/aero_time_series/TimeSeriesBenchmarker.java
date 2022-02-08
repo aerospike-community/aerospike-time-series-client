@@ -149,15 +149,16 @@ public class TimeSeriesBenchmarker {
         aerospikeClient.truncate(new InfoPolicy(),asNamespace,Constants.AS_TIME_SERIES_INDEX_SET,null);
 
         benchmarkClientObjects = new TimeSeriesRunnable[threadCount];
+        Random random  = new Random(randomSeed);
         for(int i=0;i<threadCount;i++){
             int timeSeriesCountForThread = timeSeriesCount /  threadCount;
             if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
             TimeSeriesRunnable runnable = null; // Keep the compiler happy with null assignment
             switch(runMode){
                 case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
-                    runnable = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed); break;
+                    runnable = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,random.nextLong()); break;
                 case OptionsHelper.BenchmarkModes.BATCH_INSERT:
-                    runnable = new BatchInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,randomSeed);
+                    runnable = new BatchInsertTimeSeriesRunnable(asHost,asNamespace,timeSeriesCountForThread,this,random.nextLong());
             }
             benchmarkClientObjects[i] = runnable;
             Thread t = new Thread(benchmarkClientObjects[i]);

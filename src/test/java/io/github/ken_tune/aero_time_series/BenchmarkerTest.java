@@ -331,7 +331,7 @@ public class BenchmarkerTest {
         int threadCount = 1;
         int timeSeriesCount = 1;
         int recordsPerBlock = 500;
-        int timeSeriesRangeSeconds = 86400;
+        int timeSeriesRangeSeconds = 864000;
 
         // Keep track of the start time - useful when we retrieve the data points
         long startTime = System.currentTimeMillis();

@@ -9,6 +9,6 @@ public class TestConstants {
     static final long RANDOM_SEED = 6760187239798559903L;
 
     // This time series name is the first one that gets generated if using the seed 6760187239798559903L
-    public static String REFERENCE_TIME_SERIES_NAME="BPGREBWPRB";
+    public static String REFERENCE_TIME_SERIES_NAME="LSVLRSBQIZ";
 
 }
