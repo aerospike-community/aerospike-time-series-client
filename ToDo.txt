@@ -13,7 +13,6 @@ Small
 
 Use string enums for OptionsHelper classes
 Can I remove the benchmarker code when publishing to maven
-Grep for the word 'test' in code - can some methods etc be moved to test classes - e.g. static factory method
 
 Done
 ====
@@ -44,6 +43,7 @@ Count records better when doing batch insert - keep inserting until the time ran
 Allow 1D,1H values for batch insert
 Do I need tests to check what happens when generating multiple time series - yes you do
 Figure out where the high initial second count is coming from - race condition - need to initialise startTime in Runner class
+Grep for the word 'test' in code - can some methods etc be moved to test classes - e.g. static factory method
 
 
 Notes

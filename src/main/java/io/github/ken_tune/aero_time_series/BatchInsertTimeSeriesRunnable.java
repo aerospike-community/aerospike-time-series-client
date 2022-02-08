@@ -4,20 +4,7 @@ import java.util.*;
 
 public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     private long requiredTimeSeriesRangeSeconds;
-
-    /**
-     * Constructor for a runnable that will generate timeSeriesCount time series for us
-     * Package level visibility as this will not be used in isolation
-     * @param asHost - Aerospike Host
-     * @param asNamespace - Aerospike Namespace
-     * @param timeSeriesCountPerObject - No of timeseries to generate
-     * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
-     */
-    BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
-        this(asHost,asNamespace,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
-    }
-
-
+    
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
