@@ -16,8 +16,8 @@ public abstract class TimeSeriesRunnable implements Runnable{
     protected boolean isFinished = false;
     // How many inserts have been done by this thread
     protected int updateCount = 0;
-    // When did the thread start
-    protected long startTime;
+    // When did the thread start - to avoid race conditions initialise
+    protected long startTime = System.currentTimeMillis();
     // Randomness generation
     protected Random random;
     // Time Series Client object

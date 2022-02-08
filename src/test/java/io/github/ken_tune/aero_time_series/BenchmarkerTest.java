@@ -15,7 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BenchmarkerTest {
-    private boolean doTeardown = false;
+    private boolean doTeardown = true;
 
     // For the avoidance of doubt and clarity
     int MILLISECONDS_IN_SECOND = 1000;
@@ -481,7 +481,6 @@ public class BenchmarkerTest {
                         intervalBetweenUpdates, accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
-        System.out.println(consoleOutput.get(0));
 
         Assert.assertTrue(consoleOutput.get(0).equals(String.format("-%s flag (%s) should not be used in %s mode",OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,
                         OptionsHelper.cmdLineOptionsForBatchInsert().getOption(OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),

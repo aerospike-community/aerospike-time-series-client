@@ -265,7 +265,6 @@ public class TimeSeriesClientTest {
         long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
         int indexOfLastRecord = timestamps.length - 1;
         if(startTimeOffsetInSeconds <= endTimeOffsetInSeconds) {
-            System.out.println(timestamps.length);
             Assert.assertTrue(timestamps.length == expectedBlocks);
             Assert.assertTrue(timestamps[0] == startTimeAsTimestamp ||
                     timestamps[0] == getTestBaseDate().getTime() ||
