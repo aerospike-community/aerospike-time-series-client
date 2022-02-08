@@ -71,17 +71,6 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
                     dataPointVector.add(new DataPoint(new Date(observationTime), observationValue));
                     recordsInCurrentBatch++;
                 }
-//                DataPoint[] dataPoints = new DataPoint[recordsToInsert];
-//                for (int i = 0; i < recordsToInsert; i++) {
-//                    long lastObservationTime = (i == 0) ? lastObservationTimes.get(timeSeriesName) : dataPoints[i - 1].getTimestamp();
-//                    double lastObservationValue = (i == 0) ? lastObservationValues.get(timeSeriesName) : dataPoints[i - 1].getValue();
-//                    long observationTime = nextObservationTime(lastObservationTime);
-//                    double timeIncrement = (double) (observationTime - lastObservationTime) / Constants.MILLISECONDS_IN_SECOND;
-//                    double observationValue = simulator.getNextValue(lastObservationValue, timeIncrement);
-//                    dataPoints[i] = new DataPoint(new Date(observationTime), observationValue);
-//                }
-//                DataPoint[] dataPointArray = new DataPoint[dataPoints.size()];
-//                for(int i=0;i<dataPointArray.length;i++) dataPointArray[i] = dataPoints.get(i);
                 DataPoint[] dataPoints = dataPointVector.toArray(new DataPoint[dataPointVector.size()]);
                 timeSeriesClient.put(timeSeriesName, dataPoints, recordsPerBlock);
                 lastObservationTimes.put(timeSeriesName, dataPoints[dataPoints.length - 1].getTimestamp());

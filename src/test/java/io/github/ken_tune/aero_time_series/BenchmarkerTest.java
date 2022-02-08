@@ -327,7 +327,6 @@ public class BenchmarkerTest {
      * 3) The drift and variance of the resulting series is as expected
      */
     public void batchModeCheck() throws IOException, ParseException, Utilities.ParseException {
-        doTeardown = false;
         int intervalBetweenUpdates = 10;
         int threadCount = 1;
         int timeSeriesCount = 1;
@@ -508,6 +507,86 @@ public class BenchmarkerTest {
         Assert.assertTrue(consoleOutput.get(0).equals(
                 String.format("%s is an invalid run mode. Please use %s or %s",badMode,
                         OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,OptionsHelper.BenchmarkModes.BATCH_INSERT)));
+    }
+
+    @Test
+    /**
+     * Check time series range is correctly converted for each possible suffix option
+     */
+    public void timeSeriesRangeConversionCheck() throws IOException, Utilities.ParseException{
+        timeSeriesRangeParsingCheck(20,OptionsHelper.TimeUnitIndicators.SECOND,1);
+        timeSeriesRangeParsingCheck(45,OptionsHelper.TimeUnitIndicators.MINUTE,60);
+        timeSeriesRangeParsingCheck(12,OptionsHelper.TimeUnitIndicators.HOUR,60*60);
+        timeSeriesRangeParsingCheck(5,OptionsHelper.TimeUnitIndicators.DAY,24*60*60);
+        timeSeriesRangeParsingCheck(3,OptionsHelper.TimeUnitIndicators.YEAR,365*24*60*60);
+        timeSeriesRangeParsingCheck(20,"",1);
+
+    }
+
+    @Test
+    /**
+     * Check time series range format value matches number followed by one of Y,D,H,M,S or no unit
+     * and that we throw an error if not
+     */
+    public void badTimeSeriesRange() throws IOException, Utilities.ParseException{
+        badTimeSeriesRangeStringCheck("50X");
+        badTimeSeriesRangeStringCheck("X50");
+    }
+
+    /**
+     * Private function that checks if a given 'bad' time series range string gets the expected error message
+     * @param badTimeSeriesRangeString
+     */
+    private void badTimeSeriesRangeStringCheck(String badTimeSeriesRangeString) throws IOException{
+        int intervalBetweenUpdates = 2;
+        int threadCount = 5;
+        int timeSeriesCount = 1;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates,threadCount,timeSeriesCount,badTimeSeriesRangeString);
+
+        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+
+        Assert.assertTrue(consoleOutput.get(0).equals(
+                String.format("Value for %s flag should be one of <integer> followed by %s, indicating years, days, hours, minutes or seconds",
+                        OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG, OptionsHelper.TimeUnitIndicators.ALL_INDICATORS)));
+    }
+
+    /**
+     * Utility method checking that the TimeSeriesBenchmarker correctly converts a timeRangeString to the correct number of seconds
+     * Do this by looking at the value of timeSeriesRangeSeconds and comparing to the correctly converted value - using the provided multiplier
+     * @param timePart - integer part of time string
+     * @param timeUnit - unit e.g. S,M,H,D,Y
+     * @param multiplier - multiplier to convert to seconds
+     */
+    private void timeSeriesRangeParsingCheck(int timePart, String timeUnit, int multiplier) throws Utilities.ParseException{
+        int intervalBetweenUpdates = 2;
+        int threadCount = 5;
+        int timeSeriesCount = 1;
+
+        // Create the string argument array
+        String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
+                OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
+
+        String timeSeriesRangeString = String.format("%d%s",timePart,timeUnit);
+
+        String commandLineArguments =
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates,threadCount,timeSeriesCount,timeSeriesRangeString);
+
+        TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
+        Assert.assertTrue(benchmarker.timeSeriesRangeSeconds == timePart * multiplier);
     }
 
     @After

@@ -10,11 +10,7 @@ Deal with retrospective inserts
 End times as part of the metadata - might simplify things?
 
 Grep for the word 'test' in code - can some methods etc be moved to test classes - e.g. static factory method
-
-BatchInsert
------------
-
-Allow 1D,1H values for batch insert
+Can I remove the benchmarker code when publishing to maven
 
 Done
 ====
@@ -42,6 +38,7 @@ Benchmark client - batch puts
 Benchmark client - bulk insert
 Check good/bad run modes are tested this means values for the -m parameter
 Count records better when doing batch insert - keep inserting until the time range is exceeded, which allows for some randomness in time values, rather than inserting a set number of records
+Allow 1D,1H values for batch insert
 
 Notes
 =====

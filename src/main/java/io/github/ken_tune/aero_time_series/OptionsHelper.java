@@ -3,6 +3,9 @@ package io.github.ken_tune.aero_time_series;
 import com.oracle.javafx.jmx.SGMXBean;
 import org.apache.commons.cli.*;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Help with command line processing
  */
@@ -28,7 +31,21 @@ public class OptionsHelper {
         static final String BATCH_INSERT = "batchInsert";
         static final String QUERY = "query";
     }
-    
+
+    static class TimeUnitIndicators{
+        static final String YEAR="Y";
+        static final String DAY="D";
+        static final String HOUR="H";
+        static final String MINUTE="M";
+        static final String SECOND="S";
+        // Utility string for messages
+        static final String ALL_INDICATORS=String.format("%s,%s,%s,%s or %s",YEAR,DAY,HOUR,MINUTE,SECOND);
+    }
+
+    // Regex time strings need to match to
+    // Package visibility so test classes can use
+    static Pattern regexForTimeStrings = Pattern.compile("^\\d+(Y|D|H|M|S)*$");
+
     /**
      * Command line options for Main class
      * @return cmdLineOptions
@@ -140,6 +157,7 @@ public class OptionsHelper {
      */
     private static void checkCommandLineArgumentType(String flag,String value) throws Utilities.ParseException{
         switch(flag){
+            // Absence of breaks is deliberate - all the below are int fields
             case BenchmarkerFlags.RUN_DURATION_FLAG:
             case BenchmarkerFlags.ACCELERATION_FLAG:
             case BenchmarkerFlags.THREAD_COUNT_FLAG:
@@ -162,6 +180,9 @@ public class OptionsHelper {
                         throw new Utilities.ParseException(String.format("-%s flag should take one of %s,%s,%s values. Argument supplied is %s",
                                 flag,BenchmarkModes.BATCH_INSERT,BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.QUERY,value));
                 }
+                break;
+            case BenchmarkerFlags.TIME_SERIES_RANGE_FLAG:
+                checkTimeString(value);
         }
     }
 
@@ -212,5 +233,65 @@ public class OptionsHelper {
                             BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
         }
         return result;
+    }
+
+    /**
+     * Convert timeString to seconds based on the unit provided
+     * Assume seconds if no unit provided
+     * Throws an error if the timeString is not in the expected format i.e. an integer or integer followed by one of S,M,H,D,Y
+     *
+     * @param timeString
+     * @return
+     * @throws Utilities.ParseException
+     */
+    static int convertTimeStringToSeconds(String timeString) throws Utilities.ParseException{
+        int timePart;
+        int multiplier = 1;
+        checkTimeString(timeString);
+        switch(timeString.substring(timeString.length() -1)){
+            case TimeUnitIndicators.SECOND:
+                multiplier=1;
+                timePart = Integer.parseInt(timeString.substring(0,timeString.length() -1));
+                break;
+            case TimeUnitIndicators.MINUTE:
+                multiplier = 60;
+                timePart = Integer.parseInt(timeString.substring(0,timeString.length() -1));
+                break;
+            case TimeUnitIndicators.HOUR:
+                multiplier = 60*60;
+                timePart = Integer.parseInt(timeString.substring(0,timeString.length() -1));
+                break;
+            case TimeUnitIndicators.DAY:
+                multiplier = 24 * 60 * 60;
+                timePart = Integer.parseInt(timeString.substring(0,timeString.length() -1));
+                break;
+            case TimeUnitIndicators.YEAR:
+                multiplier = 24 * 60 * 60 * 365;
+                timePart = Integer.parseInt(timeString.substring(0,timeString.length() -1));
+                break;
+            default:
+                timePart = Integer.parseInt(timeString);
+        }
+        return multiplier * timePart;
+    }
+
+    /**
+     * Utility method to check the format of time strings, which should be
+     * number followed by one of Y,D,H,M,S or no suffix
+     * If the format is not followed, an exception will be thrown
+     *
+     * @param timeString
+     */
+    private static void checkTimeString(String timeString) throws Utilities.ParseException{
+        Matcher matcher = regexForTimeStrings.matcher(timeString);
+        if(!matcher.find()) {
+            String errorMessage =
+                    String.format("Value for %s flag should be one of <integer> followed by %s, indicating years, days, hours, minutes or seconds\n",
+                            BenchmarkerFlags.TIME_SERIES_RANGE_FLAG, TimeUnitIndicators.ALL_INDICATORS);
+            errorMessage += "If no unit, number is interpreted as seconds\n";
+            errorMessage += String.format("Supplied value %s does not match this format", timeString);
+            throw new Utilities.ParseException(errorMessage);
+        }
+
     }
 }
