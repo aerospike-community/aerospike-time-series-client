@@ -49,7 +49,7 @@ public class TestUtilities {
      * @param timeSeriesCount
      * @return
      */
-    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int timeSeriesRangeSeconds,
+    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, long timeSeriesRangeSeconds,
                                                         int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){
         return new TimeSeriesBenchmarker(asHost,asNamespace,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);

@@ -3,7 +3,7 @@ package io.github.ken_tune.aero_time_series;
 import java.util.*;
 
 public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
-    private int requiredTimeSeriesRangeSeconds;
+    private long requiredTimeSeriesRangeSeconds;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
@@ -49,7 +49,7 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
             lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
             recordCountPerSeries.put(timeSeriesName,0);
         }
-        int recordsToInsertPerSeries = requiredTimeSeriesRangeSeconds / observationIntervalSeconds;
+        long recordsToInsertPerSeries = requiredTimeSeriesRangeSeconds / observationIntervalSeconds;
         int iterations = (int)Math.ceil(((double)requiredTimeSeriesRangeSeconds / observationIntervalSeconds) / recordsPerBlock);
         long maxTimestamp = startTime + requiredTimeSeriesRangeSeconds * Constants.MILLISECONDS_IN_SECOND;
         isRunning = true;
@@ -58,7 +58,7 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
             Iterator<String> timeSeriesNames = lastObservationTimes.keySet().iterator();
             while (timeSeriesNames.hasNext()) {
                 String timeSeriesName = timeSeriesNames.next();
-                int maxRecordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
+                long maxRecordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
                 Vector<DataPoint> dataPointVector = new Vector<>();
                 int recordsInCurrentBatch = 0;
                 while(recordsInCurrentBatch < maxRecordsToInsert){

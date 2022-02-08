@@ -1,7 +1,8 @@
 package io.github.ken_tune.aero_time_series;
 
-import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
+import com.aerospike.client.policy.ScanPolicy;
 import org.apache.commons.cli.ParseException;
 import org.junit.*;
 
@@ -325,13 +326,17 @@ public class BenchmarkerTest {
      * 1) The expected number of data points are created
      * 2) The number of 'blocks' is as expected
      * 3) The drift and variance of the resulting series is as expected
+     *
+     * This is a long running test - it needs to be to get the required convergence on drift and volatility
+     *
+     * We are also running for multiple time series to check that works successfully
      */
-    public void batchModeCheck() throws IOException, ParseException, Utilities.ParseException {
+    public void batchModeCheck(){
         int intervalBetweenUpdates = 10;
-        int threadCount = 1;
-        int timeSeriesCount = 1;
-        int recordsPerBlock = 500;
-        int timeSeriesRangeSeconds = 864000;
+        int threadCount = 10;
+        int timeSeriesCount = 10;
+        int recordsPerBlock = 1000;
+        long timeSeriesRangeSeconds = 86400 * 100;
 
         // Keep track of the start time - useful when we retrieve the data points
         long startTime = System.currentTimeMillis();
@@ -341,26 +346,29 @@ public class BenchmarkerTest {
 
         benchmarker.run();
 
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
-        // Widen the range slightly to allow for the fact that the benchmarker introduces variability in the sample times of OBSERVATION_INTERVAL_VARIABILITY_PCT
-        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime - Constants.MILLISECONDS_IN_SECOND),
-                new Date(startTime + (1+ timeSeriesRangeSeconds)  * Constants.MILLISECONDS_IN_SECOND));
+        Vector<String> timeSeriesNames = getTimeSeriesNames();
+        for(int i=0;i<timeSeriesNames.size();i++) {
+            String timeSeriesName = timeSeriesNames.get(i);
+            System.out.println(String.format("Checking time series with name %s",timeSeriesName));
+            TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE);
+            // Widen the range slightly to allow for the fact that the benchmarker introduces variability in the sample times of OBSERVATION_INTERVAL_VARIABILITY_PCT
+            DataPoint[] dataPoints = timeSeriesClient.getPoints(timeSeriesName, new Date(startTime - Constants.MILLISECONDS_IN_SECOND),
+                    new Date(startTime + (1 + timeSeriesRangeSeconds) * Constants.MILLISECONDS_IN_SECOND));
 
-        // Check that the number of points stored is as expected
-        Assert.assertTrue(timeSeriesRangeSeconds / intervalBetweenUpdates == dataPoints.length);
+            Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates,dataPoints.length,5));
 
-        // Check that the number of blocks stored is as expected
-        int timeSeriesBlocks = TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.REFERENCE_TIME_SERIES_NAME);
-        int expectedTimeSeriesBlocks = (int)Math.ceil((double)timeSeriesRangeSeconds / (recordsPerBlock * intervalBetweenUpdates));
-        Assert.assertTrue(timeSeriesBlocks == expectedTimeSeriesBlocks);
+            // Check that the number of blocks stored is as expected
+            int timeSeriesBlocks = TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.REFERENCE_TIME_SERIES_NAME);
+            int expectedTimeSeriesBlocks = (int) Math.ceil((double) timeSeriesRangeSeconds / (recordsPerBlock * intervalBetweenUpdates));
+            Assert.assertTrue(timeSeriesBlocks == expectedTimeSeriesBlocks);
 
-        // Check that the drift and variance are as expected
-        double[] values = new double[dataPoints.length];
-        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
+            // Check that the drift and variance are as expected
+            double[] values = new double[dataPoints.length];
+            for (int j = 0; j < values.length; j++) values[j] = dataPoints[j].getValue();
 
-        TimeSeriesSimulatorTest.checkDailyDriftPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT,intervalBetweenUpdates,20);
-        TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,intervalBetweenUpdates,10);
-
+            TimeSeriesSimulatorTest.checkDailyDriftPct(values, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, intervalBetweenUpdates, 30);
+            TimeSeriesSimulatorTest.checkDailyVolatilityPct(values, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT, intervalBetweenUpdates, 10);
+        }
     }
 
     @Test
@@ -665,5 +673,23 @@ public class BenchmarkerTest {
         System.setOut(currentOut);
         System.out.println("Run complete");
         return consoleOutput;
+    }
+
+    /**
+     * Get a list of all the time series in the database
+     * @return
+     */
+    private Vector<String> getTimeSeriesNames(){
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE);
+
+        Vector<String> timeSeriesNames = new Vector<>();
+        timeSeriesClient.asClient.scanAll(new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_INDEX_SET,
+                new ScanCallback() {
+                    @Override
+                    public void scanCallback(Key key, Record record) throws AerospikeException {
+                        timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME));
+                    }
+                },Constants.TIME_SERIES_NAME_FIELD_NAME);
+        return timeSeriesNames;
     }
 }

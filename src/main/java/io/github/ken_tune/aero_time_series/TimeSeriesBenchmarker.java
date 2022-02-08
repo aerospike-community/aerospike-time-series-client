@@ -33,7 +33,7 @@ public class TimeSeriesBenchmarker {
     private final int threadCount;
     private final int timeSeriesCount;
     final int recordsPerBlock;
-    final int timeSeriesRangeSeconds;
+    final long timeSeriesRangeSeconds;
     final int dailyDriftPct;
     final int dailyVolatilityPct;
     private final String runMode;
@@ -62,7 +62,7 @@ public class TimeSeriesBenchmarker {
 
 
     TimeSeriesBenchmarker(String asHost, String asNamespace, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
-                          int timeSeriesCount,int recordsPerBlock, int timeSeriesRangeSeconds,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
+                          int timeSeriesCount,int recordsPerBlock, long timeSeriesRangeSeconds,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
         this.runMode = runMode;
@@ -134,7 +134,7 @@ public class TimeSeriesBenchmarker {
                 output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
                 break;
             case OptionsHelper.BenchmarkModes.BATCH_INSERT:
-                int recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
+                long recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
                 output.println(String.format("Inserting %d records over a period of %d seconds",recordCount,timeSeriesRangeSeconds));
                 break;
 

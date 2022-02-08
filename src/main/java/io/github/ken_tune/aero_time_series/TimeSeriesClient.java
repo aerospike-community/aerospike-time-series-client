@@ -227,6 +227,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private void addTimeSeriesIndexRecord(String timeSeriesName, long startTime) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
         asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
+                Operation.put(new Bin(Constants.TIME_SERIES_NAME_FIELD_NAME,new Value.StringValue(timeSeriesName))),
                 // Inserts data point
                 MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_INDEX_BIN_NAME,
                         new Value.LongValue(startTime), new Value.StringValue(asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime).userKey.toString()))
