@@ -28,8 +28,8 @@ public class TimeSeriesClientTest {
 
     // Default TimeSeriesClient for tests
     private static TimeSeriesClient defaultTimeSeriesClient(){
-        return new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,
-                TestConstants.TIME_SERIES_TEST_SET,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+        return new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
     @Before
@@ -172,7 +172,8 @@ public class TimeSeriesClientTest {
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
 
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
                 Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
@@ -310,7 +311,8 @@ public class TimeSeriesClientTest {
      * @throws Exception
      */
     private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock) throws Exception{
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,recordsPerBlock);
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,recordsPerBlock);
 
         double[] values = new double[iterations];
         for(int i=0;i<iterations;i++){
@@ -370,7 +372,8 @@ public class TimeSeriesClientTest {
         int recordsPerBlock = 3;
         TimeSeriesClient timeSeriesClient;
 
-        timeSeriesClient = new TimeSeriesClient(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,recordsPerBlock);
+        timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,recordsPerBlock);
         DataPoint[] dataPoints = createDataPoints(startTime,1,1);
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints);
 

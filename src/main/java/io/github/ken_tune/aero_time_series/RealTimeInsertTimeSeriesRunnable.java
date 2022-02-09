@@ -1,5 +1,7 @@
 package io.github.ken_tune.aero_time_series;
 
+import com.aerospike.client.AerospikeClient;
+
 import java.util.*;
 
 /**
@@ -14,27 +16,27 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asHost - Aerospike Host
+     * @param asClient - Aerospike lient object
      * @param asNamespace - Aerospike Namespace
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      */
-    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
-        this(asHost,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
+    RealTimeInsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
+        this(asClient,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
     }
 
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asHost - Aerospike Host
+     * @param asClient - Aerospike Client object
      * @param asNamespace - Aerospike Namespace
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    RealTimeInsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.runDurationSeconds = benchmarkClient.runDuration;
         this.accelerationFactor = benchmarkClient.accelerationFactor;
     }

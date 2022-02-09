@@ -11,10 +11,9 @@ End times as part of the metadata - might simplify things?
 Small
 ----
 
-TimeSeriesClient - pass asClient in constructor
+% complete from batch test
 Set name length check
 Check defaults in usage
-Allow setting of sets
 Can I remove the benchmarker code when publishing to maven
 Find out about 'linting' i.e. looking for un-used methods, incomplete documentation
 
@@ -50,8 +49,8 @@ Figure out where the high initial second count is coming from - race condition -
 Grep for the word 'test' in code - can some methods etc be moved to test classes - e.g. static factory method
 Allow setting of policies in TimeSeriesClient
 Allow setting of max block size for TimeSeriesClient
-
-
+Allow setting of sets for TimeSeriesClient
+TimeSeriesClient - pass asClient in constructor - this means we don't have to worry about tls / port numbers
 
 Notes
 =====

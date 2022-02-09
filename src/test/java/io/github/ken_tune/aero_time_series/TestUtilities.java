@@ -1,6 +1,7 @@
 package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexCollectionType;
@@ -11,6 +12,18 @@ import javax.management.Query;
 import java.util.Random;
 
 public class TestUtilities {
+    /**
+     * Truncate time series data where the time series set name is as per the argument
+     * @param timeSeriesSetName
+     */
+    public static void removeTimeSeriesTestDataForSet(String timeSeriesSetName){
+        AerospikeClient asClient = new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT);
+
+        asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesSetName, null);
+        asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, TimeSeriesClient.timeSeriesIndexSetName(timeSeriesSetName), null);
+
+    }
+
     public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String asNamespace,String timeSeriesName) {
         Statement stmt = new Statement();
         stmt.setNamespace(timeSeriesClient.asNamespace);

@@ -35,26 +35,27 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
 
     /**
-     * TimeSeriesClient constructor. Provide name of an Aerospike host, tne namespace, max number of data points per Aerospike object
-     * @param asHostName
+     * TimeSeriesClient constructor. Provide an Aerospike Client object, tne namespace, the name of the set to use, max number of data points per Aerospike object
+     * @param asClient
      * @param asNamespace
+     * @param timeSeriesSet
      * @param maxBlockEntryCount
      */
-    public TimeSeriesClient(String asHostName, String asNamespace, String timeSeriesSet, int maxBlockEntryCount) {
-        asClient = new AerospikeClient(asHostName, Constants.DEFAULT_AEROSPIKE_PORT);
+    public TimeSeriesClient(AerospikeClient asClient, String asNamespace, String timeSeriesSet, int maxBlockEntryCount) {
+        this.asClient = asClient;
         this.asNamespace = asNamespace;
         this.maxBlockEntryCount = maxBlockEntryCount;
         this.timeSeriesSet = timeSeriesSet;
     }
 
     /**
-     * TimeSeriesClient constructor. Provide name of an Aerospike host and tne namespace
+     * TimeSeriesClient constructor. Provide an Aerospike Client object and tne namespace
      * Max data points per object gets set to the default value.
-     * @param asHostName
+     * @param asClient
      * @param asNamespace
      */
-    public TimeSeriesClient(String asHostName, String asNamespace) {
-        this(asHostName,asNamespace,Constants.DEFAULT_TIME_SERIES_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+    public TimeSeriesClient(AerospikeClient asClient, String asNamespace) {
+        this(asClient,asNamespace,Constants.DEFAULT_TIME_SERIES_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
     /*

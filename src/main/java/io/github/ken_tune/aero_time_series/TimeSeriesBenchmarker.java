@@ -159,9 +159,9 @@ public class TimeSeriesBenchmarker {
             TimeSeriesRunnable runnable = null; // Keep the compiler happy with null assignment
             switch(runMode){
                 case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
-                    runnable = new RealTimeInsertTimeSeriesRunnable(asHost,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong()); break;
+                    runnable = new RealTimeInsertTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong()); break;
                 case OptionsHelper.BenchmarkModes.BATCH_INSERT:
-                    runnable = new BatchInsertTimeSeriesRunnable(asHost,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong());
+                    runnable = new BatchInsertTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong());
             }
             benchmarkClientObjects[i] = runnable;
             Thread t = new Thread(benchmarkClientObjects[i]);

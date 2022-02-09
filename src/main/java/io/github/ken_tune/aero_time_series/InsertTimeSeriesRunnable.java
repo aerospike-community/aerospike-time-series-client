@@ -1,5 +1,7 @@
 package io.github.ken_tune.aero_time_series;
 
+import com.aerospike.client.AerospikeClient;
+
 /**
  * Runnable responsible for generating inserts, to be invoked by the Time Series Benchmarker
  * Adds in the observation interval and variability
@@ -22,14 +24,14 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asHost - Aerospike Host
+     * @param asClient - Aerospike Client object
      * @param asNamespace - Aerospike Namespace
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    protected InsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    protected InsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
         this.recordsPerBlock = benchmarkClient.recordsPerBlock;

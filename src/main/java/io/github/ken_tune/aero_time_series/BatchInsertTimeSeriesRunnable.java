@@ -1,5 +1,7 @@
 package io.github.ken_tune.aero_time_series;
 
+import com.aerospike.client.AerospikeClient;
+
 import java.util.*;
 
 public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
@@ -8,14 +10,14 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asHost - Aerospike Host
+     * @param asClient - Aerospike Client object
      * @param asNamespace - Aerospike Namespace
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    BatchInsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         recordsPerBlock = benchmarkClient.recordsPerBlock;
         requiredTimeSeriesRangeSeconds = benchmarkClient.timeSeriesRangeSeconds;
     }
