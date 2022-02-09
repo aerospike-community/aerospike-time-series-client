@@ -11,8 +11,6 @@ End times as part of the metadata - might simplify things?
 Small
 ----
 
-% complete from batch test
-Set name length check
 Check defaults in usage
 Can I remove the benchmarker code when publishing to maven
 Find out about 'linting' i.e. looking for un-used methods, incomplete documentation
@@ -51,6 +49,7 @@ Allow setting of policies in TimeSeriesClient
 Allow setting of max block size for TimeSeriesClient
 Allow setting of sets for TimeSeriesClient
 TimeSeriesClient - pass asClient in constructor - this means we don't have to worry about tls / port numbers
+% complete from batch test
 
 Notes
 =====
