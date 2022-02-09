@@ -19,8 +19,8 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      */
-    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
-        this(asHost,asNamespace,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
+    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
+        this(asHost,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
     }
 
 
@@ -33,8 +33,8 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    RealTimeInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.runDurationSeconds = benchmarkClient.runDuration;
         this.accelerationFactor = benchmarkClient.accelerationFactor;
     }
@@ -51,7 +51,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
             double observationValue = initTimeSeriesValue();
             lastObservationTimes.put(timeSeriesName,startTime);
             lastObservationValues.put(timeSeriesName,observationValue);
-            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue),recordsPerBlock);
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
             nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
         }
         isRunning = true;
@@ -64,7 +64,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
                     updateCount++;
                     double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/ Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName),timeIncrement);
-                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue),recordsPerBlock);
+                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
                     lastObservationValues.put(timeSeriesName,observationValue);
                     lastObservationTimes.put(timeSeriesName,nextObservationTime);
                     nextObservationTimes.put(timeSeriesName,nextObservationTime(nextObservationTime));

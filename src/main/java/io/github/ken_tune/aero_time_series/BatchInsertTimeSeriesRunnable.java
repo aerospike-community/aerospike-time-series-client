@@ -14,8 +14,8 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    BatchInsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         recordsPerBlock = benchmarkClient.recordsPerBlock;
         requiredTimeSeriesRangeSeconds = benchmarkClient.timeSeriesRangeSeconds;
     }
@@ -59,7 +59,7 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
                     recordsInCurrentBatch++;
                 }
                 DataPoint[] dataPoints = dataPointVector.toArray(new DataPoint[dataPointVector.size()]);
-                timeSeriesClient.put(timeSeriesName, dataPoints, recordsPerBlock);
+                timeSeriesClient.put(timeSeriesName, dataPoints);
                 lastObservationTimes.put(timeSeriesName, dataPoints[dataPoints.length - 1].getTimestamp());
                 lastObservationValues.put(timeSeriesName, dataPoints[dataPoints.length - 1].getValue());
                 recordCountPerSeries.put(timeSeriesName,recordCountPerSeries.get(timeSeriesName) + recordsInCurrentBatch);

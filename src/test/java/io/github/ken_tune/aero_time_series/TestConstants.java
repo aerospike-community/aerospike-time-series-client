@@ -4,6 +4,8 @@ public class TestConstants {
     public static String AEROSPIKE_HOST="172.28.128.7";
     public static String AEROSPIKE_NAMESPACE="test";
 
+    public static String TIME_SERIES_TEST_SET = "TimeSeriesTest";
+
 
     // Seed for randomiser so we can acheive deterministic results in testing
     static final long RANDOM_SEED = 6760187239798559903L;

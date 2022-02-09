@@ -7,8 +7,7 @@ public class Constants {
     public final static int SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC = 100;
 
     /* Accessible within package */
-    public final static String AS_TIME_SERIES_SET = "TS";
-    public final static String AS_TIME_SERIES_INDEX_SET = "TimeSeriesIndexes";
+    public final static String DEFAULT_TIME_SERIES_SET = "TimeSeries";
 
     final static String TIME_SERIES_BIN_NAME = "tsSeries";
     final static String TIME_SERIES_INDEX_BIN_NAME = "tsIndex";

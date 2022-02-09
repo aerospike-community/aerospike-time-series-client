@@ -15,9 +15,16 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     // Define namespace used as part of initialisation
     String asNamespace;
 
+    // Set for time series
+    private String timeSeriesSet = Constants.DEFAULT_TIME_SERIES_SET;
+
     // Read and write policies
     private Policy readPolicy = new Policy();
     private WritePolicy writePolicy = new WritePolicy();
+
+    // Max entry count per data block
+    int maxBlockEntryCount = Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK;
+
 
     // Map policy for inserts - these are not modifiable
     private final MapPolicy insertMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteMode.UPDATE);
@@ -25,10 +32,29 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
     static final long CURRENT_RECORD_TIMESTAMP = 0;
+    public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
 
-    public TimeSeriesClient(String asHostName, String asNamespace) {
+    /**
+     * TimeSeriesClient constructor. Provide name of an Aerospike host, tne namespace, max number of data points per Aerospike object
+     * @param asHostName
+     * @param asNamespace
+     * @param maxBlockEntryCount
+     */
+    public TimeSeriesClient(String asHostName, String asNamespace, String timeSeriesSet, int maxBlockEntryCount) {
         asClient = new AerospikeClient(asHostName, Constants.DEFAULT_AEROSPIKE_PORT);
         this.asNamespace = asNamespace;
+        this.maxBlockEntryCount = maxBlockEntryCount;
+        this.timeSeriesSet = timeSeriesSet;
+    }
+
+    /**
+     * TimeSeriesClient constructor. Provide name of an Aerospike host and tne namespace
+     * Max data points per object gets set to the default value.
+     * @param asHostName
+     * @param asNamespace
+     */
+    public TimeSeriesClient(String asHostName, String asNamespace) {
+        this(asHostName,asNamespace,Constants.DEFAULT_TIME_SERIES_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
     /*
@@ -67,6 +93,14 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     }
 
     /**
+     * Setter method for time series set
+     * @return
+     */
+    public String getTimeSeriesSet() {
+        return timeSeriesSet;
+    }
+
+    /**
      * Saves data point to the database
      * <p>
      * By default insert always goes to the current block for the time series which has key TimeSeriesName
@@ -75,16 +109,15 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      *
      * @param timeSeriesName
      * @param dataPoint
-     * @param maxEntryCount
      */
-    public void put(String timeSeriesName, DataPoint dataPoint, int maxEntryCount) {
+    public void put(String timeSeriesName, DataPoint dataPoint) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
         // Need to put the metadata ops and the insert together in one array
         Operation[] ops = new Operation[4];
         // Data point put operation
         ops[0] = MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_BIN_NAME, new Value.LongValue(dataPoint.getTimestamp()), new Value.DoubleValue(dataPoint.getValue()));
         // Metadata operations
-        Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoint.getTimestamp(),maxEntryCount);
+        Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoint.getTimestamp(), maxBlockEntryCount);
         // Add to the actual operations list
         ops[1] = metadataOps[0]; ops[2]=metadataOps[1]; ops[3]=metadataOps[2];
         // and execute
@@ -92,7 +125,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // Put operation returns map size by default
         long mapSize = r.getLong(Constants.TIME_SERIES_BIN_NAME);
         // If it is greater than the required size, save a copy of the block with key TimeSeries-StartTime
-        if (mapSize >= maxEntryCount) {
+        if (mapSize >= maxBlockEntryCount) {
             copyCurrentDataToHistoricBlock(timeSeriesName);
         }
     }
@@ -142,19 +175,6 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         if (asClient.exists(readPolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
             asClient.delete(writePolicy, asCurrentKeyForTimeSeries(timeSeriesName));
     }
-    /**
-     * Saves data point to the database
-     * <p>
-     * By default insert always goes to the current block for the time series which has key TimeSeriesName
-     * <p>
-     * If *default* max values per block is exceeded, save block under name TimeSeries-StartTime and remove 'current' block
-     *
-     * @param timeSeriesName
-     * @param dataPoint
-     */
-    public void put(String timeSeriesName, DataPoint dataPoint) {
-        put(timeSeriesName, dataPoint, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
-    }
 
     /**
      * Save data points to the database
@@ -163,9 +183,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      *
      * @param timeSeriesName - time series name
      * @param dataPoints - data points as an array
-     * @param maxEntryCount - max number of data points to keep in a block
      */
-    public void put(String timeSeriesName, DataPoint[] dataPoints, int maxEntryCount) {
+    public void put(String timeSeriesName, DataPoint[] dataPoints) {
         // First of all need to find out how much 'room' is available
         Record r = asClient.operate(writePolicy,asCurrentKeyForTimeSeries(timeSeriesName),MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
         int existingRecordCount = 0;
@@ -177,9 +196,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // Stop when all records have been 'put'
         while(lastRecordLoaded < dataPoints.length){
             // Load records remaining or whatever we have space for, whichever is the smaller
-            int numberOfRecordsToLoad = Math.min(dataPoints.length - lastRecordLoaded,maxEntryCount - existingRecordCount);
+            int numberOfRecordsToLoad = Math.min(dataPoints.length - lastRecordLoaded,maxBlockEntryCount - existingRecordCount);
             // Insert metadata - may not be needed, but will be ignored if it already exists
-            Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoints[lastRecordLoaded].getTimestamp(),maxEntryCount);
+            Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoints[lastRecordLoaded].getTimestamp(),maxBlockEntryCount);
             // Batch inserting datapoints is done via an array of operations
             Operation[] ops  = new Operation[numberOfRecordsToLoad + metadataOps.length];
             // Construct the array of operations
@@ -190,26 +209,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             // Put to the database
             asClient.operate(writePolicy,asCurrentKeyForTimeSeries(timeSeriesName),ops);
             // If the block is full, 'archive' it
-            if(numberOfRecordsToLoad  + existingRecordCount == maxEntryCount) copyCurrentDataToHistoricBlock(timeSeriesName);
+            if(numberOfRecordsToLoad  + existingRecordCount == maxBlockEntryCount) copyCurrentDataToHistoricBlock(timeSeriesName);
             // If we're at this point in the code we know we'll be inserting to an empty block
             existingRecordCount = 0;
             // Update the running total of records we've inserted
             lastRecordLoaded += numberOfRecordsToLoad;
         }
 
-    }
-
-    /**
-     * Save data points to the database
-     * <p>
-     * Inserts always go to the current block for the time series which has key TimeSeriesName
-     * Same as put(timeSeriesName,dataPoints,maxEntryCount) only it uses a default value for maxEntryCount - Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK
-     *
-     * @param timeSeriesName - time series name
-     * @param dataPoints - data points as an array
-     */
-    public void put(String timeSeriesName, DataPoint[] dataPoints) {
-        put(timeSeriesName, dataPoints,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
     /**
@@ -248,7 +254,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @return
      */
     Key asCurrentKeyForTimeSeries(String timeSeriesName) {
-        return new Key(asNamespace, Constants.AS_TIME_SERIES_SET, timeSeriesName);
+        return new Key(asNamespace, timeSeriesSet, timeSeriesName);
     }
 
     /**
@@ -259,7 +265,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     private Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long timestamp) {
         String historicBlockKey = String.format("%s-%d", timeSeriesName, timestamp);
-        return new Key(asNamespace, Constants.AS_TIME_SERIES_SET, historicBlockKey);
+        return new Key(asNamespace, timeSeriesSet, historicBlockKey);
     }
 
     /**
@@ -269,7 +275,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @return
      */
     private Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
-        return new Key(asNamespace, Constants.AS_TIME_SERIES_INDEX_SET, timeSeriesName);
+        return new Key(asNamespace, timeSeriesIndexSetName(), timeSeriesName);
     }
 
     /**
@@ -394,5 +400,24 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             }
         }
         return dataPoints;
+    }
+
+    /**
+     * We store some 'indexes' to make the time series db work.
+     * This gives the name of the set they're stored in
+     * It simply suffixes the time series set name with TIME_SERIES_INDEX_SET_SUFFIX
+     * @return
+     */
+    public String timeSeriesIndexSetName(){
+        return timeSeriesIndexSetName(timeSeriesSet);
+    }
+
+    /**
+     * Static method allowing inference of the time index set name - useful in a couple of places elsewhere
+     * @param setName
+     * @return
+     */
+    public static String timeSeriesIndexSetName(String setName){
+        return String.format("%s%s",setName,TIME_SERIES_INDEX_SET_SUFFIX);
     }
 }

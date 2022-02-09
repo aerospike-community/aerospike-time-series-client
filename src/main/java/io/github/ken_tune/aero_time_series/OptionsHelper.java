@@ -23,6 +23,7 @@ public class OptionsHelper {
         static final String TIME_SERIES_COUNT_FLAG = "c";
         static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
         static final String TIME_SERIES_RANGE_FLAG = "r";
+        static final String TIME_SERIES_SET_FLAG = "s";
     }
 
     static class BenchmarkModes{
@@ -53,7 +54,9 @@ public class OptionsHelper {
         Options cmdLineOptions = new Options();
 
         Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host");
-        Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace");
+        Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace for time series");
+        Option setOption = new Option(BenchmarkerFlags.TIME_SERIES_SET_FLAG,"set",true,
+                String.format("Set for time series. Defaults to %s",Constants.DEFAULT_TIME_SERIES_SET));
         Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,
                 String.format("Benchmark mode - values allowed are %s and %s",BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
         Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,
@@ -70,6 +73,7 @@ public class OptionsHelper {
 
         hostOption.setRequired(true);
         namespaceOption.setRequired(true);
+        setOption.setRequired(false);
         modeOption.setRequired(true);
         runDurationOption.setRequired(false);
         accelerationOption.setRequired(false);
@@ -81,6 +85,7 @@ public class OptionsHelper {
 
         cmdLineOptions.addOption(hostOption);
         cmdLineOptions.addOption(namespaceOption);
+        cmdLineOptions.addOption(setOption);
         cmdLineOptions.addOption(modeOption);
         cmdLineOptions.addOption(runDurationOption);
         cmdLineOptions.addOption(accelerationOption);
@@ -141,6 +146,8 @@ public class OptionsHelper {
                 return Integer.toString(0);
             case BenchmarkerFlags.RUN_DURATION_FLAG:
                 return Integer.toString(0);
+            case BenchmarkerFlags.TIME_SERIES_SET_FLAG:
+                return Constants.DEFAULT_TIME_SERIES_SET;
             default:
                 return null;
         }

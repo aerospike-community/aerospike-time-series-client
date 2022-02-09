@@ -28,8 +28,8 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    protected InsertTimeSeriesRunnable(String asHost, String asNamespace, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        super(asHost, asNamespace, timeSeriesCountPerObject, benchmarkClient, randomSeed);
+    protected InsertTimeSeriesRunnable(String asHost, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+        super(asHost, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
         this.recordsPerBlock = benchmarkClient.recordsPerBlock;

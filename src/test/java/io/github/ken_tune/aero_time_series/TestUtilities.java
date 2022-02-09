@@ -14,7 +14,7 @@ public class TestUtilities {
     public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String asNamespace,String timeSeriesName) {
         Statement stmt = new Statement();
         stmt.setNamespace(timeSeriesClient.asNamespace);
-        stmt.setSetName(Constants.AS_TIME_SERIES_SET);
+        stmt.setSetName(timeSeriesClient.getTimeSeriesSet());
         stmt.setBinNames(Constants.METADATA_BIN_NAME);
         stmt.setFilter(Filter.contains(Constants.METADATA_BIN_NAME, IndexCollectionType.MAPVALUES, timeSeriesName));
 
@@ -34,9 +34,9 @@ public class TestUtilities {
      * @param threadCount
      * @param timeSeriesCount
      */
-    static TimeSeriesBenchmarker realTimeInsertBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor,
+    static TimeSeriesBenchmarker realTimeInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor,
                                                            int threadCount, int timeSeriesCount){
-        return new TimeSeriesBenchmarker(asHost,asNamespace,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,observationIntervalSeconds,
+        return new TimeSeriesBenchmarker(asHost,asNamespace,asSet, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,observationIntervalSeconds,
                 runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,
                 TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,new Random().nextLong());
     }
@@ -51,9 +51,9 @@ public class TestUtilities {
      * @param timeSeriesCount
      * @return
      */
-    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, int observationIntervalSeconds, long timeSeriesRangeSeconds,
+    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, long timeSeriesRangeSeconds,
                                                         int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){
-        return new TimeSeriesBenchmarker(asHost,asNamespace,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
+        return new TimeSeriesBenchmarker(asHost,asNamespace,asSet,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
     }
 }
