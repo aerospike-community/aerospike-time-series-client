@@ -32,7 +32,7 @@ public class TimeSeriesClientTest {
     // An index on the Metadata map is required
     public void setup(){
         try {
-            IndexTask task = timeSeriesClient.asClient.createIndex(null,
+            IndexTask task = timeSeriesClient.asClient.createIndex(timeSeriesClient.getReadPolicy(),
                     TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_SET, Constants.METADATA_BIN_NAME, Constants.METADATA_BIN_NAME,
                     IndexType.STRING, IndexCollectionType.MAPVALUES);
             task.waitTillComplete();
@@ -160,7 +160,7 @@ public class TimeSeriesClientTest {
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
 
-        Assert.assertEquals(TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient,TestConstants.AEROSPIKE_NAMESPACE,TEST_TIME_SERIES_NAME),requiredBlocks);
+        Assert.assertEquals(TestUtilities.blockCountForTimeseries(timeSeriesClient,TestConstants.AEROSPIKE_NAMESPACE,TEST_TIME_SERIES_NAME),requiredBlocks);
     }
 
     @Test
@@ -320,6 +320,7 @@ public class TimeSeriesClientTest {
 
     @After
     // Truncate the time series set
+    // Use of null means truncate whole set
     public void teardown(){
         if(doTeardown) {
             timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, Constants.AS_TIME_SERIES_SET, null);

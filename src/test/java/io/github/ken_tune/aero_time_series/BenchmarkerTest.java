@@ -358,7 +358,7 @@ public class BenchmarkerTest {
             Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates,dataPoints.length,5));
 
             // Check that the number of blocks stored is as expected
-            int timeSeriesBlocks = TestUtilities.blockCountForTimeseries(timeSeriesClient.asClient, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.REFERENCE_TIME_SERIES_NAME);
+            int timeSeriesBlocks = TestUtilities.blockCountForTimeseries(timeSeriesClient, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.REFERENCE_TIME_SERIES_NAME);
             int expectedTimeSeriesBlocks = (int) Math.ceil((double) timeSeriesRangeSeconds / (recordsPerBlock * intervalBetweenUpdates));
             Assert.assertTrue(timeSeriesBlocks == expectedTimeSeriesBlocks);
 

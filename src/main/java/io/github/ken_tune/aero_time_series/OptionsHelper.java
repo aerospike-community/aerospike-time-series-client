@@ -1,6 +1,5 @@
 package io.github.ken_tune.aero_time_series;
 
-import com.oracle.javafx.jmx.SGMXBean;
 import org.apache.commons.cli.*;
 
 import java.util.regex.Matcher;

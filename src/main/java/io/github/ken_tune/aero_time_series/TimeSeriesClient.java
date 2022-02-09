@@ -2,6 +2,9 @@ package io.github.ken_tune.aero_time_series;
 
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
+import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.Policy;
+import com.aerospike.client.policy.WritePolicy;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -12,9 +15,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     // Define namespace used as part of initialisation
     String asNamespace;
 
-    // Map policy for inserts
-    MapPolicy insertMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteMode.UPDATE);
-    MapPolicy createOnlyMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteFlags.CREATE_ONLY + MapWriteFlags.NO_FAIL);
+    // Read and write policies
+    private Policy readPolicy = new Policy();
+    private WritePolicy writePolicy = new WritePolicy();
+
+    // Map policy for inserts - these are not modifiable
+    private final MapPolicy insertMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteMode.UPDATE);
+    private final MapPolicy createOnlyMapPolicy = new MapPolicy(MapOrder.KEY_ORDERED, MapWriteFlags.CREATE_ONLY + MapWriteFlags.NO_FAIL);
 
     // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
     static final long CURRENT_RECORD_TIMESTAMP = 0;
@@ -22,6 +29,41 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     public TimeSeriesClient(String asHostName, String asNamespace) {
         asClient = new AerospikeClient(asHostName, Constants.DEFAULT_AEROSPIKE_PORT);
         this.asNamespace = asNamespace;
+    }
+
+    /*
+        Getters / setters for policy objets
+     */
+    /**
+     * Read policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
+     * @return
+     */
+    public Policy getReadPolicy() {
+        return readPolicy;
+    }
+
+    /**
+     * Setter method for read policy object
+     * @param readPolicy
+     */
+    public void setReadPolicy(Policy readPolicy) {
+        this.readPolicy = readPolicy;
+    }
+
+    /**
+     * Write policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
+     * @return
+     */
+    public WritePolicy getWritePolicy() {
+        return writePolicy;
+    }
+
+    /**
+     * Setter method for write policy object
+     * @param writePolicy
+     */
+    public void setWritePolicy(WritePolicy writePolicy) {
+        this.writePolicy = writePolicy;
     }
 
     /**
@@ -46,7 +88,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // Add to the actual operations list
         ops[1] = metadataOps[0]; ops[2]=metadataOps[1]; ops[3]=metadataOps[2];
         // and execute
-        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName),ops);
+        Record r = asClient.operate(writePolicy, asCurrentKeyForTimeSeries(timeSeriesName),ops);
         // Put operation returns map size by default
         long mapSize = r.getLong(Constants.TIME_SERIES_BIN_NAME);
         // If it is greater than the required size, save a copy of the block with key TimeSeries-StartTime
@@ -84,21 +126,21 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName
      */
     private void copyCurrentDataToHistoricBlock(String timeSeriesName){
-        Record r2 = asClient.get(null, asCurrentKeyForTimeSeries(timeSeriesName));
+        Record currentRecord = asClient.get(readPolicy, asCurrentKeyForTimeSeries(timeSeriesName));
         Bin[] bins = new Bin[2];
         // Copying of bin requires slightly convoluted approach below
         bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
-                ((Map<Long,Double>)r2.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                ((Map<Long,Double>)currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
                 MapOrder.KEY_ORDERED);
         bins[1] = new Bin(Constants.METADATA_BIN_NAME,
-                ((Map<Long,Double>)r2.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                ((Map<Long,Double>)currentRecord.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
                 MapOrder.KEY_ORDERED);
-        long startTime = (Long) r2.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
+        long startTime = (Long) currentRecord.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
         addTimeSeriesIndexRecord(timeSeriesName,startTime);
-        asClient.put(Constants.DEFAULT_WRITE_POLICY, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
+        asClient.put(writePolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
         // and remove the current block
-        if (asClient.exists(null, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
-            asClient.delete(Constants.DEFAULT_WRITE_POLICY, asCurrentKeyForTimeSeries(timeSeriesName));
+        if (asClient.exists(readPolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
+            asClient.delete(writePolicy, asCurrentKeyForTimeSeries(timeSeriesName));
     }
     /**
      * Saves data point to the database
@@ -125,7 +167,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     public void put(String timeSeriesName, DataPoint[] dataPoints, int maxEntryCount) {
         // First of all need to find out how much 'room' is available
-        Record r = asClient.operate(Constants.DEFAULT_WRITE_POLICY,asCurrentKeyForTimeSeries(timeSeriesName),MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
+        Record r = asClient.operate(writePolicy,asCurrentKeyForTimeSeries(timeSeriesName),MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
         int existingRecordCount = 0;
         if(r != null) existingRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
 
@@ -146,7 +188,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             // and add the metadata
             for(int i=0;i<metadataOps.length;i++) ops[numberOfRecordsToLoad + i] = metadataOps[i];
             // Put to the database
-            asClient.operate(Constants.DEFAULT_WRITE_POLICY,asCurrentKeyForTimeSeries(timeSeriesName),ops);
+            asClient.operate(writePolicy,asCurrentKeyForTimeSeries(timeSeriesName),ops);
             // If the block is full, 'archive' it
             if(numberOfRecordsToLoad  + existingRecordCount == maxEntryCount) copyCurrentDataToHistoricBlock(timeSeriesName);
             // If we're at this point in the code we know we'll be inserting to an empty block
@@ -239,7 +281,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     private void addTimeSeriesIndexRecord(String timeSeriesName, long startTime) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
-        asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
+        asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                 Operation.put(new Bin(Constants.TIME_SERIES_NAME_FIELD_NAME,new Value.StringValue(timeSeriesName))),
                 // Inserts data point
                 MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_INDEX_BIN_NAME,
@@ -260,11 +302,11 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         Algorithm is, to find first block, go forward until we find the first start time after startTime then go back one
         and for endTime, go back until we find the first start time that is after the end time
 
-        Doesn't work if endTime / startTime are inverted so require specific logic for that
+        Doesn't work if endTime / startTime are i   nverted so require specific logic for that
      */
     long[] getTimestampsForTimeSeries(String timeSeriesName,long startTime,long endTime){
         if(endTime >= startTime) {
-            Record indexListRecord = asClient.operate(Constants.DEFAULT_WRITE_POLICY, asKeyForTimeSeriesIndexes(timeSeriesName),
+            Record indexListRecord = asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                     MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY));
             if(indexListRecord != null) {
                 List<Long> timestampList = (List<Long>) indexListRecord.getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
@@ -317,7 +359,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
         Key[] keys = getKeysForQuery(timeSeriesName,startTime,endTime);
-        Record[] timeSeriesBlocks = asClient.get(null,keys,Constants.TIME_SERIES_BIN_NAME);
+        Record[] timeSeriesBlocks = asClient.get(new BatchPolicy(readPolicy),keys,Constants.TIME_SERIES_BIN_NAME);
         int recordCount = 0;
         for(int i=0;i< timeSeriesBlocks.length;i++){
             Record currentRecord = timeSeriesBlocks[i];
@@ -353,5 +395,4 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         }
         return dataPoints;
     }
-
 }
