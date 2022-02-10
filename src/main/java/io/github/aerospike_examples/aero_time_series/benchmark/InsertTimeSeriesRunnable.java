@@ -7,20 +7,20 @@ import io.github.aerospike_examples.aero_time_series.Constants;
  * Runnable responsible for generating inserts, to be invoked by the Time Series Benchmarker
  * Adds in the observation interval and variability
  */
-public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
+abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
     // Average time interval in seconds between successive each time series observation
-    protected int observationIntervalSeconds;
+    final int observationIntervalSeconds;
     // In the simulation we introduce variability into the time of observations
     // The actual interval is +/- observationIntervalVariabilityPct and the simulation distributes actual time intervals uniformly across this range
-    protected double observationIntervalVariabilityPct;
+    private final double observationIntervalVariabilityPct;
     // Data points per Aerospike object
-    protected int recordsPerBlock;
+    int recordsPerBlock;
 
 
 
 
     // The simulator is used for generating the time series values
-    protected TimeSeriesSimulator simulator;
+    final TimeSeriesSimulator simulator;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
@@ -31,7 +31,7 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      * @param randomSeed - initialise with a specific seed for deterministic results
      */
-    protected InsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
+    InsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.observationIntervalSeconds = benchmarkClient.averageObservationIntervalSeconds;
         this.observationIntervalVariabilityPct = TimeSeriesBenchmarker.OBSERVATION_INTERVAL_VARIABILITY_PCT;
@@ -41,9 +41,11 @@ public abstract class InsertTimeSeriesRunnable extends TimeSeriesRunnable {
 
     /**
      * Randomly generate the next observation time for a time series observation
-     * @return
+     * Random variation in time interval is +/- observationIntervalVariabilityPct
+     *
+     * @return next observation time
      */
-    protected long nextObservationTime(long lastObservationTime){
+    long nextObservationTime(long lastObservationTime){
         int intervalSamplingGranularity = 1000;
         // Randomly vary the observation interval by +/- observationIntervalVariabilityPct
         // First generate the variability

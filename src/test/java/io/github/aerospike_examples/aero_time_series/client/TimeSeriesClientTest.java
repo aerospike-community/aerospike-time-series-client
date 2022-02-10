@@ -10,8 +10,6 @@ import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
 import io.github.aerospike_examples.aero_time_series.Utilities;
-import io.github.aerospike_examples.aero_time_series.client.DataPoint;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.junit.*;
 
 import java.text.SimpleDateFormat;
@@ -30,7 +28,7 @@ public class TimeSeriesClientTest {
     private static final String TEST_TIME_SERIES_NAME = "TimeSeriesExample";
 
     // Utility variable to control whether teardown occurs. Use when developing tests
-    boolean doTeardown = true;
+    private boolean doTeardown = true;
 
     // Default TimeSeriesClient for tests
     private static TimeSeriesClient defaultTimeSeriesClient(){
@@ -185,25 +183,25 @@ public class TimeSeriesClientTest {
 
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
 
-        Assert.assertEquals(TestUtilities.blockCountForTimeseries(timeSeriesClient,TestConstants.AEROSPIKE_NAMESPACE,TEST_TIME_SERIES_NAME),requiredBlocks);
+        Assert.assertEquals(TestUtilities.blockCountForTimeseries(timeSeriesClient, TEST_TIME_SERIES_NAME),requiredBlocks);
     }
 
     @Test
-    /**
-     * Check correct time series points are retrieved
-     * There are number of cases to consider
-     * i) start time / end time does not coincide with a block start time
-     * ii) start time coincides with a block start time, end time does not
-     * iii) start time does not coincide with a block start time but end time does not
-     * iv) start time coincides with start time for time series, end time does not coincide with a block start time
-     * v) start time precedes start time for time series, end time does not coincide with a block start time
-     * vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
-     * vii end time is coincides with a block start time - get an extra block
-     * viii start time and end time are the same, do not coincide with start of a block
-     * ix start time and end time are the same, coincide with start of a block
-     * x start time and end time are beyond the last historic block
-     *
-     * These are in a separate function (see doCorrectSeriesForTimeRangeCheck) as the same checks are used twice
+    /*
+      Check correct time series points are retrieved
+      There are number of cases to consider
+      i) start time / end time does not coincide with a block start time
+      ii) start time coincides with a block start time, end time does not
+      iii) start time does not coincide with a block start time but end time does not
+      iv) start time coincides with start time for time series, end time does not coincide with a block start time
+      v) start time precedes start time for time series, end time does not coincide with a block start time
+      vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
+      vii end time is coincides with a block start time - get an extra block
+      viii start time and end time are the same, do not coincide with start of a block
+      ix start time and end time are the same, coincide with start of a block
+      x start time and end time are beyond the last historic block
+
+      These are in a separate function (see doCorrectSeriesForTimeRangeCheck) as the same checks are used twice
      */
     public void correctSeriesForTimeRange() throws Exception{
         int entriesPerBlock = 60;
@@ -213,14 +211,14 @@ public class TimeSeriesClientTest {
     }
 
     @Test
-    /**
-     * Check correct time series points are retrieved when race conditions are introduced into the copyBlock process
-     *
-     * The same checks are used as for correctSeriesForTimeRange
-     *
-     * The race condition's introduction can be seen in TimeSeriesClient.copyCurrentDataToHistoricBlock
-     *
-     * It is enabled by
+    /*
+      Check correct time series points are retrieved when race conditions are introduced into the copyBlock process
+
+      The same checks are used as for correctSeriesForTimeRange
+
+      The race condition's introduction can be seen in TimeSeriesClient.copyCurrentDataToHistoricBlock
+
+      It is enabled by
      */
     public void correctSeriesForTimeRangeWithRaceConditions() throws Exception{
         int entriesPerBlock = 60;
@@ -265,19 +263,19 @@ public class TimeSeriesClientTest {
         }
     }
     @Test
-    /**
-     * Check correct blocks are retrieved for query intervals
-     * There are number of cases to consider
-     * i) start time / end time does not coincide with a block start time
-     * ii) start time coincides with a block start time, end time does not
-     * iii) start time does not coincide with a block start time but end time does not
-     * iv) start time coincides with start time for time series, end time does not coincide with a block start time
-     * v) start time precedes start time for time series, end time does not coincide with a block start time
-     * vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
-     * vii end time is coincides with a block start time - get an extra block
-     * viii start time and end time are the same, do not coincide with start of a block
-     * ix start time and end time are the same, coincide with start of a block
-     * x start time and end time are beyond the last historic block
+    /*
+      Check correct blocks are retrieved for query intervals
+      There are number of cases to consider
+      i) start time / end time does not coincide with a block start time
+      ii) start time coincides with a block start time, end time does not
+      iii) start time does not coincide with a block start time but end time does not
+      iv) start time coincides with start time for time series, end time does not coincide with a block start time
+      v) start time precedes start time for time series, end time does not coincide with a block start time
+      vi) start time is after start time for series, but does not coincide with a block boundary. End time is beyond last recorded time for series
+      vii end time is coincides with a block start time - get an extra block
+      viii start time and end time are the same, do not coincide with start of a block
+      ix start time and end time are the same, coincide with start of a block
+      x start time and end time are beyond the last historic block
      */
     public void correctBlocksForTimeRange() throws Exception{
         int entriesPerBlock = 60;
@@ -299,10 +297,10 @@ public class TimeSeriesClientTest {
     }
 
     @Test
-    /**
-     * Check that our query functions do what they are supposed to do
-     * i.e. Correct average, count, max, min,vol
-     * We do this by doing the calculations directly, and comparing them with the api results
+    /*
+      Check that our query functions do what they are supposed to do
+      i.e. Correct average, count, max, min,vol
+      We do this by doing the calculations directly, and comparing them with the api results
      */
     public void checkQueryFunctions() throws Exception{
         int entriesPerBlock = 60;
@@ -346,9 +344,9 @@ public class TimeSeriesClientTest {
     }
 
     @Test
-    /**
-     * Check that our query functions are well behaved when there's zero data
-     * i.e. Correct average, count, max, min,vol
+    /*
+      Check that our query functions are well behaved when there's zero data
+      i.e. Correct average, count, max, min,vol
      */
     public void checkQueryFunctionsBehaveForZeroData() throws Exception {
         int entriesPerBlock = 60;
@@ -358,7 +356,7 @@ public class TimeSeriesClientTest {
         long startTime = getTestBaseDate().getTime();
         long endTime = startTime -1;
         // Raw values - before they're added to the database
-        double[] tsValues = createTimeSeries(TEST_TIME_SERIES_NAME, intervalInSeconds, requiredBlocks * entriesPerBlock, entriesPerBlock);
+        createTimeSeries(TEST_TIME_SERIES_NAME, intervalInSeconds, requiredBlocks * entriesPerBlock, entriesPerBlock);
         // Aggregates, as computed by the API
         double queryAvgValue = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.AVG, new Date(startTime), new Date(endTime));
         double queryCount = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.COUNT, new Date(startTime), new Date(endTime));
@@ -392,16 +390,16 @@ public class TimeSeriesClientTest {
         long[] timestamps = timeSeriesClient.getTimestampsForTimeSeries(TEST_TIME_SERIES_NAME,startTimeAsTimestamp,endTimeAsTimestamp);
         int indexOfLastRecord = timestamps.length - 1;
         if(startTimeOffsetInSeconds <= endTimeOffsetInSeconds) {
-            Assert.assertTrue(timestamps.length == expectedBlocks);
+            Assert.assertEquals(timestamps.length, expectedBlocks);
             Assert.assertTrue(timestamps[0] == startTimeAsTimestamp ||
                     timestamps[0] == getTestBaseDate().getTime() ||
                     (timestamps[1] > startTimeAsTimestamp && timestamps[0] < startTimeAsTimestamp) ||
                     ((timestamps.length ==2 ) && (timestamps[1] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP)));
             Assert.assertTrue(timestamps[indexOfLastRecord] <= endTimeAsTimestamp);
-            Assert.assertTrue((timestamps[indexOfLastRecord] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP) == lastBlockZero);
+            Assert.assertEquals((timestamps[indexOfLastRecord] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP), lastBlockZero);
         }
         else
-            Assert.assertTrue(timestamps.length ==0);
+            Assert.assertEquals(0, timestamps.length);
 
     }
 
@@ -415,8 +413,8 @@ public class TimeSeriesClientTest {
      * @param recordsPerBlock - records per block
      * @param useTestMode - enable code that simulates race conditions when testing
      * @param failurePctForCopyBlock - percentage of 'copy block' calls that fail due to simulated race conditions
-     * @return
-     * @throws Exception
+     * @return time series as a double[]
+     * @throws Exception - put can result in an exception. Not trapping in test code
      */
     private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock,
             boolean useTestMode, double failurePctForCopyBlock) throws Exception{
@@ -444,8 +442,8 @@ public class TimeSeriesClientTest {
      * @param intervalInSeconds - time interval between data points
      * @param iterations - no of data points
      * @param recordsPerBlock - records per block
-     * @return
-     * @throws Exception
+     * @return generated time series as a double[]
+     * @throws Exception - can be thrown by writing to database. Allowed to bubble up in test code
      */
 
     private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock) throws Exception{
@@ -460,10 +458,11 @@ public class TimeSeriesClientTest {
      * @param timeSeriesName - name of the time series
      * @param intervalInSeconds - time interval between data points
      * @param iterations - no of data points
-     * @return
-     * @throws Exception
+     * @return time series as a double[]
+     * @throws Exception - writing to database can throw an Exception. Not trapped in test code
      */
-    private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations) throws Exception{
+    @SuppressWarnings("SameParameterValue")
+    private double[] createTimeSeries(String timeSeriesName, int intervalInSeconds, int iterations) throws Exception{
         return createTimeSeries(timeSeriesName, intervalInSeconds, iterations, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 
@@ -514,7 +513,7 @@ public class TimeSeriesClientTest {
 
         checkCorrectBlocksForTimeRange(0, 11,4,true);
         checkCorrectSeriesForTimeRange(0,11,11);
-        Assert.assertTrue(checkCurrentRecordCount(timeSeriesClient,TEST_TIME_SERIES_NAME) == 2);
+        Assert.assertEquals(2, checkCurrentRecordCount(timeSeriesClient, TEST_TIME_SERIES_NAME));
 
         // Test 2
         startTime += 10 * Constants.MILLISECONDS_IN_SECOND;
@@ -523,12 +522,13 @@ public class TimeSeriesClientTest {
 
         checkCorrectBlocksForTimeRange(0, 12,5,true);
         checkCorrectSeriesForTimeRange(0,12,12);
-        Assert.assertTrue(checkCurrentRecordCount(timeSeriesClient,TEST_TIME_SERIES_NAME) == 0);
+        Assert.assertEquals(0, checkCurrentRecordCount(timeSeriesClient, TEST_TIME_SERIES_NAME));
 
         // Test 3
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,new DataPoint[0]);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private static int checkCurrentRecordCount(TimeSeriesClient timeSeriesClient, String timeSeriesName){
         int currentRecordCount = 0;
         Record r = timeSeriesClient.asClient.operate(new WritePolicy(),timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName),
@@ -536,7 +536,8 @@ public class TimeSeriesClientTest {
         if(r != null) currentRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
         return currentRecordCount;
     }
-    private DataPoint[] createDataPoints(long startTime,int intervalInSeconds,int iterations) {
+    @SuppressWarnings("SameParameterValue")
+    private DataPoint[] createDataPoints(long startTime, int intervalInSeconds, int iterations) {
         DataPoint[] dataPoints = new DataPoint[iterations];
         for(int i=0;i<iterations;i++){
             long timestamp  = startTime + i * intervalInSeconds * Constants.MILLISECONDS_IN_SECOND;

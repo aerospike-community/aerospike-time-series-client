@@ -7,11 +7,6 @@ Small
 
 Can I remove the benchmarker code when publishing to maven
 
-Waiting
--------
-
-Find out about 'linting' i.e. looking for un-used methods, incomplete documentation 
-
 Phase 2
 -------
 
@@ -57,6 +52,7 @@ Put in optimistic locking for creation of time series blocks to avoid concurrenc
 Check defaults in usage - checked - correctly documented defaults & whether options are required
 End times as part of the metadata - might simplify things?
 Refactor packages
+Find out about 'linting' i.e. looking for un-used methods, incomplete documentation 
 
 Notes
 =====

@@ -14,6 +14,7 @@ import org.apache.commons.cli.*;
 public class TimeSeriesBenchmarker {
 
     // Simulation Defaults
+    @SuppressWarnings("WeakerAccess")
     public static final int DEFAULT_TIME_SERIES_NAME_LENGTH = 10;
     public static final int DEFAULT_TIME_SERIES_COUNT = 100;
     public static final int DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS = 1;
@@ -60,13 +61,13 @@ public class TimeSeriesBenchmarker {
 
     // Status thread related
     @SuppressWarnings("FieldCanBeLocal")
-    private static int STATUS_UPDATE_PERIOD_SECS = 1;
+    private static final int STATUS_UPDATE_PERIOD_SECS = 1;
     // How frequently do we check to see if a status update is needed
     @SuppressWarnings("FieldCanBeLocal")
-    private static int STATUS_TIMER_CHECK_PERIOD_MS = 50;
+    private static final int STATUS_TIMER_CHECK_PERIOD_MS = 50;
     // How much throughput under-performance is tolerated w/out warning
     @SuppressWarnings("FieldCanBeLocal")
-    private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
+    private static final int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
     public TimeSeriesBenchmarker(String asHost, String asNamespace, String asSet, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
@@ -206,7 +207,7 @@ public class TimeSeriesBenchmarker {
     }
 
     private void outputStatusForRealTimeInserts(){
-        output.println(String.format("Run time :  %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+        output.println(String.format("Run time : %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
                 totalUpdateCount(), (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
         // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
         // And we are beyond the first second (can produce anomalous results )
@@ -223,7 +224,7 @@ public class TimeSeriesBenchmarker {
     private void outputStatusForBatchInserts(){
         long expectedUpdateCount = timeSeriesCount * timeSeriesRangeSeconds / averageObservationIntervalSeconds;
         double pctComplete = 100 * (double) totalUpdateCount() / expectedUpdateCount;
-        output.println(String.format("Run time :  %d seconds, Data point insert count : %d, Effective updates per second : %.3f. Pct complete %.3f%%", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
+        output.println(String.format("Run time : %d seconds, Data point insert count : %d, Effective updates per second : %.3f. Pct complete %.3f%%", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
                 totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs(),pctComplete));
     }
 
@@ -243,12 +244,12 @@ public class TimeSeriesBenchmarker {
      * Compute the simulation duration by looking at the average thread run time
      * Return value is in milliseconds
      * Package level visibility for testing purposes
-     * @return
+     * @return average thread run time in milliseconds
      */
     long averageThreadRunTimeMs(){
         long runTime = 0;
-        for(int i=0;i<benchmarkClientObjects.length;i++){
-            runTime += benchmarkClientObjects[i].runTime();
+        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
+            runTime += benchmarkClientObject.runTime();
         }
         return runTime / benchmarkClientObjects.length;
     }
@@ -257,12 +258,12 @@ public class TimeSeriesBenchmarker {
      * Compute the total number of inserts for the simulation
      * Do this by aggregating inserts per thread
      * Package level visibility for testing purposes*
-     * @return
+     * @return total number of updates
      */
     int totalUpdateCount(){
         int totalUpdateCount = 0;
-        for(int i=0;i<benchmarkClientObjects.length;i++){
-            totalUpdateCount += benchmarkClientObjects[i].getUpdateCount();
+        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
+            totalUpdateCount += benchmarkClientObject.getUpdateCount();
         }
         return totalUpdateCount;
     }
@@ -271,7 +272,7 @@ public class TimeSeriesBenchmarker {
     /**
      * Work out the actual number of updates per second for the simulation - allowing for the acceleration
      * Package level access to allow for testing
-     * @return
+     * @return total expected updates per second
      */
     double expectedUpdatesPerSecond(){
         return (double)accelerationFactor * timeSeriesCount / averageObservationIntervalSeconds;
@@ -279,7 +280,7 @@ public class TimeSeriesBenchmarker {
 
     /**
      * Actual number of updates per time series per second - allowing for the acceleration
-     * @return
+     * @return updates per time series per second
      */
     private double updatesPerTimeSeriesPerSecond(){
         return (double)accelerationFactor / averageObservationIntervalSeconds;

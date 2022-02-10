@@ -11,9 +11,9 @@ import java.util.*;
  * It is possible to 'accelerate' time in order to generate inserts at a faster rate
  */
 class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
-    private int runDurationSeconds;
+    private final int runDurationSeconds;
 
-    private int accelerationFactor;
+    private final int accelerationFactor;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
@@ -23,6 +23,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
      */
+    @SuppressWarnings("SameParameterValue")
     RealTimeInsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
         this(asClient,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
     }
@@ -81,7 +82,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
      * Time may be 'sped up' during our simulation via use of the acceleration factor parameter
      * This function returns the accelerated simulation time represented as a unix epoch, in milliseconds
      *
-     * @return
+     * @return current 'simulation time', factoring in acceleration
      */
     private long getSimulationTime(){
         return startTime + (System.currentTimeMillis() - startTime) * accelerationFactor;

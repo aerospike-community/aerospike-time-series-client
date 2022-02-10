@@ -6,10 +6,10 @@ package io.github.aerospike_examples.aero_time_series;
 public class Utilities {
     /**
      * Utility function to test a value is within tolerance
-     * @param expectedValue
-     * @param actualValue
-     * @param tolerancePct
-     * @return
+     * @param expectedValue expected value
+     * @param actualValue actual value
+     * @param tolerancePct acceptable tolerance as a percentage
+     * @return boolean indicating whether value is within tolerance
      */
     public static boolean valueInTolerance(double expectedValue, double actualValue,double tolerancePct){
         return Math.abs((actualValue - expectedValue)/expectedValue) < tolerancePct / 100;

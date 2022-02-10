@@ -22,18 +22,20 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         COUNT("count","number of values in the series"),
         VOL("vol","volatility of values in series");
 
-        private String shortName;
-        private String description;
+        private final String shortName;
+        private final String description;
 
         QueryOperation(String shortName,String description) {
             this.shortName = shortName;
             this.description = description;
         }
 
+        @SuppressWarnings("unused")
         public String getShortName() {
             return shortName;
         }
 
+        @SuppressWarnings("unused")
         public String getDescription(){
             return description;
         }
@@ -50,12 +52,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      Eventually when the code runs all the way through, normal operation will be restored
      In the meantime, we have duplicate resolution built into the 'get' calls
     */
+    @SuppressWarnings("WeakerAccess")
     public static final int RETRY_COUNT_FOR_FAILED_BLOCK_COPY = 5;
 
     // Aerospike Client required
-    AerospikeClient asClient;
+    final AerospikeClient asClient;
     // Define namespace used as part of initialisation
-    String asNamespace;
+    private final String asNamespace;
 
     // Set for time series
     private String timeSeriesSet = Constants.DEFAULT_TIME_SERIES_SET;
@@ -65,7 +68,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private WritePolicy writePolicy = new WritePolicy();
 
     // Max entry count per data block
-    int maxBlockEntryCount = Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK;
+    private int maxBlockEntryCount = Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK;
 
 
     // Map policy for inserts - these are not modifiable
@@ -74,6 +77,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
     static final long CURRENT_RECORD_TIMESTAMP = 0;
+    @SuppressWarnings("WeakerAccess")
     public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
 
     // Package level visible parameters allowing testing of correct handling of race conditions
@@ -82,10 +86,10 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * TimeSeriesClient constructor. Provide an Aerospike Client object, tne namespace, the name of the set to use, max number of data points per Aerospike object
-     * @param asClient
-     * @param asNamespace
-     * @param timeSeriesSet
-     * @param maxBlockEntryCount
+     * @param asClient Aerospike Client
+     * @param asNamespace Aerospike nammespace
+     * @param timeSeriesSet Set to store time series data in
+     * @param maxBlockEntryCount max data points per Aerospike object
      */
     public TimeSeriesClient(AerospikeClient asClient, String asNamespace, String timeSeriesSet, int maxBlockEntryCount) {
         this.asClient = asClient;
@@ -97,8 +101,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * TimeSeriesClient constructor. Provide an Aerospike Client object and tne namespace
      * Max data points per object gets set to the default value.
-     * @param asClient
-     * @param asNamespace
+     * @param asClient Aerospike Client
+     * @param asNamespace Aerospike nammespace
      */
     public TimeSeriesClient(AerospikeClient asClient, String asNamespace) {
         this(asClient,asNamespace,Constants.DEFAULT_TIME_SERIES_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
@@ -109,7 +113,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     /**
      * Read policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
-     * @return
+     * @return read policy object
      */
     public Policy getReadPolicy() {
         return readPolicy;
@@ -117,31 +121,37 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * Setter method for read policy object
-     * @param readPolicy
+     * @param readPolicy - Aerospike read policy to be used when writing to Aerospike database
+     * See https://docs.aerospike.com/guide/policies for more details
      */
+    @SuppressWarnings("unused")
     public void setReadPolicy(Policy readPolicy) {
         this.readPolicy = readPolicy;
     }
 
     /**
      * Write policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
-     * @return
+     * @return Aerospike Write Policy object
      */
+    @SuppressWarnings("unused")
     public WritePolicy getWritePolicy() {
         return writePolicy;
     }
 
     /**
      * Setter method for write policy object
-     * @param writePolicy
+     *
+     * @param writePolicy Aerospike write policy to be used when writing to Aerospike database
+     * See https://docs.aerospike.com/guide/policies for more details
      */
+    @SuppressWarnings("unused")
     public void setWritePolicy(WritePolicy writePolicy) {
         this.writePolicy = writePolicy;
     }
 
     /**
-     * Setter method for time series set
-     * @return
+     * Getter method for time series set
+     * @return time series set name
      */
     public String getTimeSeriesSet() {
         return timeSeriesSet;
@@ -149,13 +159,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * Getter method for Aerospike Client
-     * @return
+     * @return Aerospike Client object
      */
     public AerospikeClient getAsClient(){ return asClient;}
 
     /**
      * Getter method for Aerospike Namespace
-     * @return
+     * @return Aerospike namespace
      */
     public String getAsNamespace(){ return asNamespace;}
 
@@ -166,8 +176,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * <p>
      * If Max Values per block is exceeded, save block under name TimeSeries-StartTime and remove 'current' block
      *
-     * @param timeSeriesName
-     * @param dataPoint
+     * @param timeSeriesName - time series name to write to
+     * @param dataPoint - data point to write
      */
     public void put(String timeSeriesName, DataPoint dataPoint) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
@@ -192,12 +202,12 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * Private method to create the operations needed to insert the metadata for a time series block
      * Breaking out as a separate method as we use in more than one place
-     * @param timeSeriesName
-     * @param timestamp
-     * @param maxEntryCount
-     * @return
+     * @param timeSeriesName - time series name
+     * @param startTimestamp - timestamp
+     * @param maxEntryCount - max entry count
+     * @return the operations required to build the metadata
      */
-    private Operation[] opsForMetadataCreation(String timeSeriesName,long timestamp,long maxEntryCount){
+    private Operation[] opsForMetadataCreation(String timeSeriesName,long startTimestamp,long maxEntryCount){
         // createOnlyMapPolicy ensures we are not over-writing the start time for the block
         Operation[] opsForMetadataCreation = new Operation[3];
         // Store time series name at time of creation
@@ -205,7 +215,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.TIME_SERIES_NAME_FIELD_NAME), new Value.StringValue(timeSeriesName));
         // Start time for block
         opsForMetadataCreation[1] =
-            MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.START_TIME_FIELD_NAME), new Value.LongValue(timestamp));
+            MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.START_TIME_FIELD_NAME), new Value.LongValue(startTimestamp));
         // Max entries for block
         opsForMetadataCreation[2] =
             MapOperation.put(createOnlyMapPolicy, Constants.METADATA_BIN_NAME, new Value.StringValue(Constants.MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME), new Value.LongValue(maxEntryCount));
@@ -215,7 +225,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * Take current block for timeSeriesName and copy it to a historic block
      * Remove the current block when done
      *
-     * @param timeSeriesName
+     * @param timeSeriesName - name of series we're processing
      */
     private void copyCurrentDataToHistoricBlock(String timeSeriesName) {
         copyCurrentDataToHistoricBlock(timeSeriesName,RETRY_COUNT_FOR_FAILED_BLOCK_COPY);
@@ -225,8 +235,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * copyCurrentDataToHistoricBlock(String timeSeriesName) will retry a set number of times if there is a failure
      * This is facilitated via the function below. Every time we retry, retryCount is deprecated
      *
-     * @param timeSeriesName
-     * @param retryCount
+     * @param timeSeriesName - name of series we're processing
+     * @param retryCount - number of retries to allow if there is a generation check error - function calls itself recursively to do this
      */
     private void copyCurrentDataToHistoricBlock(String timeSeriesName, int retryCount){
         Record currentRecord = asClient.get(readPolicy, asCurrentKeyForTimeSeries(timeSeriesName));
@@ -325,9 +335,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * Retrieve a specific data point for a named time series
      *
-     * @param timeSeriesName
-     * @param dateTime
-     * @return
+     * @param timeSeriesName name of relevant series
+     * @param dateTime timestamp for point we want
+     * @return data point if found
      */
     public DataPoint getPoint(String timeSeriesName, Date dateTime) {
         DataPoint[] dataPointArray = getPoints(timeSeriesName, dateTime, dateTime);
@@ -341,9 +351,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * Retrieve all time series points between two given date / times (inclusive)
      *
-     * @param timeSeriesName
-     * @param fromDateTime
-     * @param toDateTime
+     * @param timeSeriesName - name of time series
+     * @param fromDateTime - start time for required range
+     * @param toDateTime - end time for required range
      * @return array of DataPoint objects
      */
     public DataPoint[] getPoints(String timeSeriesName, Date fromDateTime, Date toDateTime) {
@@ -354,29 +364,30 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * Aerospike Key for a given time series name
      * Package level visibility to allow testing
      *
-     * @param timeSeriesName
-     * @return
+     * @param timeSeriesName name of time series
+     * @return Aerospike Key for current block for this time series
      */
     Key asCurrentKeyForTimeSeries(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesSet, timeSeriesName);
     }
 
     /**
-     * Aerospike Key for a given time series name
+     * Aerospike Key for a given block for a given time series
      *
-     * @param timeSeriesName
-     * @return
+     * @param timeSeriesName - name of time series
+     * @param startTimestampForBlock - start timestamp for block
+     * @return Aerospike Key for required block
      */
-    private Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long timestamp) {
-        String historicBlockKey = String.format("%s-%d", timeSeriesName, timestamp);
+    private Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long startTimestampForBlock) {
+        String historicBlockKey = String.format("%s-%d", timeSeriesName, startTimestampForBlock);
         return new Key(asNamespace, timeSeriesSet, historicBlockKey);
     }
 
     /**
      * Aerospike Index Key name for a given time series name
      *
-     * @param timeSeriesName
-     * @return
+     * @param timeSeriesName - time series in question
+     * @return - Aerospike Key to index block for that time series
      */
     private Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesIndexSetName(), timeSeriesName);
@@ -386,8 +397,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * Each time series will have a number of Aerospike records associated with it
      * We keep a record of these to make data retrieval efficient
      *
-     * @param timeSeriesName
-     * @param startTime
+     * @param timeSeriesName - name of time series we are updating index for
+     * @param startTime - start time of the block we're adding to the index
      */
     private void addTimeSeriesIndexRecord(String timeSeriesName, long startTime) {
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
@@ -403,10 +414,11 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * Internal method to calculate the start times of the blocks we need to retrieve for time range represented by
      * timestamps startTime and endTime
-     * @param timeSeriesName
-     * @param startTime
-     * @param endTime
-     * @return
+     *
+     * @param timeSeriesName - name of time series we are getting block start times for
+     * @param startTime - start time of range we're interested in
+     * @param endTime - end time of range we're interested in
+     * @return long[] containing the timestamps
      */
     /*
         Algorithm is, to find first block, go forward until we find the first start time after startTime then go back one
@@ -445,7 +457,16 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             return new long[0];
     }
 
-    Key[] getKeysForQuery(String timeSeriesName, long startTime, long endTime) {
+    /**
+     * Get the Aerospike Keys we need for the data for timeSeriesName between startTime and endTime
+     * where this represents milliseconds since the epoch
+     *
+     * @param timeSeriesName time series name
+     * @param startTime start time as long
+     * @param endTime end time as long
+     * @return Aerospike Key[]
+     */
+    private Key[] getKeysForQuery(String timeSeriesName, long startTime, long endTime) {
         long[] startTimesForBlocks = getTimestampsForTimeSeries(timeSeriesName, startTime, endTime);
         Key[] keysForQuery = new Key[startTimesForBlocks.length];
         for (int i = 0; i < startTimesForBlocks.length - 1; i++)
@@ -459,14 +480,15 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         }
         return keysForQuery;
     }
+
     /**
      * Internal method - retrieve time series data points with start and end time expressed
      * as unix epochs (seconds since 1st Jan 1970) multiplied by required resolution (10^Constants.TIMESTAMP_DECIMAL_PLACES_PER_SECOND)
      *
-     * @param timeSeriesName
-     * @param startTime
-     * @param endTime
-     * @return
+     * @param timeSeriesName name of time series we're retrieving points fpr
+     * @param startTime start time of required range
+     * @param endTime end time of required range
+     * @return DataPoint[]
      */
     private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
         Key[] keys = getKeysForQuery(timeSeriesName,startTime,endTime);
@@ -495,20 +517,19 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // index is used to track where we are when adding to the returned array
         int index = 0;
 
-        for(int i=0;i< timeSeriesBlocks.length;i++) {
+        for (Record currentRecord : timeSeriesBlocks) {
             // Null record is a possibility if we have just made the current block a historic block
-            Record currentRecord = timeSeriesBlocks[i];
-            if(currentRecord != null) {
+            if (currentRecord != null) {
                 @SuppressWarnings("unchecked") // Can assume below casting
-                Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
+                        Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
                 List<Long> sortedList = new ArrayList<>(timeSeries.keySet());
                 Collections.sort(sortedList);
-                for (int j = 0; j < sortedList.size(); j++) {
-                    long timestamp = sortedList.get(j);
+                for (Long aSortedList : sortedList) {
+                    long timestamp = aSortedList;
                     if ((startTime <= timestamp) && (timestamp <= endTime)) {
                         // Only add one point per timestamp to the array returned
                         // Check below makes sure this happens
-                        if(uniqueTimestampMap.get(timestamp) != null) {
+                        if (uniqueTimestampMap.get(timestamp) != null) {
                             dataPoints[index] = new DataPoint(timestamp, timeSeries.get(timestamp));
                             uniqueTimestampMap.remove(timestamp);
                             index++;
@@ -522,11 +543,11 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * Run a query vs a particular time series range. Query types are as per the enum QueryOperation
-     * @param timeSeriesName
-     * @param operation
-     * @param fromDateTime
-     * @param toDateTime
-     * @return
+     * @param timeSeriesName - time series to run query against
+     * @param operation - operation to apply to query e.g. avg, vol, max, min
+     * @param fromDateTime - start time for required time series range
+     * @param toDateTime - end time for required time series range
+     * @return result of the query as a double
      */
     public double runQuery(String timeSeriesName, QueryOperation operation, Date fromDateTime, Date toDateTime) {
         DataPoint[] dataPoints = getPoints(timeSeriesName,fromDateTime, toDateTime);
@@ -565,7 +586,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * We store some 'indexes' to make the time series db work.
      * This gives the name of the set they're stored in
      * It simply suffixes the time series set name with TIME_SERIES_INDEX_SET_SUFFIX
-     * @return
+     * @return the set name for the time series indexes
      */
     public String timeSeriesIndexSetName(){
         return timeSeriesIndexSetName(timeSeriesSet);
@@ -573,8 +594,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     /**
      * Static method allowing inference of the time index set name - useful in a couple of places elsewhere
-     * @param setName
-     * @return
+     * @param setName - the name of the set that stores the time series data
+     * @return - the name of the set to store the indexes in
      */
     public static String timeSeriesIndexSetName(String setName){
         return String.format("%s%s",setName,TIME_SERIES_INDEX_SET_SUFFIX);

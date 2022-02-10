@@ -3,8 +3,8 @@ package io.github.aerospike_examples.aero_time_series.client;
 import java.util.Date;
 
 public class DataPoint {
-    private long timestamp;
-    private double value;
+    private final long timestamp;
+    private final double value;
 
     public DataPoint(long timestamp,double value){
         this.timestamp = timestamp;

@@ -7,7 +7,7 @@ import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import java.util.*;
 
 class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
-    private long requiredTimeSeriesRangeSeconds;
+    private final long requiredTimeSeriesRangeSeconds;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us

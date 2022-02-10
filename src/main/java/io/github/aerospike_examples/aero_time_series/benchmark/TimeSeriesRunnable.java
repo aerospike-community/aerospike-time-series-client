@@ -10,24 +10,24 @@ import java.util.Random;
  * Generalised Runnable to be invoked by the Time Series Benchmarker
  * At this level, contains the data the Time Series Benchmarker will need to collect
  */
-public abstract class TimeSeriesRunnable implements Runnable{
-    protected int timeSeriesCountPerObject;
+abstract class TimeSeriesRunnable implements Runnable{
+    final int timeSeriesCountPerObject;
 
     // isRunning indicates the simulation is active
     // Set to true at initialisation time. Set to false when finished
-    protected boolean isRunning = true;
+    boolean isRunning = true;
     // Has the simulation finished (allows us to distinguish between start and end)
-    protected boolean isFinished = false;
+    boolean isFinished = false;
     // How many inserts have been done by this thread
-    protected int updateCount = 0;
+    int updateCount = 0;
     // When did the thread start - to avoid race conditions initialise
-    protected long startTime = System.currentTimeMillis();
+    long startTime = System.currentTimeMillis();
     // Randomness generation
-    protected Random random;
+    final Random random;
     // Time Series Client object
-    protected TimeSeriesClient timeSeriesClient;
+    final TimeSeriesClient timeSeriesClient;
 
-    protected int timeSeriesNameLength;
+    private final int timeSeriesNameLength;
 
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
@@ -45,7 +45,7 @@ public abstract class TimeSeriesRunnable implements Runnable{
     }
     /**
      * Package level access to 'isRunning' for use by the benchmark client
-     * @return
+     * @return boolean isRunning parameter
      */
     boolean isRunning() {
         return isRunning;
@@ -53,7 +53,7 @@ public abstract class TimeSeriesRunnable implements Runnable{
 
     /**
      * Package level access to the actual run time of the thread, for use by the benchmark client
-     * @return
+     * @return runTime of thread so far, in milliseconds
      */
     long runTime(){
         return (isFinished || isRunning()) ? System.currentTimeMillis() - startTime : 0;
@@ -61,7 +61,7 @@ public abstract class TimeSeriesRunnable implements Runnable{
 
     /**
      * Package level access to the update count for the thread, for use by the benchmark client
-     * @return
+     * @return update count for thread
      */
     public int getUpdateCount() {
         return updateCount;
@@ -80,7 +80,12 @@ public abstract class TimeSeriesRunnable implements Runnable{
         return String.valueOf(timeSeriesName);
     }
 
-    public double initTimeSeriesValue(){
+    /**
+     * Initialise the time series value
+     * It will be randomly somewhere between the min and max values below
+     * @return initial time series value
+     */
+    double initTimeSeriesValue(){
         double TIME_SERIES_MIN_START_VALUE = 10.0;
         double TIME_SERIES_MAX_START_VALUE = 100.0;
         return TIME_SERIES_MIN_START_VALUE + random.nextDouble() * (TIME_SERIES_MAX_START_VALUE - TIME_SERIES_MIN_START_VALUE);

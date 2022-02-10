@@ -46,7 +46,7 @@ public class OptionsHelper {
 
     // Regex time strings need to match to
     // Package visibility so test classes can use
-    static Pattern regexForTimeStrings = Pattern.compile("^\\d+(Y|D|H|M|S)*$");
+    private static final Pattern regexForTimeStrings = Pattern.compile("^\\d+[YDHMS]*$");
 
     /**
      * Command line options for Main class
@@ -106,7 +106,7 @@ public class OptionsHelper {
     /**
      * Command line options for real time insert mode
      * Allows us to check flags when this mode is used
-     * @return
+     * @return Options object
      */
     static Options cmdLineOptionsForRealTimeInsert(){
         Options options = cmdLineOptions();
@@ -118,7 +118,7 @@ public class OptionsHelper {
     /**
      * Command line options for batch insert mode
      * Allows us to check flags when this mode is used
-     * @return
+     * @return Options object
      */
 
     static Options cmdLineOptionsForBatchInsert(){
@@ -129,12 +129,7 @@ public class OptionsHelper {
 
     /**
      * Get default value for command line flags
-     * @param flag
-     * @return default value for flag
-     */
-    /**
-     * Get default value for command line flags
-     * @param flag
+     * @param flag flag identifier
      * @return default value for flag
      */
     private static String getDefaultValue(String flag) {
@@ -162,9 +157,9 @@ public class OptionsHelper {
     /**
      * Check type of supplied command line values
      * Throw an exception if there is a problem
-     * @param flag
-     * @param value
-     * @throws Utilities.ParseException
+     * @param flag flag indicating which parameter option we're checking
+     * @param value value we're checking
+     * @throws Utilities.ParseException if value cannot be parsed as expected
      */
     private static void checkCommandLineArgumentType(String flag,String value) throws Utilities.ParseException{
         switch(flag){
@@ -199,8 +194,8 @@ public class OptionsHelper {
 
     /**
      * Get option for optionFlag from a command line object, returning the default value if applicable
-     * @param cmd
-     * @param optionFlag
+     * @param cmd CommandLine object has command line arguments as called
+     * @param optionFlag option value is required for
      * @return value for option flag
      */
     static String getOptionUsingDefaults(CommandLine cmd, String optionFlag) throws Utilities.ParseException{
@@ -211,9 +206,9 @@ public class OptionsHelper {
 
     /**
      * Return a CommandLine object given String[] args
-     * @param args
+     * @param args String[] as would be passed at cmd line
      * @return CommandLine object
-     * @throws ParseException
+     * @throws ParseException if options cannot be parsed
      */
     static CommandLine getArguments(String[] args) throws ParseException, Utilities.ParseException {
         CommandLineParser parser = new DefaultParser();
@@ -251,9 +246,9 @@ public class OptionsHelper {
      * Assume seconds if no unit provided
      * Throws an error if the timeString is not in the expected format i.e. an integer or integer followed by one of S,M,H,D,Y
      *
-     * @param timeString
-     * @return
-     * @throws Utilities.ParseException
+     * @param timeString time represented as a string
+     * @return time in seconds
+     * @throws Utilities.ParseException if timeString cannot be parsed
      */
     static int convertTimeStringToSeconds(String timeString) throws Utilities.ParseException{
         int timePart;
@@ -291,7 +286,7 @@ public class OptionsHelper {
      * number followed by one of Y,D,H,M,S or no suffix
      * If the format is not followed, an exception will be thrown
      *
-     * @param timeString
+     * @param timeString string to check
      */
     private static void checkTimeString(String timeString) throws Utilities.ParseException{
         Matcher matcher = regexForTimeStrings.matcher(timeString);

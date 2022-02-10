@@ -16,7 +16,7 @@ import java.util.Random;
 public class TestUtilities {
     /**
      * Truncate time series data where the time series set name is as per the argument
-     * @param timeSeriesSetName
+     * @param timeSeriesSetName - name of the set time series is being stored in
      */
     public static void removeTimeSeriesTestDataForSet(String timeSeriesSetName){
         AerospikeClient asClient = new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT);
@@ -26,7 +26,13 @@ public class TestUtilities {
 
     }
 
-    public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String asNamespace,String timeSeriesName) {
+    /**
+     * Count the number of blocks for a time series - used by test functions
+     * @param timeSeriesClient - time series client
+     * @param timeSeriesName - name of time series
+     * @return number of blocks
+     */
+    public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String timeSeriesName) {
         Statement stmt = new Statement();
         stmt.setNamespace(timeSeriesClient.getAsNamespace());
         stmt.setSetName(timeSeriesClient.getTimeSeriesSet());
@@ -41,13 +47,13 @@ public class TestUtilities {
 
     /**
      * Utility constructor where we use the default drift and volatility values
-     * @param asHost
-     * @param asNamespace
-     * @param observationIntervalSeconds
-     * @param runDurationSeconds
-     * @param accelerationFactor
-     * @param threadCount
-     * @param timeSeriesCount
+     * @param asHost - seed host for Aerospike database
+     * @param asNamespace - namespace to write data into
+     * @param observationIntervalSeconds - time between observations
+     * @param runDurationSeconds - total run time
+     * @param accelerationFactor - acceleration factor - 'speed up' time
+     * @param threadCount - number of threads
+     * @param timeSeriesCount - number of time series to generate
      */
     public static TimeSeriesBenchmarker realTimeInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor,
                                                            int threadCount, int timeSeriesCount){
@@ -58,13 +64,13 @@ public class TestUtilities {
 
     /**
      * Convenience factory method to allow initiation of a Benchmarker object for test purposes
-     * @param asHost
-     * @param asNamespace
-     * @param observationIntervalSeconds
-     * @param timeSeriesRangeSeconds
-     * @param threadCount
-     * @param timeSeriesCount
-     * @return
+     * @param asHost - seed host for Aerospike database
+     * @param asNamespace - namespace to write data into
+     * @param observationIntervalSeconds - time between observations
+     * @param timeSeriesRangeSeconds - period time series generation should cover in seconds
+     * @param threadCount - number of threads
+     * @param timeSeriesCount - number of time series to generate
+     * @return Benchmarker object configured for batch inserts
      */
     public static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, long timeSeriesRangeSeconds,
                                                         int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){

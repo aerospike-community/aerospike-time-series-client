@@ -8,10 +8,11 @@ import org.junit.Test;
 
 public class TimeSeriesSimulatorTest {
     private static final int SECONDS_IN_DAY = 24 * 60 * 60;
-    @Test
+
     /**
-     * Check our simulator returns random values with the expected drift and variance, within a certain tolerance
+      Check our simulator returns random values with the expected drift and variance, within a certain tolerance
      */
+    @Test
     public void checkMeanAndVarianceObserved(){
         int startingValue = 12;
         //double dailyDriftPct = 10;
