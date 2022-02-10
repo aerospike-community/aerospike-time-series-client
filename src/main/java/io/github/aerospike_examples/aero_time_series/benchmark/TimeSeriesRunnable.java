@@ -74,7 +74,7 @@ public abstract class TimeSeriesRunnable implements Runnable{
      * @return String:timeSeriesName
      */
     String randomTimeSeriesName(){
-        char[] availableCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+        @SuppressWarnings("SpellCheckingInspection") char[] availableCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         char[] timeSeriesName = new char[timeSeriesNameLength];
         for(int i=0;i<timeSeriesNameLength;i++) timeSeriesName[i] = availableCharacters[random.nextInt(availableCharacters.length)];
         return String.valueOf(timeSeriesName);

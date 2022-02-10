@@ -9,7 +9,6 @@ import com.aerospike.client.policy.WritePolicy;
 import io.github.aerospike_examples.aero_time_series.Constants;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TimeSeriesClient implements ITimeSeriesClient {
     /**
@@ -38,11 +37,12 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         public String getDescription(){
             return description;
         }
-    };
+    }
+
     /*
      The code for 'archiving' blocks of data means no data will ever be lost - the current block will only be deleted after
      1) it has been copied
-     2) the original bleock has not changed in the meantime
+     2) the original block has not changed in the meantime
      If we detect 2) ( & note that 1) must have occurred before we get to check 2) )
      Then we retry a set number of times - governed by the parameter below
      Note that
@@ -76,7 +76,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     static final long CURRENT_RECORD_TIMESTAMP = 0;
     public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
 
-    // Package level visible paramaters allowing testing of correct handling of race conditions
+    // Package level visible parameters allowing testing of correct handling of race conditions
     boolean testMode = false;
     double failurePctRateForCopyBlock =0;
 
@@ -105,7 +105,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     }
 
     /*
-        Getters / setters for policy objets
+        Getters / setters for policy objects
      */
     /**
      * Read policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
@@ -230,14 +230,17 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     private void copyCurrentDataToHistoricBlock(String timeSeriesName, int retryCount){
         Record currentRecord = asClient.get(readPolicy, asCurrentKeyForTimeSeries(timeSeriesName));
+        // Need to copy the current record into a historic block
         Bin[] bins = new Bin[2];
-        // Copying of time series bin requires slightly convoluted approach below
+        // First the time series bin
         bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
-                ((Map<Long,Double>)currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
+                currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME),
                 MapOrder.KEY_ORDERED);
-        // Now set up the metadata - add in the timestamp of the most recent observation
+        // Now the metadata - add in the timestamp of the most recent observation
         Map metadata = currentRecord.getMap(Constants.METADATA_BIN_NAME);
+        @SuppressWarnings("unchecked") // Should be able to assume the below casting works
         long lastTimestamp = Collections.max(((Map<Long,Double>)currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME)).keySet());
+        //noinspection unchecked
         metadata.put(Constants.END_TIME_FIELD_NAME,lastTimestamp);
         bins[1] = new Bin(Constants.METADATA_BIN_NAME,metadata);
 
@@ -300,13 +303,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             int numberOfRecordsToLoad = Math.min(dataPoints.length - lastRecordLoaded,maxBlockEntryCount - existingRecordCount);
             // Insert metadata - may not be needed, but will be ignored if it already exists
             Operation[] metadataOps = opsForMetadataCreation(timeSeriesName,dataPoints[lastRecordLoaded].getTimestamp(),maxBlockEntryCount);
-            // Batch inserting datapoints is done via an array of operations
+            // Batch inserting data points is done via an array of operations
             Operation[] ops  = new Operation[numberOfRecordsToLoad + metadataOps.length];
             // Construct the array of operations
             for(int i=lastRecordLoaded;i<lastRecordLoaded+numberOfRecordsToLoad;i++) ops[i - lastRecordLoaded] = MapOperation.put(insertMapPolicy,Constants.TIME_SERIES_BIN_NAME,
                     Value.get(dataPoints[i].getTimestamp()),Value.get(dataPoints[i].getValue()));
             // and add the metadata
-            for(int i=0;i<metadataOps.length;i++) ops[numberOfRecordsToLoad + i] = metadataOps[i];
+            System.arraycopy(metadataOps, 0, ops, numberOfRecordsToLoad, metadataOps.length);
             // Put to the database
             asClient.operate(writePolicy,asCurrentKeyForTimeSeries(timeSeriesName),ops);
             // If the block is full, 'archive' it
@@ -341,7 +344,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName
      * @param fromDateTime
      * @param toDateTime
-     * @return Datapoints - array of DataPoint objects
+     * @return array of DataPoint objects
      */
     public DataPoint[] getPoints(String timeSeriesName, Date fromDateTime, Date toDateTime) {
         return getPoints(timeSeriesName, fromDateTime.getTime(), toDateTime.getTime());
@@ -409,13 +412,14 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         Algorithm is, to find first block, go forward until we find the first start time after startTime then go back one
         and for endTime, go back until we find the first start time that is after the end time
 
-        Doesn't work if endTime / startTime are i   nverted so require specific logic for that
+        Doesn't work if endTime / startTime are inverted so require specific logic for that
      */
     long[] getTimestampsForTimeSeries(String timeSeriesName,long startTime,long endTime){
         if(endTime >= startTime) {
             Record indexListRecord = asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                     MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY));
             if(indexListRecord != null) {
+                @SuppressWarnings("unchecked")  // Can assume below casting works
                 List<Long> timestampList = (List<Long>) indexListRecord.getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
                 int indexOfFirstTimestamp = 0;
                 int indexOfLastTimestamp = timestampList.size() - 1;
@@ -470,18 +474,14 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         // uniqueTimestampMap is used to count the unique timestamps
         Map<Long,Integer> uniqueTimestampMap = new HashMap<>();
         // First we need to count timestamps
-        for(int i=0;i< timeSeriesBlocks.length;i++){
-            Record currentRecord = timeSeriesBlocks[i];
+        for (Record currentRecord : timeSeriesBlocks) {
             // Null record is a possibility if we have just made the current block a historic block
-            if(currentRecord != null) {
-                Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
-                Iterator<Long> timestamps = timeSeries.keySet().iterator();
-                while (timestamps.hasNext()) {
-                    long timestamp = timestamps.next();
+            if (currentRecord != null) {
+                @SuppressWarnings("unchecked") // Can assume below casting
+                        Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
+                for (Long timestamp : timeSeries.keySet()) {
                     if (timestamp >= startTime && timestamp <= endTime)
-                        if(uniqueTimestampMap.get(timestamp) == null) {
-                            uniqueTimestampMap.put(timestamp,1);
-                        }
+                        uniqueTimestampMap.putIfAbsent(timestamp, 1);
                 }
             }
         }
@@ -499,6 +499,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             // Null record is a possibility if we have just made the current block a historic block
             Record currentRecord = timeSeriesBlocks[i];
             if(currentRecord != null) {
+                @SuppressWarnings("unchecked") // Can assume below casting
                 Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
                 List<Long> sortedList = new ArrayList<>(timeSeries.keySet());
                 Collections.sort(sortedList);

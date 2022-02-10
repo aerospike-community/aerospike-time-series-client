@@ -10,6 +10,7 @@ import java.util.Random;
  * i.e. the fractional differences have a linear drift rate & a noise factor that correctly scales with time
  */
 public class TimeSeriesSimulator {
+    @SuppressWarnings("FieldCanBeLocal")
     private static int SECONDS_IN_A_DAY = 24 * 60 * 60;
     private double dailyDriftPct;
     private double dailyVolatilityPct;

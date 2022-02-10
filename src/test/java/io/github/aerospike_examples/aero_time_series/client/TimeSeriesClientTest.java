@@ -50,6 +50,7 @@ public class TimeSeriesClientTest {
             task.waitTillComplete();
         }
         catch (AerospikeException e){
+            //noinspection StatementWithEmptyBody
             if(e.getResultCode() == ResultCode.INDEX_ALREADY_EXISTS){
                 // Do nothing
             }
@@ -67,7 +68,7 @@ public class TimeSeriesClientTest {
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,new DataPoint(getTestBaseDate(),tsValue));
         // Test with the getPoints call
         DataPoint[] dataPointArray = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),getTestBaseDate());
-        Assert.assertTrue(dataPointArray.length == 1);
+        Assert.assertEquals(1, dataPointArray.length);
         Assert.assertTrue(dataPointArray[0].equals(new DataPoint(getTestBaseDate(),tsValue)));
 
         // Test with getPoint
@@ -139,7 +140,7 @@ public class TimeSeriesClientTest {
         DataPoint[] dataPoints = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),
                 new Date(getTestBaseDate().getTime() + (dataPointCount/2 - 1) * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND));
         // Check the count is correct
-        Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
+        Assert.assertEquals(dataPoints.length, dataPointCount / 2);
         // and the points are the ones we expect
         for(int i=0;i<dataPointCount/2 ;i++){
             DataPoint shouldBeDataPoint = new DataPoint(
@@ -162,7 +163,7 @@ public class TimeSeriesClientTest {
                 new Date(getTestBaseDate().getTime() + (dataPointCount / 2) * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND),
                 new Date(getTestBaseDate().getTime() + dataPointCount * timeIncrementInSeconds * Constants.MILLISECONDS_IN_SECOND));
         // Check the count is correct
-        Assert.assertTrue(dataPoints.length == dataPointCount / 2 );
+        Assert.assertEquals(dataPoints.length, dataPointCount / 2);
         // and the points are the ones we expect
         for(int i=dataPointCount / 2;i<dataPointCount ;i++){
             DataPoint shouldBeDataPoint = new DataPoint(
@@ -232,6 +233,7 @@ public class TimeSeriesClientTest {
         checkCorrectSeriesForTimeRange(30,90,90-30+1);
         checkCorrectSeriesForTimeRange(60,150,150-60+1);
         checkCorrectSeriesForTimeRange(90,179,179-90+1);
+        //noinspection PointlessArithmeticExpression = deliberate to make it clear where expected count is coming from
         checkCorrectSeriesForTimeRange(0,150,150-0+1);
         checkCorrectSeriesForTimeRange(-100,150,150+1);
         checkCorrectSeriesForTimeRange(90,700,600-90);
@@ -335,10 +337,10 @@ public class TimeSeriesClientTest {
         double foundVol = Math.sqrt((foundSumSq - tsValues.length * Math.pow(foundAvg,2)) / tsValues.length);
 
         // Check that the two sets of aggregates agree
-        Assert.assertTrue(tsValues.length == queryCount);
-        Assert.assertTrue(foundSum / tsValues.length == queryAvgValue);
-        Assert.assertTrue(foundMax == queryMax);
-        Assert.assertTrue(foundMin == queryMin);
+        Assert.assertEquals(tsValues.length, queryCount, 0.0);
+        Assert.assertEquals(foundSum / tsValues.length, queryAvgValue, 0.0);
+        Assert.assertEquals(foundMax, queryMax, 0.0);
+        Assert.assertEquals(foundMin, queryMin, 0.0);
         // Need to compare volatility using a tolerance - rounding makes the values different
         Assert.assertTrue(Utilities.valueInTolerance(queryVol,foundVol,0.001));
     }
@@ -368,7 +370,7 @@ public class TimeSeriesClientTest {
         Assert.assertTrue(Double.isNaN(queryVol));
         Assert.assertTrue(Double.isNaN(queryMax));
         Assert.assertTrue(Double.isNaN(queryMin));
-        Assert.assertTrue(queryCount == 0);
+        Assert.assertEquals(0, queryCount, 0.0);
     }
     /*
         This function to be used in conjunction with correctBlocksForTimeRange only
@@ -505,6 +507,7 @@ public class TimeSeriesClientTest {
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints);
 
         // Test 1
+        //noinspection PointlessArithmeticExpression - making at clear start time addition is 1 second by design
         startTime += 1 * Constants.MILLISECONDS_IN_SECOND;
         dataPoints = createDataPoints(startTime,1,10);
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,dataPoints);

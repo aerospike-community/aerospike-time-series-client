@@ -18,7 +18,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asClient - Aerospike lient object
+     * @param asClient - Aerospike client object
      * @param asNamespace - Aerospike Namespace
      * @param timeSeriesCountPerObject - No of timeseries to generate
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
@@ -60,18 +60,16 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         }
         isRunning = true;
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
-            Iterator<String> timeSeriesNames = nextObservationTimes.keySet().iterator();
-            while(timeSeriesNames.hasNext()){
-                String timeSeriesName = timeSeriesNames.next();
+            for (String timeSeriesName : nextObservationTimes.keySet()) {
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);
-                if(nextObservationTime < getSimulationTime()) {
+                if (nextObservationTime < getSimulationTime()) {
                     updateCount++;
-                    double timeIncrement = (double)(nextObservationTime - lastObservationTimes.get(timeSeriesName))/ Constants.MILLISECONDS_IN_SECOND;
-                    double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName),timeIncrement);
-                    timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(nextObservationTime),observationValue));
-                    lastObservationValues.put(timeSeriesName,observationValue);
-                    lastObservationTimes.put(timeSeriesName,nextObservationTime);
-                    nextObservationTimes.put(timeSeriesName,nextObservationTime(nextObservationTime));
+                    double timeIncrement = (double) (nextObservationTime - lastObservationTimes.get(timeSeriesName)) / Constants.MILLISECONDS_IN_SECOND;
+                    double observationValue = simulator.getNextValue(lastObservationValues.get(timeSeriesName), timeIncrement);
+                    timeSeriesClient.put(timeSeriesName, new DataPoint(new Date(nextObservationTime), observationValue));
+                    lastObservationValues.put(timeSeriesName, observationValue);
+                    lastObservationTimes.put(timeSeriesName, nextObservationTime);
+                    nextObservationTimes.put(timeSeriesName, nextObservationTime(nextObservationTime));
                 }
             }
         }
@@ -80,7 +78,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     }
 
     /**
-     * Time may be 'speeded up' during our simulation via use of the acceleration factor paramter
+     * Time may be 'sped up' during our simulation via use of the acceleration factor parameter
      * This function returns the accelerated simulation time represented as a unix epoch, in milliseconds
      *
      * @return

@@ -50,6 +50,7 @@ public class TimeSeriesBenchmarker {
     private final String asSet;
 
     // Aerospike client
+    @SuppressWarnings("FieldCanBeLocal")
     private AerospikeClient aerospikeClient;
     // Underlying runnable objects for the benchmark
     private TimeSeriesRunnable[] benchmarkClientObjects;
@@ -58,10 +59,13 @@ public class TimeSeriesBenchmarker {
     PrintStream output= System.out;
 
     // Status thread related
+    @SuppressWarnings("FieldCanBeLocal")
     private static int STATUS_UPDATE_PERIOD_SECS = 1;
     // How frequently do we check to see if a status update is needed
+    @SuppressWarnings("FieldCanBeLocal")
     private static int STATUS_TIMER_CHECK_PERIOD_MS = 50;
     // How much throughput under-performance is tolerated w/out warning
+    @SuppressWarnings("FieldCanBeLocal")
     private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
@@ -175,6 +179,7 @@ public class TimeSeriesBenchmarker {
             if(System.currentTimeMillis() > nextOutputTime) {
                 if(averageThreadRunTimeMs() >0) outputStatus();
                 nextOutputTime+= Constants.MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
+                //noinspection CatchMayIgnoreException
                 try {
                     Thread.sleep(STATUS_TIMER_CHECK_PERIOD_MS);
                 }
@@ -228,8 +233,8 @@ public class TimeSeriesBenchmarker {
      */
     private boolean isRunning(){
         boolean running = false;
-        for(int i=0;i<benchmarkClientObjects.length;i++){
-            running |= benchmarkClientObjects[i].isRunning();
+        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
+            running |= benchmarkClientObject.isRunning();
         }
         return running;
     }

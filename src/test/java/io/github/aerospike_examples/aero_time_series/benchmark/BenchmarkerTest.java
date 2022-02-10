@@ -6,13 +6,8 @@ import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
 import io.github.aerospike_examples.aero_time_series.Utilities;
-import io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper;
-import io.github.aerospike_examples.aero_time_series.benchmark.RealTimeInsertTimeSeriesRunnable;
-import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
-import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesSimulatorTest;
 import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
-import org.apache.commons.cli.ParseException;
 import org.junit.*;
 
 import java.io.*;
@@ -24,10 +19,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BenchmarkerTest {
-    private boolean doTeardown = true;
-
-    // For the avoidance of doubt and clarity
-    int MILLISECONDS_IN_SECOND = 1000;
+    @SuppressWarnings("FieldCanBeLocal")
+    private static boolean doTeardown = true;
 
     @Test
     /**
@@ -42,7 +35,7 @@ public class BenchmarkerTest {
         RealTimeInsertTimeSeriesRunnable benchmarkRunnable = new RealTimeInsertTimeSeriesRunnable(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
                 TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,1,benchmarker);
         String timeSeriesName = benchmarkRunnable.randomTimeSeriesName();
-        Assert.assertTrue(timeSeriesName.length() == benchmarker.timeSeriesNameLength);
+        Assert.assertEquals(timeSeriesName.length(), benchmarker.timeSeriesNameLength);
     }
 
     @Test
@@ -83,7 +76,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
@@ -106,7 +99,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
@@ -129,7 +122,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
@@ -152,7 +145,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
     }
@@ -175,7 +168,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount / intervalBetweenUpdates,
                 benchmarker.totalUpdateCount(),testTolerancePct));
@@ -279,10 +272,11 @@ public class BenchmarkerTest {
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
         int warningCount = 0;
-        for(int i=0;i<consoleOutput.size();i++){
-            System.out.println(consoleOutput.get(i));
-            if(consoleOutput.get(i).startsWith(
-                    String.format("!!!Update rate should be %.3f, actually",benchmarker.expectedUpdatesPerSecond())) && consoleOutput.get(i).endsWith(" - underflow")) warningCount++;
+        for (String aConsoleOutput : consoleOutput) {
+            System.out.println(aConsoleOutput);
+            if (aConsoleOutput.startsWith(
+                    String.format("!!!Update rate should be %.3f, actually", benchmarker.expectedUpdatesPerSecond())) && aConsoleOutput.endsWith(" - underflow"))
+                warningCount++;
         }
         // We should get a warning on every second, for rounding reasons the first two may not happen
         Assert.assertTrue(warningCount >= runDurationSeconds -2);
@@ -295,7 +289,7 @@ public class BenchmarkerTest {
      * Should see updates per second / updates per second per time series header
      * Should see a status message every second plus an initial status message
      */
-    public void correctMainOutput() throws IOException, ParseException, Utilities.ParseException{
+    public void correctMainOutput() throws IOException, Utilities.ParseException{
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -395,7 +389,7 @@ public class BenchmarkerTest {
     /**
      * Check parse exception is well handled
      */
-    public void cmdLineParseExceptionHandled() throws IOException, ParseException, Utilities.ParseException{
+    public void cmdLineParseExceptionHandled() throws IOException {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -511,7 +505,7 @@ public class BenchmarkerTest {
     /**
      * Check bad run modes are handled well
      */
-    public void badModeHandling() throws IOException, ParseException, Utilities.ParseException{
+    public void badModeHandling() throws IOException {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -540,7 +534,7 @@ public class BenchmarkerTest {
     /**
      * Check time series range is correctly converted for each possible suffix option
      */
-    public void timeSeriesRangeConversionCheck() throws IOException, Utilities.ParseException{
+    public void timeSeriesRangeConversionCheck() throws Utilities.ParseException{
         timeSeriesRangeParsingCheck(20,OptionsHelper.TimeUnitIndicators.SECOND,1);
         timeSeriesRangeParsingCheck(45,OptionsHelper.TimeUnitIndicators.MINUTE,60);
         timeSeriesRangeParsingCheck(12,OptionsHelper.TimeUnitIndicators.HOUR,60*60);
@@ -555,7 +549,7 @@ public class BenchmarkerTest {
      * Check time series range format value matches number followed by one of Y,D,H,M,S or no unit
      * and that we throw an error if not
      */
-    public void badTimeSeriesRange() throws IOException, Utilities.ParseException{
+    public void badTimeSeriesRange() throws IOException {
         badTimeSeriesRangeStringCheck("50X");
         badTimeSeriesRangeStringCheck("X50");
     }
@@ -699,8 +693,6 @@ public class BenchmarkerTest {
      */
     private static ByteArrayOutputStream setupForConsoleOutputParsing(){
         System.out.println("This test requires console output to be captured. Running ....");
-        // Capture existing stdout
-        PrintStream oldSout = System.out;
         // Create new stdout
         ByteArrayOutputStream bStream = new ByteArrayOutputStream();
         System.setOut(new PrintStream(bStream));
@@ -746,13 +738,11 @@ public class BenchmarkerTest {
                 TestConstants.AEROSPIKE_NAMESPACE);
 
         Vector<String> timeSeriesNames = new Vector<>();
-        timeSeriesClient.getAsClient().scanAll(new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
-                new ScanCallback() {
-                    @Override
-                    public void scanCallback(Key key, Record record) throws AerospikeException {
-                        timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME));
-                    }
-                },Constants.TIME_SERIES_NAME_FIELD_NAME);
+        timeSeriesClient.getAsClient().scanAll(
+                new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
+                // Callback is a lamda function
+                (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
+                Constants.TIME_SERIES_NAME_FIELD_NAME);
         return timeSeriesNames;
     }
 }

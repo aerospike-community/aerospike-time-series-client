@@ -6,7 +6,7 @@ import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 
 import java.util.*;
 
-public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
+class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     private long requiredTimeSeriesRangeSeconds;
 
     /**
@@ -36,7 +36,7 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             String timeSeriesName = randomTimeSeriesName();
             // 'T-1'
             lastObservationTimes.put(timeSeriesName,startTime + startTime - nextObservationTime(startTime));
-            // Obseration at 'T-1' - time independent so can use initTimeSeriesValue
+            // Observation at 'T-1' - time independent so can use initTimeSeriesValue
             lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
             recordCountPerSeries.put(timeSeriesName,0);
         }
@@ -46,27 +46,25 @@ public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         isRunning = true;
 
         for(int iterationCount = 0;iterationCount < iterations;iterationCount++) {
-            Iterator<String> timeSeriesNames = lastObservationTimes.keySet().iterator();
-            while (timeSeriesNames.hasNext()) {
-                String timeSeriesName = timeSeriesNames.next();
-                long maxRecordsToInsert = Math.min(recordsPerBlock,recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
+            for (String timeSeriesName : lastObservationTimes.keySet()) {
+                long maxRecordsToInsert = Math.min(recordsPerBlock, recordsToInsertPerSeries - recordCountPerSeries.get(timeSeriesName));
                 Vector<DataPoint> dataPointVector = new Vector<>();
                 int recordsInCurrentBatch = 0;
-                while(recordsInCurrentBatch < maxRecordsToInsert){
+                while (recordsInCurrentBatch < maxRecordsToInsert) {
                     long lastObservationTime = (recordsInCurrentBatch == 0) ? lastObservationTimes.get(timeSeriesName) : dataPointVector.get(recordsInCurrentBatch - 1).getTimestamp();
                     double lastObservationValue = (recordsInCurrentBatch == 0) ? lastObservationValues.get(timeSeriesName) : dataPointVector.get(recordsInCurrentBatch - 1).getValue();
                     long observationTime = nextObservationTime(lastObservationTime);
-                    if(observationTime > maxTimestamp) break;
+                    if (observationTime > maxTimestamp) break;
                     double timeIncrement = (double) (observationTime - lastObservationTime) / Constants.MILLISECONDS_IN_SECOND;
                     double observationValue = simulator.getNextValue(lastObservationValue, timeIncrement);
                     dataPointVector.add(new DataPoint(new Date(observationTime), observationValue));
                     recordsInCurrentBatch++;
                 }
-                DataPoint[] dataPoints = dataPointVector.toArray(new DataPoint[dataPointVector.size()]);
+                DataPoint[] dataPoints = dataPointVector.toArray(new DataPoint[0]);
                 timeSeriesClient.put(timeSeriesName, dataPoints);
                 lastObservationTimes.put(timeSeriesName, dataPoints[dataPoints.length - 1].getTimestamp());
                 lastObservationValues.put(timeSeriesName, dataPoints[dataPoints.length - 1].getValue());
-                recordCountPerSeries.put(timeSeriesName,recordCountPerSeries.get(timeSeriesName) + recordsInCurrentBatch);
+                recordCountPerSeries.put(timeSeriesName, recordCountPerSeries.get(timeSeriesName) + recordsInCurrentBatch);
                 updateCount += recordsInCurrentBatch;
             }
         }

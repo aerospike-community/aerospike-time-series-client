@@ -5,7 +5,7 @@ import java.util.Date;
 public interface ITimeSeriesClient {
     /**
      * Put a data point for time series timeSeriesName into the database
-     * A datapoint is a structure containing a timestamp and a floating point value
+     * A data point is a structure containing a timestamp and a floating point value
      *
      * @param timeSeriesName
      * @param dataPoint
