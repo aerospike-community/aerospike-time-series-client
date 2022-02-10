@@ -3,3 +3,4 @@ release.properties
 .idea
 apitimeseries.iml
 target
+*.swp

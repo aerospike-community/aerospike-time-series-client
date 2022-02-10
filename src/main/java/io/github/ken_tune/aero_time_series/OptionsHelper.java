@@ -53,23 +53,26 @@ public class OptionsHelper {
     static Options cmdLineOptions(){
         Options cmdLineOptions = new Options();
 
-        Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host");
-        Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace for time series");
+        Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host. Required");
+        Option namespaceOption = new Option(BenchmarkerFlags.NAMESPACE_FLAG,"namespace",true,"Namespace for time series. Required.");
         Option setOption = new Option(BenchmarkerFlags.TIME_SERIES_SET_FLAG,"set",true,
                 String.format("Set for time series. Defaults to %s",Constants.DEFAULT_TIME_SERIES_SET));
         Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,
-                String.format("Benchmark mode - values allowed are %s and %s",BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
+                String.format("Benchmark mode - values allowed are %s and %s. Required.",BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
         Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,
-                String.format("Simulation duration in seconds. Only valid in %s mode.",BenchmarkModes.REAL_TIME_INSERT));
+                String.format("Simulation duration in seconds. Required for %s mode. Not valid in %s mode",BenchmarkModes.REAL_TIME_INSERT, BenchmarkModes.BATCH_INSERT));
         Option accelerationOption = new Option(BenchmarkerFlags.ACCELERATION_FLAG,"acceleration",true,
-                String.format("Simulation acceleration factor (clock speed multiplier). Only valid in %s mode.",BenchmarkModes.REAL_TIME_INSERT));
+                String.format("Simulation acceleration factor (clock speed multiplier). Only valid in %s mode. Optional.",BenchmarkModes.REAL_TIME_INSERT));
         Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,
-                "Max time series points in each Aerospike object");
+                String.format("Max time series points in each Aerospike object. Optional. Defaults to %d",Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK));
         Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,
-                String.format("period to be spanned by time series. Only valid in %s mode",BenchmarkModes.BATCH_INSERT));
-        Option threadCountOption = new Option(BenchmarkerFlags.THREAD_COUNT_FLAG,"threads",true,"Thread count required");
-        Option timeSeriesCountOption = new Option(BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,"timeSeriesCount",true,"No of time series to simulate");
-        Option intervalOption = new Option(BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,"interval",true,"Average interval between observations");
+                String.format("Period to be spanned by time series. Required for %s mode. Not valid in %s mode",BenchmarkModes.BATCH_INSERT, BenchmarkModes.REAL_TIME_INSERT));
+        Option threadCountOption = new Option(BenchmarkerFlags.THREAD_COUNT_FLAG,"threads",true,
+                String.format("Thread count required. Optional. Defaults to %d",TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT));
+        Option timeSeriesCountOption = new Option(BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,"timeSeriesCount",true,
+                String.format("No of time series to simulate. Optional. Defaults to %d",TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT));
+        Option intervalOption = new Option(BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,"interval",true,
+                "Average interval between observations. Required");
 
         hostOption.setRequired(true);
         namespaceOption.setRequired(true);
