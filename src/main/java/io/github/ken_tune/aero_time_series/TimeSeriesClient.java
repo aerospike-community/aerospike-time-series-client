@@ -3,6 +3,7 @@ package io.github.ken_tune.aero_time_series;
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
 import com.aerospike.client.policy.BatchPolicy;
+import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
 
@@ -10,6 +11,19 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TimeSeriesClient implements ITimeSeriesClient {
+    /*
+     The code for 'archiving' blocks of data means no data will ever be lost - the current block will only be deleted after
+     1) it has been copied
+     2) the original bleock has not changed in the meantime
+     If we detect 2) ( & note that 1) must have occurred before we get to check 2) )
+     Then we retry a set number of times - governed by the parameter below
+     Note that
+     If we don't succeed in RETRY_COUNT_FOR_FAILED_BLOCK_COPY times, we still have all the data, but we may have it twice
+     Eventually when the code runs all the way through, normal operation will be restored
+     In the meantime, we have duplicate resolution built into the 'get' calls
+    */
+    public static final int RETRY_COUNT_FOR_FAILED_BLOCK_COPY = 5;
+
     // Aerospike Client required
     AerospikeClient asClient;
     // Define namespace used as part of initialisation
@@ -33,6 +47,10 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
     static final long CURRENT_RECORD_TIMESTAMP = 0;
     public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
+
+    // Package level visible paramaters allowing testing of correct handling of race conditions
+    boolean testMode = false;
+    double failurePctRateForCopyBlock =0;
 
     /**
      * TimeSeriesClient constructor. Provide an Aerospike Client object, tne namespace, the name of the set to use, max number of data points per Aerospike object
@@ -159,7 +177,18 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      *
      * @param timeSeriesName
      */
-    private void copyCurrentDataToHistoricBlock(String timeSeriesName){
+    private void copyCurrentDataToHistoricBlock(String timeSeriesName) {
+        copyCurrentDataToHistoricBlock(timeSeriesName,RETRY_COUNT_FOR_FAILED_BLOCK_COPY);
+    }
+
+    /**
+     * copyCurrentDataToHistoricBlock(String timeSeriesName) will retry a set number of times if there is a failure
+     * This is facilitated via the function below. Every time we retry, retryCount is deprecated
+     *
+     * @param timeSeriesName
+     * @param retryCount
+     */
+    private void copyCurrentDataToHistoricBlock(String timeSeriesName, int retryCount){
         Record currentRecord = asClient.get(readPolicy, asCurrentKeyForTimeSeries(timeSeriesName));
         Bin[] bins = new Bin[2];
         // Copying of bin requires slightly convoluted approach below
@@ -172,9 +201,36 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         long startTime = (Long) currentRecord.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
         addTimeSeriesIndexRecord(timeSeriesName,startTime);
         asClient.put(writePolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
-        // and remove the current block
-        if (asClient.exists(readPolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime)))
-            asClient.delete(writePolicy, asCurrentKeyForTimeSeries(timeSeriesName));
+        // and remove the current block, if the archived block exists
+        // Strictly speaking I don't think the 'exists' check is necessary, but it does make things clear
+        if (asClient.exists(readPolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime))) {
+            // We check that in the meantime the current record has not changed via the generation check
+            WritePolicy checkGenerationWritePolicy = new WritePolicy(writePolicy);
+            checkGenerationWritePolicy.generation = currentRecord.generation;
+            checkGenerationWritePolicy.generationPolicy = GenerationPolicy.EXPECT_GEN_EQUAL;
+            // This code is for testing purposes to verify that even if the current record is modified
+            // we still get correct results
+            // testMode = true should only be set by test code
+            if(testMode) {
+                // & we mimic 'new writes' with probability failurePctRateForCopyBlock, set to zero by default
+                if (new Random().nextDouble() < failurePctRateForCopyBlock / 100) {
+                    asClient.touch(writePolicy, asCurrentKeyForTimeSeries(timeSeriesName));
+                    System.out.println("Failure triggered in copy block section");
+                }
+            }
+            // Out of test code block. If the delete fails, we retry
+            try {
+                asClient.delete(checkGenerationWritePolicy, asCurrentKeyForTimeSeries(timeSeriesName));
+            }
+            catch(AerospikeException e){
+                if(e.getResultCode() == ResultCode.GENERATION_ERROR){
+                    if(retryCount > 0){
+                        retryCount--;
+                        copyCurrentDataToHistoricBlock(timeSeriesName, retryCount);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -367,7 +423,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
         Key[] keys = getKeysForQuery(timeSeriesName,startTime,endTime);
         Record[] timeSeriesBlocks = asClient.get(new BatchPolicy(readPolicy),keys,Constants.TIME_SERIES_BIN_NAME);
-        int recordCount = 0;
+        // uniqueTimestampMap is used to count the unique timestamps
+        Map<Long,Integer> uniqueTimestampMap = new HashMap<>();
+        // First we need to count timestamps
         for(int i=0;i< timeSeriesBlocks.length;i++){
             Record currentRecord = timeSeriesBlocks[i];
             // Null record is a possibility if we have just made the current block a historic block
@@ -376,12 +434,21 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 Iterator<Long> timestamps = timeSeries.keySet().iterator();
                 while (timestamps.hasNext()) {
                     long timestamp = timestamps.next();
-                    if (timestamp >= startTime && timestamp <= endTime) recordCount++;
+                    if (timestamp >= startTime && timestamp <= endTime)
+                        if(uniqueTimestampMap.get(timestamp) == null) {
+                            uniqueTimestampMap.put(timestamp,1);
+                        }
                 }
             }
         }
+        // Then initialise an appropriately sized array
+        DataPoint[] dataPoints = new DataPoint[uniqueTimestampMap.size()];
 
-        DataPoint[] dataPoints = new DataPoint[recordCount];
+        // Make use of uniqueTimestampMap to make sure we get rid of any duplicate points
+        // These can arise if copyCurrentDataToHistoricBlock does not run to completion
+        // Note the duplicates will eventually be naturally eliminated
+
+        // index is used to track where we are when adding to the returned array
         int index = 0;
 
         for(int i=0;i< timeSeriesBlocks.length;i++) {
@@ -394,8 +461,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 for (int j = 0; j < sortedList.size(); j++) {
                     long timestamp = sortedList.get(j);
                     if ((startTime <= timestamp) && (timestamp <= endTime)) {
-                        dataPoints[index] = new DataPoint(timestamp, timeSeries.get(timestamp));
-                        index++;
+                        // Only add one point per timestamp to the array returned
+                        // Check below makes sure this happens
+                        if(uniqueTimestampMap.get(timestamp) != null) {
+                            dataPoints[index] = new DataPoint(timestamp, timeSeries.get(timestamp));
+                            uniqueTimestampMap.remove(timestamp);
+                            index++;
+                        }
                     }
                 }
             }

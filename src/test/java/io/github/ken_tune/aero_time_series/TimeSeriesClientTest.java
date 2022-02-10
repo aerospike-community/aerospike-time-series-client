@@ -195,11 +195,36 @@ public class TimeSeriesClientTest {
      * viii start time and end time are the same, do not coincide with start of a block
      * ix start time and end time are the same, coincide with start of a block
      * x start time and end time are beyond the last historic block
+     *
+     * These are in a separate function (see doCorrectSeriesForTimeRangeCheck) as the same checks are used twice
      */
     public void correctSeriesForTimeRange() throws Exception{
+        doTeardown = false;
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
+        doCorrectSeriesForTimeRangeChecks();
+    }
+
+    @Test
+    /**
+     * Check correct time series points are retrieved when race conditions are introduced into the copyBlock process
+     *
+     * The same checks are used as for correctSeriesForTimeRange
+     *
+     * The race condition's introduction can be seen in TimeSeriesClient.copyCurrentDataToHistoricBlock
+     *
+     * It is enabled by
+     */
+    public void correctSeriesForTimeRangeWithRaceConditions() throws Exception{
+        doTeardown = false;
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock,true,20);
+        doCorrectSeriesForTimeRangeChecks();
+    }
+
+    private void doCorrectSeriesForTimeRangeChecks() throws Exception{
         checkCorrectSeriesForTimeRange(30,90,90-30+1);
         checkCorrectSeriesForTimeRange(60,150,150-60+1);
         checkCorrectSeriesForTimeRange(90,179,179-90+1);
@@ -299,6 +324,7 @@ public class TimeSeriesClientTest {
             Assert.assertTrue(timestamps.length ==0);
 
     }
+
     /**
      * Utility method to create time series
      * Returns an array of the random values generated
@@ -307,12 +333,18 @@ public class TimeSeriesClientTest {
      * @param intervalInSeconds - time interval between data points
      * @param iterations - no of data points
      * @param recordsPerBlock - records per block
+     * @param useTestMode - enable code that simulates race conditions when testing
+     * @param failurePctForCopyBlock - percentage of 'copy block' calls that fail due to simulated race conditions
      * @return
      * @throws Exception
      */
-    private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock) throws Exception{
+    private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock,
+            boolean useTestMode, double failurePctForCopyBlock) throws Exception{
+
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
                 TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,recordsPerBlock);
+        timeSeriesClient.testMode = useTestMode;
+        timeSeriesClient.failurePctRateForCopyBlock = failurePctForCopyBlock;
 
         double[] values = new double[iterations];
         for(int i=0;i<iterations;i++){
@@ -321,6 +353,23 @@ public class TimeSeriesClientTest {
             timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(getTestBaseDate().getTime() + i * intervalInSeconds * Constants.MILLISECONDS_IN_SECOND),value));
         }
         return values;
+    }
+
+    /**
+     * Utility method to create time series
+     * Returns an array of the random values generated
+     * This is the 'normal' version of createTimeSeries - it does not introduce any race conditions
+     *
+     * @param timeSeriesName - name of the time series
+     * @param intervalInSeconds - time interval between data points
+     * @param iterations - no of data points
+     * @param recordsPerBlock - records per block
+     * @return
+     * @throws Exception
+     */
+
+    private double[] createTimeSeries(String timeSeriesName,int intervalInSeconds,int iterations, int recordsPerBlock) throws Exception{
+        return createTimeSeries(timeSeriesName, intervalInSeconds, iterations,recordsPerBlock,false,0);
     }
 
     /**

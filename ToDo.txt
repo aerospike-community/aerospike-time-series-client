@@ -3,7 +3,6 @@ Need to deal with tags
 
 Benchmark client - simulate queries
 
-Put in optimistic locking for creation of time series blocks to avoid concurrency issues
 
 Deal with retrospective inserts
 End times as part of the metadata - might simplify things?
@@ -50,6 +49,7 @@ Allow setting of max block size for TimeSeriesClient
 Allow setting of sets for TimeSeriesClient
 TimeSeriesClient - pass asClient in constructor - this means we don't have to worry about tls / port numbers
 % complete from batch test
+Put in optimistic locking for creation of time series blocks to avoid concurrency issues - testing added for the same
 
 Notes
 =====
