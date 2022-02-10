@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.client;
 
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
@@ -6,6 +6,7 @@ import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
+import io.github.aerospike_examples.aero_time_series.Constants;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -118,6 +119,18 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     public String getTimeSeriesSet() {
         return timeSeriesSet;
     }
+
+    /**
+     * Getter method for Aerospike Client
+     * @return
+     */
+    public AerospikeClient getAsClient(){ return asClient;}
+
+    /**
+     * Getter method for Aerospike Namespace
+     * @return
+     */
+    public String getAsNamespace(){ return asNamespace;}
 
     /**
      * Saves data point to the database

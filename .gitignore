@@ -4,3 +4,4 @@ release.properties
 apitimeseries.iml
 target
 *.swp
+*.swo

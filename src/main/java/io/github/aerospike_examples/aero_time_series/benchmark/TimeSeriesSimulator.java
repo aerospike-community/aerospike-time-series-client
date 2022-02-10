@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import java.util.Random;
 

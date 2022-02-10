@@ -1,6 +1,8 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.AerospikeClient;
+import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 
 import java.util.Random;
 

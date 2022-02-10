@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
@@ -7,8 +7,10 @@ import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexCollectionType;
 import com.aerospike.client.query.RecordSet;
 import com.aerospike.client.query.Statement;
+import io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper;
+import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 
-import javax.management.Query;
 import java.util.Random;
 
 public class TestUtilities {
@@ -26,12 +28,12 @@ public class TestUtilities {
 
     public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String asNamespace,String timeSeriesName) {
         Statement stmt = new Statement();
-        stmt.setNamespace(timeSeriesClient.asNamespace);
+        stmt.setNamespace(timeSeriesClient.getAsNamespace());
         stmt.setSetName(timeSeriesClient.getTimeSeriesSet());
         stmt.setBinNames(Constants.METADATA_BIN_NAME);
         stmt.setFilter(Filter.contains(Constants.METADATA_BIN_NAME, IndexCollectionType.MAPVALUES, timeSeriesName));
 
-        RecordSet rs = timeSeriesClient.asClient.query( new QueryPolicy(timeSeriesClient.getReadPolicy()), stmt);
+        RecordSet rs = timeSeriesClient.getAsClient().query( new QueryPolicy(timeSeriesClient.getReadPolicy()), stmt);
         int blockCount = 0;
         while (rs.next()) blockCount++;
         return blockCount;
@@ -47,7 +49,7 @@ public class TestUtilities {
      * @param threadCount
      * @param timeSeriesCount
      */
-    static TimeSeriesBenchmarker realTimeInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor,
+    public static TimeSeriesBenchmarker realTimeInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor,
                                                            int threadCount, int timeSeriesCount){
         return new TimeSeriesBenchmarker(asHost,asNamespace,asSet, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,observationIntervalSeconds,
                 runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,
@@ -64,7 +66,7 @@ public class TestUtilities {
      * @param timeSeriesCount
      * @return
      */
-    static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, long timeSeriesRangeSeconds,
+    public static TimeSeriesBenchmarker batchInsertBenchmarker(String asHost, String asNamespace, String asSet, int observationIntervalSeconds, long timeSeriesRangeSeconds,
                                                         int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){
         return new TimeSeriesBenchmarker(asHost,asNamespace,asSet,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);

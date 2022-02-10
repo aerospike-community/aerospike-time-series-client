@@ -1,6 +1,7 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.AerospikeClient;
+import io.github.aerospike_examples.aero_time_series.Constants;
 
 /**
  * Runnable responsible for generating inserts, to be invoked by the Time Series Benchmarker

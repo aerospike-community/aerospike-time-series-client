@@ -1,6 +1,8 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.AerospikeClient;
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 
 import java.util.*;
 
@@ -8,7 +10,7 @@ import java.util.*;
  * This runnable will insert data in real time for a specified period
  * It is possible to 'accelerate' time in order to generate inserts at a faster rate
  */
-class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
+class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     private int runDurationSeconds;
 
     private int accelerationFactor;

@@ -1,11 +1,8 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.client;
 
-import io.github.ken_tune.aero_time_series.Constants;
-import io.github.ken_tune.aero_time_series.DataPoint;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Date;
 
 public class DataPointTest {
     @Test

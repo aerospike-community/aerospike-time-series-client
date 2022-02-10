@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.client;
 
 import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
@@ -6,6 +6,11 @@ import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.query.*;
 import com.aerospike.client.cdt.MapOperation;
 import com.aerospike.client.task.IndexTask;
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.TestConstants;
+import io.github.aerospike_examples.aero_time_series.TestUtilities;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.junit.*;
 
 import java.text.SimpleDateFormat;
@@ -171,7 +176,7 @@ public class TimeSeriesClientTest {
     public void blockTest() throws Exception{
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
-
+        doTeardown = false;
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
                 TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
                 Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);

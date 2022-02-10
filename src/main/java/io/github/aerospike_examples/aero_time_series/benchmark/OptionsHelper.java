@@ -1,5 +1,7 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.Utilities;
 import org.apache.commons.cli.*;
 
 import java.util.regex.Matcher;
@@ -12,24 +14,24 @@ public class OptionsHelper {
     /**
      * Flags used at the command line
      */
-    static class BenchmarkerFlags{
-        static final String HOST_FLAG = "h";
-        static final String NAMESPACE_FLAG = "n";
-        static final String MODE_FLAG = "m";
-        static final String RUN_DURATION_FLAG = "d";
-        static final String ACCELERATION_FLAG = "a";
-        static final String RECORDS_PER_BLOCK_FLAG = "b";
-        static final String THREAD_COUNT_FLAG = "z";
-        static final String TIME_SERIES_COUNT_FLAG = "c";
-        static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
-        static final String TIME_SERIES_RANGE_FLAG = "r";
-        static final String TIME_SERIES_SET_FLAG = "s";
+    public static class BenchmarkerFlags{
+        public static final String HOST_FLAG = "h";
+        public static final String NAMESPACE_FLAG = "n";
+        public static final String MODE_FLAG = "m";
+        public static final String RUN_DURATION_FLAG = "d";
+        public static final String ACCELERATION_FLAG = "a";
+        public static final String RECORDS_PER_BLOCK_FLAG = "b";
+        public static final String THREAD_COUNT_FLAG = "z";
+        public static final String TIME_SERIES_COUNT_FLAG = "c";
+        public static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
+        public static final String TIME_SERIES_RANGE_FLAG = "r";
+        public static final String TIME_SERIES_SET_FLAG = "s";
     }
 
-    static class BenchmarkModes{
-        static final String REAL_TIME_INSERT = "realTimeWrite";
-        static final String BATCH_INSERT = "batchInsert";
-        static final String QUERY = "query";
+    public static class BenchmarkModes{
+        public static final String REAL_TIME_INSERT = "realTimeWrite";
+        public static final String BATCH_INSERT = "batchInsert";
+        public static final String QUERY = "query";
     }
 
     static class TimeUnitIndicators{

@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series;
 
 /**
  * Useful functions
@@ -19,7 +19,7 @@ public class Utilities {
      * Throw this error if we have parsing exceptions
      */
     public static class ParseException extends Exception{
-        ParseException(String message){
+        public ParseException(String message){
             super(message);
         }
     }

@@ -1,10 +1,12 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.AerospikeClient;
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 
 import java.util.*;
 
-public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable{
+public class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     private long requiredTimeSeriesRangeSeconds;
 
     /**

@@ -1,8 +1,17 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.*;
-import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.ScanPolicy;
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.TestConstants;
+import io.github.aerospike_examples.aero_time_series.TestUtilities;
+import io.github.aerospike_examples.aero_time_series.Utilities;
+import io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper;
+import io.github.aerospike_examples.aero_time_series.benchmark.RealTimeInsertTimeSeriesRunnable;
+import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
+import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesSimulatorTest;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.apache.commons.cli.ParseException;
 import org.junit.*;
 
@@ -737,7 +746,7 @@ public class BenchmarkerTest {
                 TestConstants.AEROSPIKE_NAMESPACE);
 
         Vector<String> timeSeriesNames = new Vector<>();
-        timeSeriesClient.asClient.scanAll(new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
+        timeSeriesClient.getAsClient().scanAll(new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
                 new ScanCallback() {
                     @Override
                     public void scanCallback(Key key, Record record) throws AerospikeException {

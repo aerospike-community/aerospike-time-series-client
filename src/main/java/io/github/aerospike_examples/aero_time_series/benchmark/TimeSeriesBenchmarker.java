@@ -1,4 +1,4 @@
-package io.github.ken_tune.aero_time_series;
+package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
@@ -6,6 +6,9 @@ import com.aerospike.client.policy.InfoPolicy;
 import java.io.PrintStream;
 import java.util.Random;
 
+import io.github.aerospike_examples.aero_time_series.Constants;
+import io.github.aerospike_examples.aero_time_series.Utilities;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.apache.commons.cli.*;
 
 public class TimeSeriesBenchmarker {
@@ -62,7 +65,7 @@ public class TimeSeriesBenchmarker {
     private static int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
-    TimeSeriesBenchmarker(String asHost, String asNamespace, String asSet, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
+    public TimeSeriesBenchmarker(String asHost, String asNamespace, String asSet, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
                           int timeSeriesCount,int recordsPerBlock, long timeSeriesRangeSeconds,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
         this.asHost = asHost;
         this.asNamespace = asNamespace;
