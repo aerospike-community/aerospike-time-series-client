@@ -1,6 +1,3 @@
-Make start value range configurable
-Need to deal with tags
-
 Benchmark client - simulate queries
 
 Deal with retrospective inserts
@@ -9,8 +6,19 @@ End times as part of the metadata - might simplify things?
 Small
 ----
 
+Reorganise
 Can I remove the benchmarker code when publishing to maven
-Find out about 'linting' i.e. looking for un-used methods, incomplete documentation
+
+Waiting
+-------
+
+Find out about 'linting' i.e. looking for un-used methods, incomplete documentation 
+
+Phase 2
+-------
+
+Need to deal with tags
+Compression
 
 Done
 ====

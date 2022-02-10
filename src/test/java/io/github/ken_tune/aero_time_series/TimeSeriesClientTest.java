@@ -199,7 +199,6 @@ public class TimeSeriesClientTest {
      * These are in a separate function (see doCorrectSeriesForTimeRangeCheck) as the same checks are used twice
      */
     public void correctSeriesForTimeRange() throws Exception{
-        doTeardown = false;
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock);
@@ -217,7 +216,6 @@ public class TimeSeriesClientTest {
      * It is enabled by
      */
     public void correctSeriesForTimeRangeWithRaceConditions() throws Exception{
-        doTeardown = false;
         int entriesPerBlock = 60;
         int requiredBlocks = 10;
         createTimeSeries(TEST_TIME_SERIES_NAME,1,requiredBlocks * entriesPerBlock,entriesPerBlock,true,20);
