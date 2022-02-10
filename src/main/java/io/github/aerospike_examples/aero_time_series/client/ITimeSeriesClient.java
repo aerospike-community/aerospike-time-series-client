@@ -43,4 +43,15 @@ public interface ITimeSeriesClient {
      *
      */
     DataPoint getPoint(String timeSeriesName,Date dateTime);
+
+    /**
+     * Run a query vs a particular time series range. Query types are as per the enum QueryOperation
+     * @param timeSeriesName
+     * @param operation
+     * @param fromDateTime
+     * @param toDateTime
+     * @return
+     */
+    double runQuery(String timeSeriesName, TimeSeriesClient.QueryOperation operation, Date fromDateTime, Date toDateTime);
+
 }

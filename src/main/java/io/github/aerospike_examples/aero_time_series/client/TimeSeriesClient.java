@@ -12,6 +12,33 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class TimeSeriesClient implements ITimeSeriesClient {
+    /**
+     * Enumeration of the types of queries we can run against a time series
+     */
+    public enum QueryOperation
+    {
+        MAX("max","maximum value of series"),
+        MIN("min", "minimum value of series"),
+        AVG("avg", "average value of series"),
+        COUNT("count","number of values in the series"),
+        VOL("vol","volatility of values in series");
+
+        private String shortName;
+        private String description;
+
+        QueryOperation(String shortName,String description) {
+            this.shortName = shortName;
+            this.description = description;
+        }
+
+        public String getShortName() {
+            return shortName;
+        }
+
+        public String getDescription(){
+            return description;
+        }
+    };
     /*
      The code for 'archiving' blocks of data means no data will ever be lost - the current block will only be deleted after
      1) it has been copied
@@ -490,6 +517,47 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             }
         }
         return dataPoints;
+    }
+
+    /**
+     * Run a query vs a particular time series range. Query types are as per the enum QueryOperation
+     * @param timeSeriesName
+     * @param operation
+     * @param fromDateTime
+     * @param toDateTime
+     * @return
+     */
+    public double runQuery(String timeSeriesName, QueryOperation operation, Date fromDateTime, Date toDateTime) {
+        DataPoint[] dataPoints = getPoints(timeSeriesName,fromDateTime, toDateTime);
+        switch(operation){
+            case MAX:
+                double maxValue = Double.MIN_VALUE;
+                for(DataPoint d: dataPoints) maxValue = Math.max(maxValue,d.getValue());
+                return maxValue == Double.MIN_VALUE ? Double.NaN : maxValue;
+            case MIN:
+                double minValue = Double.MAX_VALUE;
+                for(DataPoint d: dataPoints) minValue = Math.min(minValue,d.getValue());
+                return minValue == Double.MAX_VALUE ? Double.NaN : minValue;
+            case COUNT:
+                return dataPoints.length;
+            case AVG:
+                double sum = 0;
+                double count = dataPoints.length;
+                for(DataPoint d: dataPoints) sum+= d.getValue();
+                return count > 0 ? sum / count : Double.NaN;
+            case VOL:
+                sum = 0;
+                count = dataPoints.length;
+                if(count == 0) return Double.NaN;
+                for(DataPoint d: dataPoints) sum+= d.getValue();
+                double avg = sum / count;
+                double sumsq = 0;
+                for(DataPoint d: dataPoints) sumsq+=Math.pow(d.getValue() - avg,2);
+                return Math.sqrt(sumsq / count);
+            default:
+                return Double.NaN;
+        }
+
     }
 
     /**

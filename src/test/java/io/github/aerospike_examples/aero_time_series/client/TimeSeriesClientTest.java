@@ -9,6 +9,7 @@ import com.aerospike.client.task.IndexTask;
 import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
+import io.github.aerospike_examples.aero_time_series.Utilities;
 import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.junit.*;
@@ -295,6 +296,80 @@ public class TimeSeriesClientTest {
 
     }
 
+    @Test
+    /**
+     * Check that our query functions do what they are supposed to do
+     * i.e. Correct average, count, max, min,vol
+     * We do this by doing the calculations directly, and comparing them with the api results
+     */
+    public void checkQueryFunctions() throws Exception{
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        int intervalInSeconds = 15;
+
+        long startTime = getTestBaseDate().getTime();
+        long endTime = startTime + entriesPerBlock * requiredBlocks * intervalInSeconds * Constants.MILLISECONDS_IN_SECOND;
+        // Raw values - before they're added to the database
+        double[] tsValues = createTimeSeries(TEST_TIME_SERIES_NAME,intervalInSeconds,requiredBlocks * entriesPerBlock,entriesPerBlock);
+        // Aggregates, as computed by the API
+        double queryAvgValue = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.AVG,new Date(startTime), new Date(endTime));
+        double queryCount = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.COUNT,new Date(startTime), new Date(endTime));
+        double queryMax = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MAX,new Date(startTime), new Date(endTime));
+        double queryMin = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MIN,new Date(startTime), new Date(endTime));
+        double queryVol = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.VOL,new Date(startTime), new Date(endTime));
+
+        // Aggregates - as computed 'by hand'
+        double foundSum = 0;
+        double foundSumSq = 0;
+        double foundMax = Double.MIN_VALUE;
+        double foundMin = Double.MAX_VALUE;
+
+        for(double tsValue : tsValues){
+            foundSum += tsValue;
+            foundMax = Math.max(foundMax,tsValue);
+            foundMin = Math.min(foundMin,tsValue);
+            foundSumSq += Math.pow(tsValue,2);
+        }
+
+        double foundAvg = foundSum / tsValues.length;
+        double foundVol = Math.sqrt((foundSumSq - tsValues.length * Math.pow(foundAvg,2)) / tsValues.length);
+
+        // Check that the two sets of aggregates agree
+        Assert.assertTrue(tsValues.length == queryCount);
+        Assert.assertTrue(foundSum / tsValues.length == queryAvgValue);
+        Assert.assertTrue(foundMax == queryMax);
+        Assert.assertTrue(foundMin == queryMin);
+        // Need to compare volatility using a tolerance - rounding makes the values different
+        Assert.assertTrue(Utilities.valueInTolerance(queryVol,foundVol,0.001));
+    }
+
+    @Test
+    /**
+     * Check that our query functions are well behaved when there's zero data
+     * i.e. Correct average, count, max, min,vol
+     */
+    public void checkQueryFunctionsBehaveForZeroData() throws Exception {
+        int entriesPerBlock = 60;
+        int requiredBlocks = 10;
+        int intervalInSeconds = 15;
+
+        long startTime = getTestBaseDate().getTime();
+        long endTime = startTime -1;
+        // Raw values - before they're added to the database
+        double[] tsValues = createTimeSeries(TEST_TIME_SERIES_NAME, intervalInSeconds, requiredBlocks * entriesPerBlock, entriesPerBlock);
+        // Aggregates, as computed by the API
+        double queryAvgValue = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.AVG, new Date(startTime), new Date(endTime));
+        double queryCount = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.COUNT, new Date(startTime), new Date(endTime));
+        double queryMax = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MAX, new Date(startTime), new Date(endTime));
+        double queryMin = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MIN, new Date(startTime), new Date(endTime));
+        double queryVol = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.VOL, new Date(startTime), new Date(endTime));
+
+        Assert.assertTrue(Double.isNaN(queryAvgValue));
+        Assert.assertTrue(Double.isNaN(queryVol));
+        Assert.assertTrue(Double.isNaN(queryMax));
+        Assert.assertTrue(Double.isNaN(queryMin));
+        Assert.assertTrue(queryCount == 0);
+    }
     /*
         This function to be used in conjunction with correctBlocksForTimeRange only
         Checks that the start times for the time series blocks we retrieve obey the following rules
