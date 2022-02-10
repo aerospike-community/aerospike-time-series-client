@@ -1,7 +1,6 @@
 Benchmark client - simulate queries
 
 Deal with retrospective inserts
-End times as part of the metadata - might simplify things?
 
 Small
 ----
@@ -57,6 +56,7 @@ TimeSeriesClient - pass asClient in constructor - this means we don't have to wo
 % complete from batch test
 Put in optimistic locking for creation of time series blocks to avoid concurrency issues - testing added for the same
 Check defaults in usage - checked - correctly documented defaults & whether options are required
+End times as part of the metadata - might simplify things?
 
 Notes
 =====

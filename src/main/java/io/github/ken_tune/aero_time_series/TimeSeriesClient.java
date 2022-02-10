@@ -191,14 +191,18 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private void copyCurrentDataToHistoricBlock(String timeSeriesName, int retryCount){
         Record currentRecord = asClient.get(readPolicy, asCurrentKeyForTimeSeries(timeSeriesName));
         Bin[] bins = new Bin[2];
-        // Copying of bin requires slightly convoluted approach below
+        // Copying of time series bin requires slightly convoluted approach below
         bins[0] = new Bin(Constants.TIME_SERIES_BIN_NAME,
                 ((Map<Long,Double>)currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
                 MapOrder.KEY_ORDERED);
-        bins[1] = new Bin(Constants.METADATA_BIN_NAME,
-                ((Map<Long,Double>)currentRecord.getMap(Constants.METADATA_BIN_NAME)).entrySet().stream().collect(Collectors.toList()),
-                MapOrder.KEY_ORDERED);
+        // Now set up the metadata - add in the timestamp of the most recent observation
+        Map metadata = currentRecord.getMap(Constants.METADATA_BIN_NAME);
+        long lastTimestamp = Collections.max(((Map<Long,Double>)currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME)).keySet());
+        metadata.put(Constants.END_TIME_FIELD_NAME,lastTimestamp);
+        bins[1] = new Bin(Constants.METADATA_BIN_NAME,metadata);
+
         long startTime = (Long) currentRecord.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
+
         addTimeSeriesIndexRecord(timeSeriesName,startTime);
         asClient.put(writePolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
         // and remove the current block, if the archived block exists

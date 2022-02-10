@@ -13,6 +13,7 @@ public class Constants {
     final static String TIME_SERIES_INDEX_BIN_NAME = "tsIndex";
     final static String TIME_SERIES_NAME_FIELD_NAME = "TimeSeriesName";
     final static String START_TIME_FIELD_NAME = "StartTime";
+    final static String END_TIME_FIELD_NAME = "EndTime";
     final static String METADATA_BIN_NAME = "Metadata";
     final static String MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME = "maxTSEntries";
 
