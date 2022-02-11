@@ -616,9 +616,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
         // Create a policy to make sure, when we look up the first start time from the index that we don't get an error if it doesn't exist
         WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
-        Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
         // Now try and get the earliest start time from the index
-        blockRecordExistsPolicy.filterExp = Exp.build(Exp.gt(MapExp.size(Exp.bin(Constants.TIME_SERIES_INDEX_BIN_NAME, Exp.Type.MAP)), Exp.val(0)));
+        blockRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+
         Record startTimeFromFirstHistoricBlockRecord = asClient.operate(blockRecordExistsPolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                 MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, 0, MapReturnType.KEY));
 
@@ -659,9 +659,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         else {
             // Create a policy to make sure, when we look up the last end time from the index that we don't get an error if it doesn't exist
             WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
-            Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
-            // Now try and get the latest start time from the index
             blockRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+
+            // Now try and get the latest start time from the index
             // Get the start time for the most recent historic block
             Record startTimeForLastHistoricBlockRecord = asClient.operate(blockRecordExistsPolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                     MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, -1, MapReturnType.KEY));
@@ -675,6 +675,36 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             }
         }
         return endTime;
+    }
+
+    /**
+     * Get the data point count for the series
+     * @param timeSeriesName time series name
+     * @return data point count for series
+     */
+
+    long dataPointCount(String timeSeriesName){
+        long dataPointCount = 0;
+        // Get the start times from the index block
+        Record startTimesListRecord = asClient.get(getWritePolicy(), asKeyForTimeSeriesIndexes(timeSeriesName),
+                Constants.TIME_SERIES_INDEX_BIN_NAME);
+        if(startTimesListRecord != null){
+            // If there are any, get the size of each block
+            for(long startTime : ((Map<Long,String>)(startTimesListRecord.getMap(Constants.TIME_SERIES_INDEX_BIN_NAME))).keySet()){
+                dataPointCount+= asClient.operate(getWritePolicy(),
+                        asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTime),MapOperation.size(Constants.TIME_SERIES_BIN_NAME)).getLong(Constants.TIME_SERIES_BIN_NAME);
+            }
+        }
+
+        // Create a policy to make sure, when we look up the size from the current block, there are no errors
+        WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
+        Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
+
+        Record sizeOfCurrentRecord = asClient.operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
+                MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
+        if(sizeOfCurrentRecord != null) dataPointCount+= sizeOfCurrentRecord.getLong(Constants.TIME_SERIES_BIN_NAME);
+
+        return dataPointCount;
     }
 
 }

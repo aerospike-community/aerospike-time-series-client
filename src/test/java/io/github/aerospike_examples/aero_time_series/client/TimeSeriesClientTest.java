@@ -624,4 +624,44 @@ public class TimeSeriesClientTest {
         Assert.assertEquals(Long.MAX_VALUE,timeSeriesClient.endTimeForSeries(seriesName));
     }
 
+    /**
+     * Are counts for series correctly found
+     *
+     * Three cases
+     * 1) There is a current block
+     * 2) There are historic records but no current block
+     * 3) There are no data points
+     *
+     * @throws Exception but it's a test
+     */
+    @Test
+    public void seriesCountCheck() throws Exception{
+        String seriesName;
+        int intervalInSeconds;
+        int iterations;
+        int recordsPerBlock;
+
+        // First create some time series
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
+        // Series that will have a historic block
+        seriesName = "Sensor-1";
+        intervalInSeconds = 9;
+        recordsPerBlock = 13;
+        iterations = 2 * recordsPerBlock + 5;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName),(long)iterations);
+        // Series that will not have a historic block
+        seriesName = "Sensor-2";
+        intervalInSeconds = 15;
+        recordsPerBlock = 12;
+        iterations = 2 * recordsPerBlock ;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName),(long)iterations);
+
+
+        seriesName = "Sensor-3";
+        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName),0L);
+
+    }
+
 }
