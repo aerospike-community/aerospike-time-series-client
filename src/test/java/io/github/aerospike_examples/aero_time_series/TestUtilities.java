@@ -3,6 +3,7 @@ package io.github.aerospike_examples.aero_time_series;
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.QueryPolicy;
+import com.aerospike.client.policy.ScanPolicy;
 import com.aerospike.client.query.Filter;
 import com.aerospike.client.query.IndexCollectionType;
 import com.aerospike.client.query.RecordSet;
@@ -12,6 +13,7 @@ import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchma
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 
 import java.util.Random;
+import java.util.Vector;
 
 public class TestUtilities {
     /**
@@ -76,5 +78,26 @@ public class TestUtilities {
                                                         int threadCount, int timeSeriesCount, int recordsPerBlock, long randomSeed){
         return new TimeSeriesBenchmarker(asHost,asNamespace,asSet,OptionsHelper.BenchmarkModes.BATCH_INSERT,observationIntervalSeconds,0,0,threadCount,
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
+    }
+
+    /**
+     * Get a list of all the time series in the database
+     * @param timeSeriesClient object to use
+     * @return Vector containing available time series names
+     */
+    public static Vector<String> getTimeSeriesNames(TimeSeriesClient timeSeriesClient){
+        Vector<String> timeSeriesNames = new Vector<>();
+        timeSeriesClient.getAsClient().scanAll(
+                new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
+                // Callback is a lambda function
+                (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
+                Constants.TIME_SERIES_NAME_FIELD_NAME);
+        return timeSeriesNames;
+    }
+
+    // Default TimeSeriesClient for tests
+    public static TimeSeriesClient defaultTimeSeriesClient(){
+        return new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
 }

@@ -2,6 +2,8 @@ package io.github.aerospike_examples.aero_time_series.client;
 
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
@@ -600,4 +602,79 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     public static String timeSeriesIndexSetName(String setName){
         return String.format("%s%s",setName,TIME_SERIES_INDEX_SET_SUFFIX);
     }
+
+    /**
+     * Get the earliest timestamp for the given series
+     * @param timeSeriesName time series name
+     * @return earliest timestamp Long.MAX if series does not exist
+     */
+    long startTimeForSeries(String timeSeriesName) {
+        // First we get the earliest start time from the index block, if it exists
+        // Then earliest start time from the current block
+        // else Long.MAX - there is no data for this series
+        long startTime = Long.MAX_VALUE;
+
+        // Create a policy to make sure, when we look up the first start time from the index that we don't get an error if it doesn't exist
+        WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
+        Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+        // Now try and get the earliest start time from the index
+        blockRecordExistsPolicy.filterExp = Exp.build(Exp.gt(MapExp.size(Exp.bin(Constants.TIME_SERIES_INDEX_BIN_NAME, Exp.Type.MAP)), Exp.val(0)));
+        Record startTimeFromFirstHistoricBlockRecord = asClient.operate(blockRecordExistsPolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
+                MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, 0, MapReturnType.KEY));
+
+        if (startTimeFromFirstHistoricBlockRecord != null) {
+            startTime = startTimeFromFirstHistoricBlockRecord.getLong(Constants.TIME_SERIES_INDEX_BIN_NAME);
+        } else {
+            WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
+            Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
+
+            Record startTimeFromCurrentBlockRecord = asClient.operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
+                    MapOperation.getByIndex(Constants.TIME_SERIES_BIN_NAME, 0, MapReturnType.KEY));
+            if (startTimeFromCurrentBlockRecord != null) {
+                startTime = startTimeFromCurrentBlockRecord.getLong(Constants.TIME_SERIES_BIN_NAME);
+            }
+        }
+        return startTime;
+    }
+    /**
+     * Get the latest timestamp for the given series
+     * @param timeSeriesName time series name
+     * @return latest timestamp Long.MAX if series does not exist
+     */
+    long endTimeForSeries(String timeSeriesName) {
+        // First we get the latest time from the current block.
+        // If this does not exist then we get the  end time from the last record in the historic blocks, if it exists
+        // else Long.MAX - there is no data for this series
+        long endTime = Long.MAX_VALUE;
+        // Create a policy to make sure, when we look up the last end time from the current block, we don't get an error if it doesn't exist
+        WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
+        Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
+
+        Record endTimeFromCurrentBlockRecord = asClient.operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
+                MapOperation.getByIndex(Constants.TIME_SERIES_BIN_NAME, -1, MapReturnType.KEY));
+        // If something is returned, it is the most recent timestamp
+        if (endTimeFromCurrentBlockRecord != null) {
+            endTime = endTimeFromCurrentBlockRecord.getLong(Constants.TIME_SERIES_BIN_NAME);
+        }
+        else {
+            // Create a policy to make sure, when we look up the last end time from the index that we don't get an error if it doesn't exist
+            WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
+            Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+            // Now try and get the latest start time from the index
+            blockRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+            // Get the start time for the most recent historic block
+            Record startTimeForLastHistoricBlockRecord = asClient.operate(blockRecordExistsPolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
+                    MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, -1, MapReturnType.KEY));
+            // If it exists
+            if (startTimeForLastHistoricBlockRecord != null) {
+                long startTimeForLastBlock = startTimeForLastHistoricBlockRecord.getLong(Constants.TIME_SERIES_INDEX_BIN_NAME);
+                // Get the last timestamp from that record
+                Record endTimeFromLastBlockRecord = asClient.operate(currentRecordExistsPolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTimeForLastBlock),
+                        MapOperation.getByIndex(Constants.TIME_SERIES_BIN_NAME, -1, MapReturnType.KEY));
+                endTime = endTimeFromLastBlockRecord.getLong(Constants.TIME_SERIES_BIN_NAME);
+            }
+        }
+        return endTime;
+    }
+
 }

@@ -1,7 +1,6 @@
 package io.github.aerospike_examples.aero_time_series.benchmark;
 
 import com.aerospike.client.*;
-import com.aerospike.client.policy.ScanPolicy;
 import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
@@ -354,7 +353,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
 
-        Vector<String> timeSeriesNames = getTimeSeriesNames();
+        Vector<String> timeSeriesNames = TestUtilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
         for (String timeSeriesName : timeSeriesNames) {
             System.out.println(String.format("Checking time series with name %s", timeSeriesName));
             TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
@@ -576,7 +575,7 @@ public class BenchmarkerTest {
 
         TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
 
-        Vector<String> timeSeriesNames = getTimeSeriesNames();
+        Vector<String> timeSeriesNames = TestUtilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
         for (String timeSeriesName : timeSeriesNames) {
             System.out.println(String.format("Checking time series with name %s", timeSeriesName));
             TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
@@ -729,20 +728,4 @@ public class BenchmarkerTest {
         return consoleOutput;
     }
 
-    /**
-     * Get a list of all the time series in the database
-     * @return Vector containing available time series names
-     */
-    private Vector<String> getTimeSeriesNames(){
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE);
-
-        Vector<String> timeSeriesNames = new Vector<>();
-        timeSeriesClient.getAsClient().scanAll(
-                new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
-                // Callback is a lambda function
-                (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
-                Constants.TIME_SERIES_NAME_FIELD_NAME);
-        return timeSeriesNames;
-    }
 }

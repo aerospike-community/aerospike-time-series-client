@@ -17,7 +17,7 @@ import java.util.*;
 
 public class TimeSeriesClientTest {
     // Reference base data for creating test time series
-    private static final String BASE_DATE = "2022-01-02";
+    private static final String BASE_DATE = "2022-01-01";
     // Used to parse BASE_DATE
     private static final String DATE_FORMAT = "yyyy-MM-dd";
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat(DATE_FORMAT);
@@ -30,16 +30,10 @@ public class TimeSeriesClientTest {
     // Utility variable to control whether teardown occurs. Use when developing tests
     private boolean doTeardown = true;
 
-    // Default TimeSeriesClient for tests
-    private static TimeSeriesClient defaultTimeSeriesClient(){
-        return new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
-    }
-
     @Before
     // An index on the Metadata map is required
     public void setup(){
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
         try {
             String indexName =String.format("%s-%s",timeSeriesClient.getTimeSeriesSet(),Constants.METADATA_BIN_NAME);
             IndexTask task = timeSeriesClient.asClient.createIndex(timeSeriesClient.getReadPolicy(),
@@ -61,7 +55,7 @@ public class TimeSeriesClientTest {
     @Test
     // Can we insert a time series data point and retrieve it
     public void singlePointInsert() throws Exception {
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
         double tsValue = RANDOM.nextDouble();
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,new DataPoint(getTestBaseDate(),tsValue));
         // Test with the getPoints call
@@ -77,7 +71,7 @@ public class TimeSeriesClientTest {
     @Test
     // Check we get an empty array / null point when no points found
     public void nullBehaviourWhenPointsNotAvailable() throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         DataPoint[] dataPointArray = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME,getTestBaseDate(),getTestBaseDate());
         Assert.assertEquals(dataPointArray.length,0);
@@ -90,7 +84,7 @@ public class TimeSeriesClientTest {
     // When we insert multiple points
     // Do we get them back in the correct order
     public void multiplePointInsert() throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         int dataPointCount = 10;
         int timeIncrementInSeconds = 15;
@@ -108,7 +102,7 @@ public class TimeSeriesClientTest {
     // When we insert multiple points out of sequence
     // Do we get them back in the correct order
     public void multiplePointInsert2() throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         int dataPointCount = 10;
         int timeIncrementInSeconds = 15;
@@ -129,7 +123,7 @@ public class TimeSeriesClientTest {
     // Time bounds respected for getPoints
     // If only first n points requested, only return first n
     public void timeBoundsRespected1() throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         int dataPointCount = 10;
         int timeIncrementInSeconds = 15;
@@ -151,7 +145,7 @@ public class TimeSeriesClientTest {
     // Time bounds respected for getPoints
     // If only last n points requested, only return last n
     public void timeBoundsRespected2() throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         int dataPointCount = 10;
         int timeIncrementInSeconds = 15;
@@ -250,7 +244,7 @@ public class TimeSeriesClientTest {
                 Each point's timestamp is greater than the one preceding it
      */
     private void checkCorrectSeriesForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedCount) throws Exception {
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         Date startTime = new Date(getTestBaseDate().getTime() + startTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND);
         Date endTime = new Date(getTestBaseDate().getTime() + endTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND);
@@ -312,11 +306,11 @@ public class TimeSeriesClientTest {
         // Raw values - before they're added to the database
         double[] tsValues = createTimeSeries(TEST_TIME_SERIES_NAME,intervalInSeconds,requiredBlocks * entriesPerBlock,entriesPerBlock);
         // Aggregates, as computed by the API
-        double queryAvgValue = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.AVG,new Date(startTime), new Date(endTime));
-        double queryCount = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.COUNT,new Date(startTime), new Date(endTime));
-        double queryMax = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MAX,new Date(startTime), new Date(endTime));
-        double queryMin = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MIN,new Date(startTime), new Date(endTime));
-        double queryVol = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.VOL,new Date(startTime), new Date(endTime));
+        double queryAvgValue = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.AVG,new Date(startTime), new Date(endTime));
+        double queryCount = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.COUNT,new Date(startTime), new Date(endTime));
+        double queryMax = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MAX,new Date(startTime), new Date(endTime));
+        double queryMin = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.MIN,new Date(startTime), new Date(endTime));
+        double queryVol = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME,TimeSeriesClient.QueryOperation.VOL,new Date(startTime), new Date(endTime));
 
         // Aggregates - as computed 'by hand'
         double foundSum = 0;
@@ -358,11 +352,11 @@ public class TimeSeriesClientTest {
         // Raw values - before they're added to the database
         createTimeSeries(TEST_TIME_SERIES_NAME, intervalInSeconds, requiredBlocks * entriesPerBlock, entriesPerBlock);
         // Aggregates, as computed by the API
-        double queryAvgValue = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.AVG, new Date(startTime), new Date(endTime));
-        double queryCount = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.COUNT, new Date(startTime), new Date(endTime));
-        double queryMax = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MAX, new Date(startTime), new Date(endTime));
-        double queryMin = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MIN, new Date(startTime), new Date(endTime));
-        double queryVol = defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.VOL, new Date(startTime), new Date(endTime));
+        double queryAvgValue = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.AVG, new Date(startTime), new Date(endTime));
+        double queryCount = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.COUNT, new Date(startTime), new Date(endTime));
+        double queryMax = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MAX, new Date(startTime), new Date(endTime));
+        double queryMin = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.MIN, new Date(startTime), new Date(endTime));
+        double queryVol = TestUtilities.defaultTimeSeriesClient().runQuery(TEST_TIME_SERIES_NAME, TimeSeriesClient.QueryOperation.VOL, new Date(startTime), new Date(endTime));
 
         Assert.assertTrue(Double.isNaN(queryAvgValue));
         Assert.assertTrue(Double.isNaN(queryVol));
@@ -383,7 +377,7 @@ public class TimeSeriesClientTest {
         4)  Whether the last timestamp has the special CURRENT_RECORD_TIMESTAMP marker
      */
     private void checkCorrectBlocksForTimeRange(int startTimeOffsetInSeconds,int endTimeOffsetInSeconds,int expectedBlocks, boolean lastBlockZero) throws Exception{
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         long startTimeAsTimestamp = getTestBaseDate().getTime() +startTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND;
         long endTimeAsTimestamp = getTestBaseDate().getTime()+endTimeOffsetInSeconds * Constants.MILLISECONDS_IN_SECOND;
@@ -475,7 +469,7 @@ public class TimeSeriesClientTest {
     // Truncate the time series set
     // Use of null means truncate whole set
     public void teardown(){
-        TimeSeriesClient timeSeriesClient = defaultTimeSeriesClient();
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         if(doTeardown) {
             timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.getTimeSeriesSet(), null);
@@ -528,7 +522,7 @@ public class TimeSeriesClientTest {
         timeSeriesClient.put(TEST_TIME_SERIES_NAME,new DataPoint[0]);
     }
 
-    @SuppressWarnings("SameParameterValue")
+    @SuppressWarnings("SameParameterValue") // avoid messages that the test cases always use the same timeSeriesName
     private static int checkCurrentRecordCount(TimeSeriesClient timeSeriesClient, String timeSeriesName){
         int currentRecordCount = 0;
         Record r = timeSeriesClient.asClient.operate(new WritePolicy(),timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName),
@@ -536,7 +530,8 @@ public class TimeSeriesClientTest {
         if(r != null) currentRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
         return currentRecordCount;
     }
-    @SuppressWarnings("SameParameterValue")
+
+    @SuppressWarnings("SameParameterValue") // avoid messages that the test cases always use the same intervalInSeconds
     private DataPoint[] createDataPoints(long startTime, int intervalInSeconds, int iterations) {
         DataPoint[] dataPoints = new DataPoint[iterations];
         for(int i=0;i<iterations;i++){
@@ -546,4 +541,87 @@ public class TimeSeriesClientTest {
         }
         return dataPoints;
     }
+
+    /**
+     * Are start times for series correctly found
+     *
+     * Three cases
+     * 1) There is a historic block
+     * 2) There is a current record but no historic block
+     * 3) There are no data points
+     *
+     * @throws Exception - but it's a test
+     */
+    @Test
+    public void startTimeForSeriesCheck() throws Exception{
+        String seriesName;
+        int intervalInSeconds;
+        int iterations;
+        int recordsPerBlock;
+
+        // First create some time series
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
+        // Series that will have a historic block
+        seriesName = "Sensor-1";
+        intervalInSeconds = 9;
+        recordsPerBlock = 13;
+        iterations = 2 * recordsPerBlock + 5;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(getTestBaseDate().getTime(), timeSeriesClient.startTimeForSeries(seriesName));
+
+        // Series that will not have a historic block
+        seriesName = "Sensor-2";
+        intervalInSeconds = 15;
+        recordsPerBlock = 12;
+        iterations = recordsPerBlock -2 ;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(getTestBaseDate().getTime() ,timeSeriesClient.startTimeForSeries(seriesName));
+
+        // Series that has no blocks
+        seriesName = "Sensor-3";
+        Assert.assertEquals(Long.MAX_VALUE,timeSeriesClient.startTimeForSeries(seriesName));
+    }
+
+    /**
+     * Are end times for series correctly found
+     *
+     * Three cases
+     * 1) There is a current block
+     * 2) There is a historic record but no current block
+     * 3) There are no data points
+     *
+     * @throws Exception but it's a test
+     */
+    @Test
+    public void endTimeForSeriesCheck() throws Exception{
+        String seriesName;
+        int intervalInSeconds;
+        int iterations;
+        int recordsPerBlock;
+
+        // First create some time series
+        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
+        // Series that will have a historic block
+        seriesName = "Sensor-1";
+        intervalInSeconds = 9;
+        recordsPerBlock = 13;
+        iterations = 2 * recordsPerBlock + 5;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(getTestBaseDate().getTime() + intervalInSeconds * (iterations -1)*Constants.MILLISECONDS_IN_SECOND,
+                timeSeriesClient.endTimeForSeries(seriesName));
+
+        // Series that will not have a historic block
+        seriesName = "Sensor-2";
+        intervalInSeconds = 15;
+        recordsPerBlock = 12;
+        iterations = 2 * recordsPerBlock ;
+        createTimeSeries(seriesName,intervalInSeconds,iterations   ,recordsPerBlock);
+        Assert.assertEquals(getTestBaseDate().getTime() + intervalInSeconds * (iterations -1)*Constants.MILLISECONDS_IN_SECOND,
+                timeSeriesClient.endTimeForSeries(seriesName));
+
+
+        seriesName = "Sensor-3";
+        Assert.assertEquals(Long.MAX_VALUE,timeSeriesClient.endTimeForSeries(seriesName));
+    }
+
 }
