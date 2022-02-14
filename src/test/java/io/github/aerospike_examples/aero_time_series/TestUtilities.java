@@ -80,21 +80,6 @@ public class TestUtilities {
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
     }
 
-    /**
-     * Get a list of all the time series in the database
-     * @param timeSeriesClient object to use
-     * @return Vector containing available time series names
-     */
-    public static Vector<String> getTimeSeriesNames(TimeSeriesClient timeSeriesClient){
-        Vector<String> timeSeriesNames = new Vector<>();
-        timeSeriesClient.getAsClient().scanAll(
-                new ScanPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(),
-                // Callback is a lambda function
-                (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
-                Constants.TIME_SERIES_NAME_FIELD_NAME);
-        return timeSeriesNames;
-    }
-
     // Default TimeSeriesClient for tests
     public static TimeSeriesClient defaultTimeSeriesClient(){
         return new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),

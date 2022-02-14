@@ -7,11 +7,22 @@ Small
 
 Can I remove the benchmarker code when publishing to maven
 
+Nice To Have
+------------
+
+International date times
+REPL loop
+
 Phase 2
 -------
 
 Need to deal with tags
 Compression
+
+Other
+-----
+
+Shell script for invocation
 
 Done
 ====

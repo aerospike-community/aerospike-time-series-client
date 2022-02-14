@@ -32,10 +32,11 @@ class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
 
         // Set up each time series. Given that observation times and values are bootstrapped from the previous value we
         // have to set up what happened at 'T-1'
+        long seriesStartTime = (System.currentTimeMillis() / (24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND )) * 24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND;
         for(int i = 0; i< timeSeriesCountPerObject; i++){
             String timeSeriesName = randomTimeSeriesName();
             // 'T-1'
-            lastObservationTimes.put(timeSeriesName,startTime + startTime - nextObservationTime(startTime));
+            lastObservationTimes.put(timeSeriesName,seriesStartTime + seriesStartTime - nextObservationTime(seriesStartTime));
             // Observation at 'T-1' - time independent so can use initTimeSeriesValue
             lastObservationValues.put(timeSeriesName,initTimeSeriesValue());
             recordCountPerSeries.put(timeSeriesName,0);

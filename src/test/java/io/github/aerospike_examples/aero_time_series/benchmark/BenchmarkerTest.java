@@ -353,7 +353,7 @@ public class BenchmarkerTest {
 
         benchmarker.run();
 
-        Vector<String> timeSeriesNames = TestUtilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
+        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
         for (String timeSeriesName : timeSeriesNames) {
             System.out.println(String.format("Checking time series with name %s", timeSeriesName));
             TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
@@ -575,7 +575,7 @@ public class BenchmarkerTest {
 
         TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
 
-        Vector<String> timeSeriesNames = TestUtilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
+        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
         for (String timeSeriesName : timeSeriesNames) {
             System.out.println(String.format("Checking time series with name %s", timeSeriesName));
             TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
