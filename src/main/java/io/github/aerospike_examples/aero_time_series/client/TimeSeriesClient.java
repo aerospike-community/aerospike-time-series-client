@@ -3,7 +3,6 @@ package io.github.aerospike_examples.aero_time_series.client;
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.policy.BatchPolicy;
 import com.aerospike.client.policy.GenerationPolicy;
 import com.aerospike.client.policy.Policy;
@@ -257,8 +256,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         bins[1] = new Bin(Constants.METADATA_BIN_NAME,metadata);
 
         long startTime = (Long) currentRecord.getMap(Constants.METADATA_BIN_NAME).get(Constants.START_TIME_FIELD_NAME);
+        long entryCount = currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME).size();
 
-        addTimeSeriesIndexRecord(timeSeriesName,startTime);
+        addTimeSeriesIndexRecord(timeSeriesName,startTime, lastTimestamp,entryCount);
         asClient.put(writePolicy, asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime), bins);
         // and remove the current block, if the archived block exists
         // Strictly speaking I don't think the 'exists' check is necessary, but it does make things clear
@@ -402,15 +402,17 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName - name of time series we are updating index for
      * @param startTime - start time of the block we're adding to the index
      */
-    private void addTimeSeriesIndexRecord(String timeSeriesName, long startTime) {
+    private void addTimeSeriesIndexRecord(String timeSeriesName, long startTime, long endTime, long entryCount) {
+        Map<String,Object> metadata = new HashMap<>();
+        metadata.put(Constants.END_TIME_FIELD_NAME,endTime);
+        metadata.put(Constants.ENTRY_COUNT_FIELD_NAME,entryCount);
         // Rely on automatic map creation - don't need to explicitly create a map - put will do that for you
         asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
                 Operation.put(new Bin(Constants.TIME_SERIES_NAME_FIELD_NAME,new Value.StringValue(timeSeriesName))),
                 // Inserts data point
-                MapOperation.put(insertMapPolicy, Constants.TIME_SERIES_INDEX_BIN_NAME,
-                        new Value.LongValue(startTime), new Value.StringValue(asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime).userKey.toString()))
+                MapOperation.put(insertMapPolicy,Constants.TIME_SERIES_INDEX_BIN_NAME,
+                        new Value.LongValue(startTime),new Value.MapValue(metadata))
         );
-
     }
 
     /**
@@ -686,13 +688,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     long dataPointCount(String timeSeriesName){
         long dataPointCount = 0;
         // Get the start times from the index block
-        Record startTimesListRecord = asClient.get(getWritePolicy(), asKeyForTimeSeriesIndexes(timeSeriesName),
+        Record metadataRecord = asClient.get(getWritePolicy(), asKeyForTimeSeriesIndexes(timeSeriesName),
                 Constants.TIME_SERIES_INDEX_BIN_NAME);
-        if(startTimesListRecord != null){
+        if(metadataRecord != null){
             // If there are any, get the size of each block
-            for(long startTime : ((Map<Long,String>)(startTimesListRecord.getMap(Constants.TIME_SERIES_INDEX_BIN_NAME))).keySet()){
-                dataPointCount+= asClient.operate(getWritePolicy(),
-                        asKeyForHistoricTimeSeriesBlock(timeSeriesName,startTime),MapOperation.size(Constants.TIME_SERIES_BIN_NAME)).getLong(Constants.TIME_SERIES_BIN_NAME);
+            Map<Long,Map<String,Long>> metadataMap = (Map<Long,Map<String,Long>>)metadataRecord.getMap(Constants.TIME_SERIES_INDEX_BIN_NAME);
+            for(long startTime : metadataMap.keySet()){
+                dataPointCount+= metadataMap.get(startTime).get(Constants.ENTRY_COUNT_FIELD_NAME);
             }
         }
 

@@ -3,9 +3,7 @@ package io.github.aerospike_examples.aero_time_series.client;
 import com.aerospike.client.*;
 import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.WritePolicy;
-import com.aerospike.client.query.*;
 import com.aerospike.client.cdt.MapOperation;
-import com.aerospike.client.task.IndexTask;
 import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
@@ -29,28 +27,6 @@ public class TimeSeriesClientTest {
 
     // Utility variable to control whether teardown occurs. Use when developing tests
     private boolean doTeardown = true;
-
-    @Before
-    // An index on the Metadata map is required
-    public void setup(){
-        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
-        try {
-            String indexName =String.format("%s-%s",timeSeriesClient.getTimeSeriesSet(),Constants.METADATA_BIN_NAME);
-            IndexTask task = timeSeriesClient.asClient.createIndex(timeSeriesClient.getReadPolicy(),
-                    TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, indexName, Constants.METADATA_BIN_NAME,
-                    IndexType.STRING, IndexCollectionType.MAPVALUES);
-            task.waitTillComplete();
-        }
-        catch (AerospikeException e){
-            //noinspection StatementWithEmptyBody
-            if(e.getResultCode() == ResultCode.INDEX_ALREADY_EXISTS){
-                // Do nothing
-            }
-            else
-                throw e;
-        }
-
-    }
 
     @Test
     // Can we insert a time series data point and retrieve it

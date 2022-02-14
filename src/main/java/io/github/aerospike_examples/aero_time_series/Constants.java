@@ -13,6 +13,7 @@ public class Constants {
     public final static String START_TIME_FIELD_NAME = "StartTime";
     public final static String END_TIME_FIELD_NAME = "EndTime";
     public final static String METADATA_BIN_NAME = "Metadata";
+    public final static String ENTRY_COUNT_FIELD_NAME = "EntryCount";
     public final static String MAX_BLOCK_TIME_SERIES_ENTRIES_FIELD_NAME = "maxTSEntries";
 
     public final static int DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK = 1000;

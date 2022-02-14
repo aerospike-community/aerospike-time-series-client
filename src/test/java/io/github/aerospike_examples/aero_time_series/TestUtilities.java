@@ -1,13 +1,11 @@
 package io.github.aerospike_examples.aero_time_series;
 
 import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.policy.InfoPolicy;
-import com.aerospike.client.policy.QueryPolicy;
 import com.aerospike.client.policy.ScanPolicy;
-import com.aerospike.client.query.Filter;
-import com.aerospike.client.query.IndexCollectionType;
-import com.aerospike.client.query.RecordSet;
-import com.aerospike.client.query.Statement;
 import io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper;
 import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
@@ -34,17 +32,25 @@ public class TestUtilities {
      * @param timeSeriesName - name of time series
      * @return number of blocks
      */
+    /*
+        Do this by scanning the time series set, using a filter expression, and counting the results
+     */
     public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String timeSeriesName) {
-        Statement stmt = new Statement();
-        stmt.setNamespace(timeSeriesClient.getAsNamespace());
-        stmt.setSetName(timeSeriesClient.getTimeSeriesSet());
-        stmt.setBinNames(Constants.METADATA_BIN_NAME);
-        stmt.setFilter(Filter.contains(Constants.METADATA_BIN_NAME, IndexCollectionType.MAPVALUES, timeSeriesName));
+        // Filter expression - only get records where metadata.timeseriesfieldname = timeseriesname
+        Exp filterExp =
+                Exp.eq(
+                        MapExp.getByKey(MapReturnType.VALUE, Exp.Type.STRING,Exp.val(Constants.TIME_SERIES_NAME_FIELD_NAME),
+                                Exp.bin(Constants.METADATA_BIN_NAME,Exp.Type.MAP)),
+                        Exp.val(timeSeriesName));
 
-        RecordSet rs = timeSeriesClient.getAsClient().query( new QueryPolicy(timeSeriesClient.getReadPolicy()), stmt);
-        int blockCount = 0;
-        while (rs.next()) blockCount++;
-        return blockCount;
+        Vector records = new Vector();
+        ScanPolicy scanPolicy = new ScanPolicy();
+        scanPolicy.filterExp = Exp.build(filterExp);
+        timeSeriesClient.getAsClient().scanAll(
+                scanPolicy, timeSeriesClient.getAsNamespace(), timeSeriesClient.getTimeSeriesSet(),
+                // Callback is a lambda function
+                (key, record) -> records.add(record));
+        return records.size();
     }
 
     /**
