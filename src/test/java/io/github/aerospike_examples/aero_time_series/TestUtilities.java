@@ -86,6 +86,11 @@ public class TestUtilities {
         timeSeriesCount,recordsPerBlock,timeSeriesRangeSeconds, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
     }
 
+    public static TimeSeriesBenchmarker queryBenchmarker(String asHost, String asNamespace, String asSet, int runDurationSeconds, int threadCount, long randomSeed){
+        return new TimeSeriesBenchmarker(asHost,asNamespace,asSet,OptionsHelper.BenchmarkModes.QUERY,0,10,0,threadCount,
+                0,0,0, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
+    }
+
     // Default TimeSeriesClient for tests
     public static TimeSeriesClient defaultTimeSeriesClient(){
         return new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),

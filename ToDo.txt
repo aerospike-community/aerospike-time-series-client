@@ -1,11 +1,12 @@
-Benchmark client - simulate queries
-
 Deal with retrospective inserts
 
 Small
 ----
 
 Can I remove the benchmarker code when publishing to maven
+Add a no truncate option
+How do I test the query benchmarker
+Check the benchmarker headers
 
 Nice To Have
 ------------
@@ -64,6 +65,7 @@ Check defaults in usage - checked - correctly documented defaults & whether opti
 End times as part of the metadata - might simplify things?
 Refactor packages
 Find out about 'linting' i.e. looking for un-used methods, incomplete documentation 
+Benchmark client - simulate queries
 
 Notes
 =====

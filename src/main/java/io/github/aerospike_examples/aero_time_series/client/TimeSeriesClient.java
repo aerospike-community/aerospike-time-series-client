@@ -3,10 +3,8 @@ package io.github.aerospike_examples.aero_time_series.client;
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.policy.BatchPolicy;
-import com.aerospike.client.policy.GenerationPolicy;
-import com.aerospike.client.policy.Policy;
-import com.aerospike.client.policy.WritePolicy;
+import com.aerospike.client.exp.MapExp;
+import com.aerospike.client.policy.*;
 import io.github.aerospike_examples.aero_time_series.Constants;
 
 import java.util.*;
@@ -708,5 +706,4 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
         return dataPointCount;
     }
-
 }

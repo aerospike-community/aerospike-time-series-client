@@ -448,8 +448,7 @@ public class TimeSeriesClientTest {
         TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
 
         if(doTeardown) {
-            timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.getTimeSeriesSet(), null);
-            timeSeriesClient.asClient.truncate(new InfoPolicy(), TestConstants.AEROSPIKE_NAMESPACE, timeSeriesClient.timeSeriesIndexSetName(), null);
+            TestUtilities.removeTimeSeriesTestDataForSet(timeSeriesClient.getTimeSeriesSet());
         }
     }
 

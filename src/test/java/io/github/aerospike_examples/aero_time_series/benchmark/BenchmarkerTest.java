@@ -189,7 +189,8 @@ public class BenchmarkerTest {
                 TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
-        Assert.assertEquals(consoleOutput.get(2), String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d", updatesPerSecond, Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
+
+        Assert.assertEquals(consoleOutput.get(5), String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d", updatesPerSecond, Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
     }
 
     /**
@@ -309,10 +310,10 @@ public class BenchmarkerTest {
         TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
         // Capture the console output
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
-
+        for(String output: consoleOutput) System.out.println(output);
         // Check the two header messages
-        Assert.assertEquals(consoleOutput.get(0), String.format("Updates per second : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates));
-        Assert.assertEquals(consoleOutput.get(1), String.format("Updates per second per time series : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates / timeSeriesCount));
+        Assert.assertEquals(consoleOutput.get(2), String.format("Updates per second : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates));
+        Assert.assertEquals(consoleOutput.get(3), String.format("Updates per second per time series : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates / timeSeriesCount));
 
         // Check we get the expected number of status messages
         Pattern pattern = Pattern.compile("Run time : \\d+ seconds, Update count : \\d+, Actual updates per second : \\d+.\\d{3}", Pattern.CASE_INSENSITIVE);

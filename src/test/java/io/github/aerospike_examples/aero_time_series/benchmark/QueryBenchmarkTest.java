@@ -1,14 +1,18 @@
 package io.github.aerospike_examples.aero_time_series.benchmark;
 
+import com.aerospike.client.cdt.MapReturnType;
+import com.aerospike.client.exp.Exp;
+import com.aerospike.client.exp.MapExp;
+import com.aerospike.client.policy.ScanPolicy;
+import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
 import io.github.aerospike_examples.aero_time_series.Utilities;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClientTest;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Date;
 import java.util.Vector;
 
 public class QueryBenchmarkTest {
@@ -20,7 +24,8 @@ public class QueryBenchmarkTest {
         int threadCount = 10;
         int timeSeriesCount = 10;
         int recordsPerBlock = 1000;
-        long timeSeriesRangeSeconds = 86400 * 100;
+        long timeSeriesRangeSeconds = 86400 * 10;
+        int queryRunDuratinoSeconds = 10;
 
         // Keep track of the start time - useful when we retrieve the data points
         long startTime = System.currentTimeMillis();
@@ -31,11 +36,10 @@ public class QueryBenchmarkTest {
 
         benchmarker.run();
 
-        TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
-        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
-        for(String timeSeriesName : timeSeriesNames){
-            System.out.println(TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient,timeSeriesName));
-        }
+        TimeSeriesBenchmarker readBenchmarker = TestUtilities.queryBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
+                queryRunDuratinoSeconds,threadCount,TestConstants.RANDOM_SEED);
+        readBenchmarker.run();
 
     }
+
 }

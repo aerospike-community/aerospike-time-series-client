@@ -139,37 +139,65 @@ public class TimeSeriesBenchmarker {
     }
 
     void run(){
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(aerospikeClient = new AerospikeClient(asHost,Constants.DEFAULT_AEROSPIKE_PORT),
+                asNamespace,asSet,recordsPerBlock);
+
         switch(runMode){
+            // First of all print out a header showing what is happening
             case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
+                output.println("Running in real time insert mode");
+                output.println();
                 output.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
                 output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
+                output.println();
                 break;
             case OptionsHelper.BenchmarkModes.BATCH_INSERT:
+                output.println("Running in batch insert mode");
+                output.println();
                 long recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
                 output.println(String.format("Inserting %d records over a period of %d seconds",recordCount,timeSeriesRangeSeconds));
+                output.println();
+                break;
+            case OptionsHelper.BenchmarkModes.QUERY:
+                output.println("Running in query mode");
+                output.println();
+                output.println(QueryTimeSeriesRunnable.timeSeriesInfoSummary(QueryTimeSeriesRunnable.getTimeSeriesDetails(timeSeriesClient)));
+                output.println();
                 break;
 
         }
         if(updatesPerTimeSeriesPerSecond() > Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC){
-            output.println(String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",updatesPerTimeSeriesPerSecond(),Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
+            output.println(String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",
+                    updatesPerTimeSeriesPerSecond(),Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
         }
 
-        // Initialisation
-        aerospikeClient = new AerospikeClient(asHost,Constants.DEFAULT_AEROSPIKE_PORT);
-        aerospikeClient.truncate(new InfoPolicy(),asNamespace,asSet,null);
-        aerospikeClient.truncate(new InfoPolicy(),asNamespace,TimeSeriesClient.timeSeriesIndexSetName(asSet),null);
+        // Initialisation - truncate time series if running in one of the insert modes
+        if((runMode.equals(OptionsHelper.BenchmarkModes.BATCH_INSERT) || runMode.equals(OptionsHelper.BenchmarkModes.REAL_TIME_INSERT))) {
+            timeSeriesClient.getAsClient().truncate(new InfoPolicy(), asNamespace, asSet, null);
+            timeSeriesClient.getAsClient().truncate(new InfoPolicy(), asNamespace, TimeSeriesClient.timeSeriesIndexSetName(asSet), null);
+        }
 
         benchmarkClientObjects = new TimeSeriesRunnable[threadCount];
         Random random  = new Random(randomSeed);
         for(int i=0;i<threadCount;i++){
-            int timeSeriesCountForThread = timeSeriesCount /  threadCount;
-            if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
             TimeSeriesRunnable runnable = null; // Keep the compiler happy with null assignment
+            int timeSeriesCountForThread; // only needed for insert modes
             switch(runMode){
                 case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
-                    runnable = new RealTimeInsertTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong()); break;
+                    // Figure out how many time series per thread to manage
+                    timeSeriesCountForThread = timeSeriesCount /  threadCount;
+                    if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
+                    runnable = new RealTimeInsertTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong());
+                    break;
                 case OptionsHelper.BenchmarkModes.BATCH_INSERT:
+                    // Figure out how many time series per thread to manage
+                    timeSeriesCountForThread = timeSeriesCount /  threadCount;
+                    if(i < timeSeriesCount % threadCount) timeSeriesCountForThread++;
                     runnable = new BatchInsertTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,timeSeriesCountForThread,this,random.nextLong());
+                    break;
+                case OptionsHelper.BenchmarkModes.QUERY:
+                    runnable = new QueryTimeSeriesRunnable(aerospikeClient,asNamespace,asSet,0,this,random.nextLong());
+                    break;
             }
             benchmarkClientObjects[i] = runnable;
             Thread t = new Thread(benchmarkClientObjects[i]);
@@ -187,7 +215,11 @@ public class TimeSeriesBenchmarker {
                 catch(InterruptedException e){}
             }
         }
+        output.println();
+        output.println("Run Summary");
+        output.println();
         outputStatus();
+        output.println();
     }
 
     /**
@@ -201,6 +233,9 @@ public class TimeSeriesBenchmarker {
                 break;
             case OptionsHelper.BenchmarkModes.BATCH_INSERT:
                 outputStatusForBatchInserts();
+                break;
+            case OptionsHelper.BenchmarkModes.QUERY:
+                outputStatusForQueries();
                 break;
         }
 
@@ -226,6 +261,11 @@ public class TimeSeriesBenchmarker {
         double pctComplete = 100 * (double) totalUpdateCount() / expectedUpdateCount;
         output.println(String.format("Run time : %d seconds, Data point insert count : %d, Effective updates per second : %.3f. Pct complete %.3f%%", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
                 totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs(),pctComplete));
+    }
+
+    private void outputStatusForQueries(){
+        output.println(String.format("Run time : %d seconds, Query count : %d, Queries per second %.3f",averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs()));
     }
 
     /**
