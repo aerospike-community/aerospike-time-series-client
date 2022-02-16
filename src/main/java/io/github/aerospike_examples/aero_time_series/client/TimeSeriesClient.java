@@ -3,7 +3,6 @@ package io.github.aerospike_examples.aero_time_series.client;
 import com.aerospike.client.*;
 import com.aerospike.client.cdt.*;
 import com.aerospike.client.exp.Exp;
-import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.policy.*;
 import io.github.aerospike_examples.aero_time_series.Constants;
 
@@ -86,7 +85,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     /**
      * TimeSeriesClient constructor. Provide an Aerospike Client object, tne namespace, the name of the set to use, max number of data points per Aerospike object
      * @param asClient Aerospike Client
-     * @param asNamespace Aerospike nammespace
+     * @param asNamespace Aerospike namespace
      * @param timeSeriesSet Set to store time series data in
      * @param maxBlockEntryCount max data points per Aerospike object
      */
@@ -101,8 +100,9 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * TimeSeriesClient constructor. Provide an Aerospike Client object and tne namespace
      * Max data points per object gets set to the default value.
      * @param asClient Aerospike Client
-     * @param asNamespace Aerospike nammespace
+     * @param asNamespace Aerospike namespace
      */
+    @SuppressWarnings("unused") // Required in API
     public TimeSeriesClient(AerospikeClient asClient, String asNamespace) {
         this(asClient,asNamespace,Constants.DEFAULT_TIME_SERIES_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
     }
@@ -114,6 +114,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * Read policy used for Aerospike transactions. See https://docs.aerospike.com/guide/policies for more details
      * @return read policy object
      */
+    @SuppressWarnings("unused") // Required in API
     public Policy getReadPolicy() {
         return readPolicy;
     }
@@ -690,6 +691,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 Constants.TIME_SERIES_INDEX_BIN_NAME);
         if(metadataRecord != null){
             // If there are any, get the size of each block
+            @SuppressWarnings("unchecked") // Type is expected
             Map<Long,Map<String,Long>> metadataMap = (Map<Long,Map<String,Long>>)metadataRecord.getMap(Constants.TIME_SERIES_INDEX_BIN_NAME);
             for(long startTime : metadataMap.keySet()){
                 dataPointCount+= metadataMap.get(startTime).get(Constants.ENTRY_COUNT_FIELD_NAME);

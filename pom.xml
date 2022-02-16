@@ -133,7 +133,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.aerospike.utility.SingleKeyUpdateTest</mainClass>
+                            <mainClass>io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

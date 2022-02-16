@@ -97,7 +97,7 @@ public class TimeSeriesBenchmarker {
         catch(Utilities.ParseException e){
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.cmdLineOptions());
+            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.standardCmdLineOptions());
         }
     }
 
@@ -106,11 +106,12 @@ public class TimeSeriesBenchmarker {
      *     Protected visibility to allow testing use
      */
     static TimeSeriesBenchmarker initBenchmarkerFromStringArgs(String[] args) throws Utilities.ParseException{
-        TimeSeriesBenchmarker benchmarker = null;
+        TimeSeriesBenchmarker benchmarker;
         try {
             CommandLine cmd = OptionsHelper.getArguments(args);
             CommandLineParser parser = new DefaultParser();
-            parser.parse(OptionsHelper.cmdLineOptionsForRealTimeInsert(), args);
+            // Check the command line versus options standard for all run modes
+            parser.parse(OptionsHelper.standardCmdLineOptions(), args);
 
             benchmarker = new TimeSeriesBenchmarker(
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
@@ -132,8 +133,8 @@ public class TimeSeriesBenchmarker {
         catch(ParseException e){
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.cmdLineOptions());
-            System.exit(1);
+            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.standardCmdLineOptions());
+            throw(new Utilities.ParseException(e.getMessage()));
         }
         return benchmarker;
     }
@@ -145,21 +146,21 @@ public class TimeSeriesBenchmarker {
         switch(runMode){
             // First of all print out a header showing what is happening
             case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
-                output.println("Running in real time insert mode");
+                output.println("Aerospike Time Series Benchmarker running in real time insert mode");
                 output.println();
                 output.println(String.format("Updates per second : %.3f",expectedUpdatesPerSecond()));
                 output.println(String.format("Updates per second per time series : %.3f",updatesPerTimeSeriesPerSecond()));
                 output.println();
                 break;
             case OptionsHelper.BenchmarkModes.BATCH_INSERT:
-                output.println("Running in batch insert mode");
+                output.println("Aerospike Time Series Benchmarker running in batch insert mode");
                 output.println();
                 long recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
                 output.println(String.format("Inserting %d records over a period of %d seconds",recordCount,timeSeriesRangeSeconds));
                 output.println();
                 break;
             case OptionsHelper.BenchmarkModes.QUERY:
-                output.println("Running in query mode");
+                output.println("Aerospike Time Series Benchmarker running in query mode");
                 output.println();
                 output.println(QueryTimeSeriesRunnable.timeSeriesInfoSummary(QueryTimeSeriesRunnable.getTimeSeriesDetails(timeSeriesClient)));
                 output.println();

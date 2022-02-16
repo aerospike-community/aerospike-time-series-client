@@ -7,12 +7,11 @@ import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
 
 import java.util.Date;
-import java.util.Random;
 import java.util.Vector;
 
-public class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
-    TimeSeriesClient timeSeriesClient;
-    long runDurationSeconds;
+class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
+    private final TimeSeriesClient timeSeriesClient;
+    private final long runDurationSeconds;
 
     public QueryTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);

@@ -50,9 +50,12 @@ public class OptionsHelper {
 
     /**
      * Command line options for Main class
-     * @return cmdLineOptions
+     * This function provides the options in general terms, to allow for initial parsing
+     * Separate logic is required to parse the options based on benchmark mode - this is done in getArguments
+     * Utility functions are provided below to return command line options for each mode
+     * @return standardCmdLineOptions
      */
-    static Options cmdLineOptions(){
+    static Options standardCmdLineOptions(){
         Options cmdLineOptions = new Options();
 
         Option hostOption = new Option(BenchmarkerFlags.HOST_FLAG,"host",true,"Aerospike seed host. Required");
@@ -60,15 +63,19 @@ public class OptionsHelper {
         Option setOption = new Option(BenchmarkerFlags.TIME_SERIES_SET_FLAG,"set",true,
                 String.format("Set for time series. Defaults to %s",Constants.DEFAULT_TIME_SERIES_SET));
         Option modeOption = new Option(BenchmarkerFlags.MODE_FLAG,"mode",true,
-                String.format("Benchmark mode - values allowed are %s and %s. Required.",BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
+                String.format("Benchmark mode - values allowed are %s, %s and %s. Required.",
+                        BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT, BenchmarkModes.QUERY));
         Option runDurationOption = new Option(BenchmarkerFlags.RUN_DURATION_FLAG,"duration",true,
-                String.format("Simulation duration in seconds. Required for %s mode. Not valid in %s mode",BenchmarkModes.REAL_TIME_INSERT, BenchmarkModes.BATCH_INSERT));
+                String.format("Simulation duration in seconds. Required for %s and %s mode. Not valid in %s mode",
+                        BenchmarkModes.REAL_TIME_INSERT, BenchmarkModes.QUERY, BenchmarkModes.BATCH_INSERT));
         Option accelerationOption = new Option(BenchmarkerFlags.ACCELERATION_FLAG,"acceleration",true,
                 String.format("Simulation acceleration factor (clock speed multiplier). Only valid in %s mode. Optional.",BenchmarkModes.REAL_TIME_INSERT));
         Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,
                 String.format("Max time series points in each Aerospike object. Optional. Defaults to %d",Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK));
         Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,
-                String.format("Period to be spanned by time series. Required for %s mode. Not valid in %s mode",BenchmarkModes.BATCH_INSERT, BenchmarkModes.REAL_TIME_INSERT));
+                String.format("Period to be spanned by time series. Only valid in %s mode.\n" +
+                        "Specify as <number><unit> where <unit is one of Y(ears),D(ays),H(ours),M(inutes),S(econds) e.g. 1Y or 12H",
+                        BenchmarkModes.BATCH_INSERT));
         Option threadCountOption = new Option(BenchmarkerFlags.THREAD_COUNT_FLAG,"threads",true,
                 String.format("Thread count required. Optional. Defaults to %d",TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT));
         Option timeSeriesCountOption = new Option(BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,"timeSeriesCount",true,
@@ -76,17 +83,20 @@ public class OptionsHelper {
         Option intervalOption = new Option(BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,"interval",true,
                 "Average interval between observations. Required");
 
+        // These options are common to all modes
         hostOption.setRequired(true);
         namespaceOption.setRequired(true);
         setOption.setRequired(false);
         modeOption.setRequired(true);
+        threadCountOption.setRequired(false);
+
+        // The options below - whether these options are allowed / optional / not allowed is mode dependent
         runDurationOption.setRequired(false);
         accelerationOption.setRequired(false);
         recordsPerBlockOption.setRequired(false);
         timeSeriesRangeOption.setRequired(false);
-        threadCountOption.setRequired(false);
-        timeSeriesCountOption.setRequired(true);
-        intervalOption.setRequired(true);
+        timeSeriesCountOption.setRequired(false);
+        intervalOption.setRequired(false);
 
         cmdLineOptions.addOption(hostOption);
         cmdLineOptions.addOption(namespaceOption);
@@ -99,7 +109,6 @@ public class OptionsHelper {
         cmdLineOptions.addOption(threadCountOption);
         cmdLineOptions.addOption(timeSeriesCountOption);
         cmdLineOptions.addOption(intervalOption);
-
         return cmdLineOptions;
     }
 
@@ -108,11 +117,21 @@ public class OptionsHelper {
      * Allows us to check flags when this mode is used
      * @return Options object
      */
-    static Options cmdLineOptionsForRealTimeInsert(){
-        Options options = cmdLineOptions();
+    private static Options cmdLineOptionsForRealTimeInsert(){
+        Options options = standardCmdLineOptions();
+        Options clonedOptions = new Options();
+        // Basically need to filter out the options which are not allowed in this mode
+        for(Option option : options.getOptions()){
+            switch(option.getOpt()){
+                case BenchmarkerFlags.TIME_SERIES_RANGE_FLAG:
+                    break;
+                default:
+                    clonedOptions.addOption(option);
+            }
+        }
+        // And set required for the flags that are needed
         options.getOption(BenchmarkerFlags.RUN_DURATION_FLAG).setRequired(true);
-        options.getOption(BenchmarkerFlags.ACCELERATION_FLAG).setRequired(false);
-        return options;
+        return clonedOptions;
     }
 
     /**
@@ -120,11 +139,47 @@ public class OptionsHelper {
      * Allows us to check flags when this mode is used
      * @return Options object
      */
-
-    static Options cmdLineOptionsForBatchInsert(){
-        Options options = cmdLineOptions();
+    private static Options cmdLineOptionsForBatchInsert(){
+        Options options = standardCmdLineOptions();
+        Options clonedOptions = new Options();
+        // Basically need to filter out the options which are not allowed in this mode
+        for(Option option : options.getOptions()){
+            switch(option.getOpt()){
+                case BenchmarkerFlags.RUN_DURATION_FLAG:
+                case BenchmarkerFlags.ACCELERATION_FLAG:
+                    break;
+                default:
+                    clonedOptions.addOption(option);
+            }
+        }
+        // And set required for the flags that are needed
         options.getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).setRequired(true);
-        return options;
+        return clonedOptions;
+    }
+
+    /**
+     * Command line options for query mode
+     * Allows us to check flags when this mode is used
+     * @return Options object
+     */
+    private static Options cmdLineOptionsForQueryMode(){
+        Options options = standardCmdLineOptions();
+        Options clonedOptions = new Options();
+        // Basically need to filter out the options which are not allowed in this mode
+        for(Option option : options.getOptions()){
+            switch(option.getOpt()){
+                case BenchmarkerFlags.ACCELERATION_FLAG:
+                case BenchmarkerFlags.TIME_SERIES_RANGE_FLAG:
+                case BenchmarkerFlags.TIME_SERIES_COUNT_FLAG:
+                case BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG:
+                    break;
+                default:
+                    clonedOptions.addOption(option);
+            }
+        }
+        // And set required for the flags that are needed
+        clonedOptions.getOption(BenchmarkerFlags.RUN_DURATION_FLAG).setRequired(true);
+        return clonedOptions;
     }
 
     /**
@@ -148,6 +203,8 @@ public class OptionsHelper {
                 return Integer.toString(0);
             case BenchmarkerFlags.TIME_SERIES_SET_FLAG:
                 return Constants.DEFAULT_TIME_SERIES_SET;
+            case BenchmarkerFlags.TIME_SERIES_COUNT_FLAG:
+                return Integer.toString(TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
             default:
                 return null;
         }
@@ -200,7 +257,7 @@ public class OptionsHelper {
      */
     static String getOptionUsingDefaults(CommandLine cmd, String optionFlag) throws Utilities.ParseException{
         String value = cmd.getOptionValue(optionFlag, getDefaultValue(optionFlag));
-        checkCommandLineArgumentType(optionFlag,value);
+        if(cmd.hasOption(optionFlag)) checkCommandLineArgumentType(optionFlag,value);
         return value;
     }
 
@@ -212,35 +269,51 @@ public class OptionsHelper {
      */
     static CommandLine getArguments(String[] args) throws ParseException, Utilities.ParseException {
         CommandLineParser parser = new DefaultParser();
-        CommandLine result = parser.parse(cmdLineOptions(), args);
+        CommandLine result = parser.parse(standardCmdLineOptions(), args);
         switch(result.getOptionValue(BenchmarkerFlags.MODE_FLAG)){
             case BenchmarkModes.REAL_TIME_INSERT:
-                if(result.hasOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG))
-                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
-                            BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
-                            OptionsHelper.cmdLineOptionsForRealTimeInsert().getOption(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
-                            BenchmarkModes.REAL_TIME_INSERT));
+                for(Option option : OptionsHelper.standardCmdLineOptions().getOptions()) {
+                    if (!OptionsHelper.cmdLineOptionsForRealTimeInsert().hasOption(option.getOpt())){
+                        throwErrorIfFlagFoundForMode(result,option.getOpt(),result.getOptionValue(BenchmarkerFlags.MODE_FLAG));
+                    }
+                }
                 break;
             case BenchmarkModes.BATCH_INSERT:
-                if(result.hasOption(BenchmarkerFlags.RUN_DURATION_FLAG))
-                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
-                            BenchmarkerFlags.RUN_DURATION_FLAG,
-                            OptionsHelper.cmdLineOptionsForBatchInsert().getOption(BenchmarkerFlags.RUN_DURATION_FLAG).getLongOpt(),
-                            BenchmarkModes.BATCH_INSERT));
-                if(result.hasOption(BenchmarkerFlags.ACCELERATION_FLAG))
-                    throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
-                            BenchmarkerFlags.ACCELERATION_FLAG,
-                            OptionsHelper.cmdLineOptionsForBatchInsert().getOption(BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
-                            BenchmarkModes.BATCH_INSERT));
+                for(Option option : OptionsHelper.standardCmdLineOptions().getOptions()) {
+                    if (!OptionsHelper.cmdLineOptionsForBatchInsert().hasOption(option.getOpt())){
+                        throwErrorIfFlagFoundForMode(result,option.getOpt(),result.getOptionValue(BenchmarkerFlags.MODE_FLAG));
+                    }
+                }
+                break;
+            case BenchmarkModes.QUERY:
+                for(Option option : OptionsHelper.standardCmdLineOptions().getOptions()) {
+                    if (!OptionsHelper.cmdLineOptionsForQueryMode().hasOption(option.getOpt())){
+                        throwErrorIfFlagFoundForMode(result,option.getOpt(),result.getOptionValue(BenchmarkerFlags.MODE_FLAG));
+                    }
+                }
                 break;
             default:
                 throw new Utilities.ParseException(
-                    String.format("%s is an invalid run mode. Please use %s or %s",result.getOptionValue(BenchmarkerFlags.MODE_FLAG),
-                            BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT));
+                    String.format("%s is an invalid run mode. Please use %s, %s or %s",result.getOptionValue(BenchmarkerFlags.MODE_FLAG),
+                            BenchmarkModes.REAL_TIME_INSERT,BenchmarkModes.BATCH_INSERT,BenchmarkModes.QUERY));
         }
         return result;
     }
 
+    /**
+     * Small utility function to throw an error if specified flag is found for given mode
+     * @param result CommandLine object
+     * @param benchmarkerFlag flag to check for
+     * @param benchmarkerMode run mode
+     * @throws Utilities.ParseException if flag is being used
+     */
+    private static void throwErrorIfFlagFoundForMode(CommandLine result, String benchmarkerFlag,String benchmarkerMode) throws Utilities.ParseException{
+        if(result.hasOption(benchmarkerFlag))
+            throw new Utilities.ParseException(String.format("-%s flag (%s) should not be used in %s mode",
+                    benchmarkerFlag,
+                    OptionsHelper.standardCmdLineOptions().getOption(benchmarkerFlag).getLongOpt(),
+                    benchmarkerMode));
+    }
     /**
      * Convert timeString to seconds based on the unit provided
      * Assume seconds if no unit provided

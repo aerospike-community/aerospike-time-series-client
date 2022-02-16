@@ -1,7 +1,6 @@
 package io.github.aerospike_examples.aero_time_series.client;
 
 import com.aerospike.client.*;
-import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.WritePolicy;
 import com.aerospike.client.cdt.MapOperation;
 import io.github.aerospike_examples.aero_time_series.Constants;

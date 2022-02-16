@@ -7,10 +7,10 @@ import java.util.Date;
  * Container object for key information about a single time series
  */
 public class TimeSeriesInfo {
-    private String seriesName;
-    private long startDateTime;
-    private long endDateTime;
-    private long dataPointCount;
+    private final String seriesName;
+    private final long startDateTime;
+    private final long endDateTime;
+    private final long dataPointCount;
 
     private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
     private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat(DATE_FORMAT);
@@ -22,7 +22,7 @@ public class TimeSeriesInfo {
      * @param endDateTime - latest data point timestamp for series
      * @param dataPointCount - number of points in the time series
      */
-    public TimeSeriesInfo(String seriesName, long startDateTime, long endDateTime, long dataPointCount){
+    private TimeSeriesInfo(String seriesName, long startDateTime, long endDateTime, long dataPointCount){
         this.seriesName = seriesName;
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
@@ -70,7 +70,7 @@ public class TimeSeriesInfo {
      * Static method allowing generation of a TimeSeriesInfo object
      * @param timeSeriesClient client object
      * @param timeSeriesName time series name
-     * @return
+     * @return TimeSeriesInfo object for specified time series
      */
     public static TimeSeriesInfo getTimeSeriesDetails(TimeSeriesClient timeSeriesClient, String timeSeriesName){
         long startDateTime = timeSeriesClient.startTimeForSeries(timeSeriesName);

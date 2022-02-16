@@ -402,7 +402,7 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
                         intervalBetweenUpdates, runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("-%s flag should have an integer argument. Argument supplied is %s", OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, badThreadCount));
     }
@@ -430,10 +430,11 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
                         intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
+        for(String output: consoleOutput) System.out.println(output);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("-%s flag (%s) should not be used in %s mode", OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
-                OptionsHelper.cmdLineOptionsForRealTimeInsert().getOption(OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
+                OptionsHelper.standardCmdLineOptions().getOption(OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
                 OptionsHelper.BenchmarkModes.REAL_TIME_INSERT));
     }
 
@@ -460,10 +461,11 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
                         intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("-%s flag (%s) should not be used in %s mode", OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
-                OptionsHelper.cmdLineOptionsForBatchInsert().getOption(OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG).getLongOpt(),
+                OptionsHelper.standardCmdLineOptions().getOption(OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG).getLongOpt(),
                 OptionsHelper.BenchmarkModes.BATCH_INSERT));
     }
 
@@ -489,10 +491,10 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
                         intervalBetweenUpdates, accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("-%s flag (%s) should not be used in %s mode", OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,
-                OptionsHelper.cmdLineOptionsForBatchInsert().getOption(OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
+                OptionsHelper.standardCmdLineOptions().getOption(OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG).getLongOpt(),
                 OptionsHelper.BenchmarkModes.BATCH_INSERT));
     }
 
@@ -518,10 +520,10 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,badMode,
                         intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
-        Assert.assertEquals(consoleOutput.get(0), String.format("%s is an invalid run mode. Please use %s or %s", badMode,
-                OptionsHelper.BenchmarkModes.REAL_TIME_INSERT, OptionsHelper.BenchmarkModes.BATCH_INSERT));
+        Assert.assertEquals(consoleOutput.get(0), String.format("%s is an invalid run mode. Please use %s, %s or %s", badMode,
+                OptionsHelper.BenchmarkModes.REAL_TIME_INSERT, OptionsHelper.BenchmarkModes.BATCH_INSERT,OptionsHelper.BenchmarkModes.QUERY));
     }
 
     /**
@@ -613,7 +615,7 @@ public class BenchmarkerTest {
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
                         intervalBetweenUpdates,threadCount,timeSeriesCount,badTimeSeriesRangeString);
 
-        Vector<String> consoleOutput = runBenchmarkerGetOutput(commandLineArguments);
+        Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("Value for %s flag should be one of <integer> followed by %s, indicating years, days, hours, minutes or seconds",
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG, OptionsHelper.TimeUnitIndicators.ALL_INDICATORS));
@@ -666,63 +668,12 @@ public class BenchmarkerTest {
         // Save the existing output stream
         PrintStream currentOut = System.out;
         // Swap stdout for an internal stream
-        ByteArrayOutputStream bStream = setupForConsoleOutputParsing();
+        ByteArrayOutputStream bStream = TestUtilities.setupForConsoleOutputParsing();
         benchmarker.output = new PrintStream(bStream);
         // Run the benchmarker
         benchmarker.run();
         // Capture the output
-        Vector<String> consoleOutput = getConsoleOutput(bStream);
-        // Replace the previous output stream
-        System.setOut(currentOut);
-        System.out.println("Run complete");
-        return consoleOutput;
-    }
-
-    /**
-     * Private method for setting up environment so we can test the console output
-     * The returned stream is needed to process the console output
-     *
-     * @return ByteArrayOutputStream
-     */
-    private static ByteArrayOutputStream setupForConsoleOutputParsing(){
-        System.out.println("This test requires console output to be captured. Running ....");
-        // Create new stdout
-        ByteArrayOutputStream bStream = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(bStream));
-        return bStream;
-    }
-
-    /**
-     * Private method for getting the console output as a vector of strings
-     * Requires a previously defined output stream
-     * @param bStream - stream to be read from
-     * @return - Vector of strings which are the result of reading from the output stream
-     * @throws IOException - if reading from a stream an IOException can in theory happen, but not relevant here
-     */
-    private static Vector<String> getConsoleOutput(ByteArrayOutputStream bStream) throws IOException{
-        // Convert stdout into a vector of strings
-        ByteArrayInputStream binStream = new ByteArrayInputStream(bStream.toByteArray());
-        BufferedReader reader =  new BufferedReader(new InputStreamReader(binStream));
-        Vector<String> consoleOutput = new Vector<>();
-        while(reader.ready()) consoleOutput.addElement(reader.readLine());
-        return consoleOutput;
-    }
-
-    /**
-     * Run the benchmarker and capture the output
-     * @param commandLineArguments - arguments to run the benchmarker with
-     * @return output as a Vector<String>
-     * @throws IOException if there is an error reading from the output stream, which there shouldn't be
-     */
-    private static Vector<String> runBenchmarkerGetOutput(String commandLineArguments) throws IOException{
-        // Save the existing output stream
-        PrintStream currentOut = System.out;
-        // Swap in a new output stream
-        ByteArrayOutputStream consoleOutputStream = setupForConsoleOutputParsing();
-        // Run benchmarker
-        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
-        // Capture the output
-        Vector<String> consoleOutput = getConsoleOutput(consoleOutputStream);
+        Vector<String> consoleOutput = TestUtilities.getConsoleOutput(bStream);
         // Replace the previous output stream
         System.setOut(currentOut);
         System.out.println("Run complete");
