@@ -72,6 +72,7 @@ public class OptionsHelper {
                 String.format("Simulation acceleration factor (clock speed multiplier). Only valid in %s mode. Optional.",BenchmarkModes.REAL_TIME_INSERT));
         Option recordsPerBlockOption = new Option(BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG,"recordsPerBlock",true,
                 String.format("Max time series points in each Aerospike object. Optional. Defaults to %d",Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK));
+        //noinspection SpellCheckingInspection
         Option timeSeriesRangeOption = new Option(BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,"timeSeriesRange",true,
                 String.format("Period to be spanned by time series. Only valid in %s mode.\n" +
                         "Specify as <number><unit> where <unit is one of Y(ears),D(ays),H(ours),M(inutes),S(econds) e.g. 1Y or 12H",

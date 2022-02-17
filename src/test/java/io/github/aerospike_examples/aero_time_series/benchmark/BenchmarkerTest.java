@@ -10,10 +10,7 @@ import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.junit.*;
 
 import java.io.*;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Vector;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,38 +19,38 @@ public class BenchmarkerTest {
     private static boolean doTeardown = true;
 
     /**
-      Check that the randomly generated time series name is of the expected length
+     * Check that the randomly generated time series name is of the expected length
      */
     @Test
-    public void checkTimeSeriesNameGeneration(){
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                        TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS, TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,
-                        TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR, TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,
-                        TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
+    public void checkTimeSeriesNameGeneration() {
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS, TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,
+                TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR, TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,
+                TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
 
-        RealTimeInsertTimeSeriesRunnable benchmarkRunnable = new RealTimeInsertTimeSeriesRunnable(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,1,benchmarker);
+        RealTimeInsertTimeSeriesRunnable benchmarkRunnable = new RealTimeInsertTimeSeriesRunnable(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, 1, benchmarker);
         String timeSeriesName = benchmarkRunnable.randomTimeSeriesName();
         Assert.assertEquals(timeSeriesName.length(), benchmarker.timeSeriesNameLength);
     }
 
     /**
-      Check that time series name generation is random
-      10,000 samples - are any identical
+     * Check that time series name generation is random
+     * 10,000 samples - are any identical
      */
     @Test
-    public void checkTimeSeriesNamesUnique(){
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                        TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS, TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,
-                        TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR, TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,
-                        TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
+    public void checkTimeSeriesNamesUnique() {
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                TimeSeriesBenchmarker.DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS, TimeSeriesBenchmarker.DEFAULT_RUN_DURATION_SECONDS,
+                TimeSeriesBenchmarker.DEFAULT_ACCELERATION_FACTOR, TimeSeriesBenchmarker.DEFAULT_THREAD_COUNT,
+                TimeSeriesBenchmarker.DEFAULT_TIME_SERIES_COUNT);
 
-        RealTimeInsertTimeSeriesRunnable benchmarkRunnable = new RealTimeInsertTimeSeriesRunnable(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,1,benchmarker);
+        RealTimeInsertTimeSeriesRunnable benchmarkRunnable = new RealTimeInsertTimeSeriesRunnable(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, 1, benchmarker);
 
         int randomSampleCount = 10000;
         Set<String> s = new HashSet<>();
-        for(int i=0;i<randomSampleCount;i++) s.add(benchmarkRunnable.randomTimeSeriesName());
+        for (int i = 0; i < randomSampleCount; i++) s.add(benchmarkRunnable.randomTimeSeriesName());
         Assert.assertEquals(s.size(), randomSampleCount);
     }
 
@@ -61,7 +58,7 @@ public class BenchmarkerTest {
      * Basic test to make sure that the benchmarker runs for the expected amount of time and delivers expected updates
      */
     @Test
-    public void checkVanillaBenchmarkDurationAndUpdates(){
+    public void checkVanillaBenchmarkDurationAndUpdates() {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 1;
@@ -70,14 +67,14 @@ public class BenchmarkerTest {
         // Set test tolerance to 20% as we are using small numbers - variability could be slightly higher than 10% at any given time
         int testTolerancePct = 20;
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                intervalBetweenUpdates, runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount, benchmarker.totalUpdateCount(), testTolerancePct));
     }
 
     /**
@@ -85,7 +82,7 @@ public class BenchmarkerTest {
      * This can be seen via the number of updates
      */
     @Test
-    public void checkAccelerationFactorObserved(){
+    public void checkAccelerationFactorObserved() {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -93,14 +90,14 @@ public class BenchmarkerTest {
         int timeSeriesCount = 1;
         int testTolerancePct = 5;
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                        intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount, benchmarker.totalUpdateCount(), testTolerancePct));
     }
 
     /**
@@ -108,7 +105,7 @@ public class BenchmarkerTest {
      * This can be seen via the number of updates
      */
     @Test
-    public void checkTimeSeriesCountObserved(){
+    public void checkTimeSeriesCountObserved() {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -117,13 +114,13 @@ public class BenchmarkerTest {
         int testTolerancePct = 5;
 
         TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,
-                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount, benchmarker.totalUpdateCount(), testTolerancePct));
     }
 
     /**
@@ -131,7 +128,7 @@ public class BenchmarkerTest {
      * This can be seen via the number of updates
      */
     @Test
-    public void checkThreadCountObserved(){
+    public void checkThreadCountObserved() {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -139,14 +136,14 @@ public class BenchmarkerTest {
         int timeSeriesCount = 10;
         int testTolerancePct = 5;
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
         // Check that expected updates are within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount,benchmarker.totalUpdateCount(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount, benchmarker.totalUpdateCount(), testTolerancePct));
     }
 
     /**
@@ -154,7 +151,7 @@ public class BenchmarkerTest {
      * This can be seen via the number of updates
      */
     @Test
-    public void checkUpdateIntervalObserved(){
+    public void checkUpdateIntervalObserved() {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -162,22 +159,22 @@ public class BenchmarkerTest {
         int timeSeriesCount = 10;
         int testTolerancePct = 5;
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         benchmarker.run();
         // Check that run time is within tolerance
-        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND,benchmarker.averageThreadRunTimeMs(),testTolerancePct));
+        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
         // Check that expected updates are within tolerance
         Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount / intervalBetweenUpdates,
-                benchmarker.totalUpdateCount(),testTolerancePct));
+                benchmarker.totalUpdateCount(), testTolerancePct));
     }
 
     /**
      * If we exceed the number of key updates we can accommodate per second, is there a warning message?
      */
     @Test
-    public void checkHotKeyCheck() throws Exception{
+    public void checkHotKeyCheck() throws Exception {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 101;
@@ -186,7 +183,7 @@ public class BenchmarkerTest {
         double updatesPerSecond = (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates;
 
         TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,
-                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
 
@@ -197,7 +194,7 @@ public class BenchmarkerTest {
      * Check drift is simulated correctly
      */
     @Test
-    public void checkDriftSimulatedCorrectly(){
+    public void checkDriftSimulatedCorrectly() {
         // Generate 500 observations via acceleration
         int intervalBetweenUpdates = 60;
         int runDurationSeconds = 10;
@@ -209,30 +206,32 @@ public class BenchmarkerTest {
         int dailyVolatilityPct = 0;
         // Check the simulation generates drift correctly when volatility is zero
         TimeSeriesBenchmarker benchmarker =
-                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
-                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,
-                        0,dailyDriftPct,dailyVolatilityPct, TestConstants.RANDOM_SEED);
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor,
+                        threadCount, timeSeriesCount, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,
+                        0, dailyDriftPct, dailyVolatilityPct, TestConstants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
-        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME, new Date(startTime), new Date(startTime + (long) accelerationFactor * runDurationSeconds * 1000));
         double[] values = new double[dataPoints.length];
-        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
-        TimeSeriesSimulatorTest.checkDailyDriftPct(values,dailyDriftPct,intervalBetweenUpdates,10);
+        for (int i = 0; i < values.length; i++) values[i] = dataPoints[i].getValue();
+        TimeSeriesSimulatorTest.checkDailyDriftPct(values, dailyDriftPct, intervalBetweenUpdates, 10);
     }
 
     /**
      * Check volatility is simulated correctly
      */
     @Test
-    public void checkVolatilitySimulatedCorrectly(){
+    public void checkVolatilitySimulatedCorrectly() {
+        teardown();
+        doTeardown = false;
         // Generate 500 observations via acceleration
         int intervalBetweenUpdates = 60;
         int runDurationSeconds = 10;
-        int accelerationFactor = intervalBetweenUpdates *50;
+        int accelerationFactor = intervalBetweenUpdates * 50;
         int threadCount = 1;
         int timeSeriesCount = 1;
         // Set drift to zero so we can focus on volatility
@@ -240,19 +239,19 @@ public class BenchmarkerTest {
         int dailyVolatilityPct = 10;
         // Check the simulation generates drift correctly when volatility is zero
         TimeSeriesBenchmarker benchmarker =
-                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates,runDurationSeconds,accelerationFactor,
-                        threadCount,timeSeriesCount,Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK,0,dailyDriftPct,dailyVolatilityPct, TestConstants.RANDOM_SEED);
+                new TimeSeriesBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor,
+                        threadCount, timeSeriesCount, Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK, 0, dailyDriftPct, dailyVolatilityPct, TestConstants.RANDOM_SEED);
         long startTime = System.currentTimeMillis();
         benchmarker.run();
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST,Constants.DEFAULT_AEROSPIKE_PORT),
-                TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
                 Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
-        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME,new Date(startTime),new Date(startTime + (long)accelerationFactor * runDurationSeconds * 1000));
+        DataPoint[] dataPoints = timeSeriesClient.getPoints(TestConstants.REFERENCE_TIME_SERIES_NAME, new Date(startTime), new Date(startTime + (long) accelerationFactor * runDurationSeconds * 1000));
         double[] values = new double[dataPoints.length];
-        for(int i=0;i<values.length;i++) values[i] = dataPoints[i].getValue();
-        TimeSeriesSimulatorTest.checkDailyVolatilityPct(values,dailyVolatilityPct,intervalBetweenUpdates,10);
+        for (int i = 0; i < values.length; i++) values[i] = dataPoints[i].getValue();
+        TimeSeriesSimulatorTest.checkDailyVolatilityPct(values, dailyVolatilityPct, intervalBetweenUpdates, 10);
     }
 
     /**

@@ -59,6 +59,24 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
             nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
         }
+        /*
+            Put some dummy data in when running in real time mode
+            If we don't all the blocks will fill up at the same time which creates a sawtooth effect
+            as far as disk use is concerned
+            So blocks are primed initially, and the dummy data is removed at the end of the run
+         */
+        for(String timeSeriesName : lastObservationTimes.keySet()){
+            int epochTime = 0;
+            // Randomly each initial block to a random extent
+            int dummyRecordCount = random.nextInt(timeSeriesClient.getMaxBlockEntryCount());
+            DataPoint[] dataPoints = new DataPoint[dummyRecordCount];
+            for(int i=0;i<dummyRecordCount;i++){
+                // The data points have -ve time and value zero, so they are easily identified
+                dataPoints[i] = new DataPoint(new Date(epochTime),0);
+                epochTime-=Constants.MILLISECONDS_IN_SECOND;
+            }
+            timeSeriesClient.put(timeSeriesName,dataPoints);
+        }
         isRunning = true;
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
             for (String timeSeriesName : nextObservationTimes.keySet()) {
@@ -74,6 +92,9 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
                 }
             }
         }
+        // Then remove the dummy records
+        for(String timeSeriesName : lastObservationTimes.keySet()) timeSeriesClient.removeDummyRecords(timeSeriesName);
+
         isFinished = true;
         isRunning = false;
     }

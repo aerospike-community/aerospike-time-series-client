@@ -36,6 +36,7 @@ public class TestUtilities {
     /*
         Do this by scanning the time series set, using a filter expression, and counting the results
      */
+    @SuppressWarnings("SpellCheckingInspection") // ignore typo annotation
     public static int blockCountForTimeseries(TimeSeriesClient timeSeriesClient, String timeSeriesName) {
         // Filter expression - only get records where metadata.timeseriesfieldname = timeseriesname
         Exp filterExp =

@@ -170,6 +170,12 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     public String getAsNamespace(){ return asNamespace;}
 
     /**
+     * Getter for max block entry count
+     * @return max block entry count
+     */
+    public int getMaxBlockEntryCount(){ return maxBlockEntryCount;}
+
+    /**
      * Saves data point to the database
      * <p>
      * By default insert always goes to the current block for the time series which has key TimeSeriesName
@@ -368,7 +374,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName name of time series
      * @return Aerospike Key for current block for this time series
      */
-    Key asCurrentKeyForTimeSeries(String timeSeriesName) {
+    public Key asCurrentKeyForTimeSeries(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesSet, timeSeriesName);
     }
 
@@ -627,7 +633,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             startTime = startTimeFromFirstHistoricBlockRecord.getLong(Constants.TIME_SERIES_INDEX_BIN_NAME);
         } else {
             WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
-            Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
+            currentRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
 
             Record startTimeFromCurrentBlockRecord = asClient.operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
                     MapOperation.getByIndex(Constants.TIME_SERIES_BIN_NAME, 0, MapReturnType.KEY));
@@ -708,4 +714,51 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
         return dataPointCount;
     }
+
+    /**
+     * Utility method to remove 'dummy' records
+     * These are inserted by the benchmarker at the start of a run to prevent all the blocks filling up at the same time
+     * After the run, the dummy records are removed using this function
+     * @param timeSeriesName Time Series to remove dummy records for
+     */
+    public void removeDummyRecords(String timeSeriesName) {
+        long startTime;
+        // Create a policy to make sure, when we look up the first start time from the index that we don't get an error if it doesn't exist
+        WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
+        // Now try and get the earliest start time from the index
+        blockRecordExistsPolicy.filterExp =Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
+
+        Record startTimeFromFirstHistoricBlockRecord = getAsClient().operate(blockRecordExistsPolicy,
+                asKeyForTimeSeriesIndexes(timeSeriesName),
+                MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, 0, MapReturnType.KEY));
+
+        // If there are historic blocks
+        if (startTimeFromFirstHistoricBlockRecord != null) {
+            startTime = startTimeFromFirstHistoricBlockRecord.getLong(Constants.TIME_SERIES_INDEX_BIN_NAME);
+            // Remove dummy records from the first block
+            Record r = getAsClient().operate(getWritePolicy(), asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
+                    MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE),
+                    MapOperation.size(Constants.TIME_SERIES_BIN_NAME)
+            );
+            // The resulting entry count is returned
+            long entryCount = (Long)(r.getList(Constants.TIME_SERIES_BIN_NAME).get(1));
+
+            getAsClient().operate(blockRecordExistsPolicy,asKeyForTimeSeriesIndexes(timeSeriesName),
+                    MapOperation.put(new MapPolicy(),Constants.TIME_SERIES_INDEX_BIN_NAME,
+                            new Value.StringValue(Constants.ENTRY_COUNT_FIELD_NAME),new Value.LongValue(entryCount),
+                            CTX.mapIndex(0)
+                    )
+            );
+        }
+        WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
+        currentRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
+
+        // Remove dummy records from the current block
+        getAsClient().operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
+                MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE)
+        );
+
+
+    }
+
 }
