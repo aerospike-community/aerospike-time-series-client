@@ -104,4 +104,35 @@ public class QueryBenchmarkerTest {
                 OptionsHelper.standardCmdLineOptions().getOption(OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
                 OptionsHelper.BenchmarkModes.QUERY));
     }
+
+    /**
+     * Check a good run runs without errors
+     * @throws Exception Can throw exception
+     */
+    @Test
+    public void goodRun() throws Exception{
+        TestUtilities.removeTimeSeriesTestDataForSet(TestConstants.TIME_SERIES_TEST_SET);
+
+        int intervalBetweenUpdates = 10;
+        int threadCount = 10;
+        int timeSeriesCount = 10;
+        int recordsPerBlock = 1000;
+        long timeSeriesRangeSeconds = 86400 * 10;
+        int queryRunDuratinoSeconds = 10;
+
+        // Keep track of the start time - useful when we retrieve the data points
+        long startTime = System.currentTimeMillis();
+
+        TimeSeriesBenchmarker benchmarker = TestUtilities.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,
+                TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,timeSeriesRangeSeconds,
+                threadCount,timeSeriesCount,recordsPerBlock, TestConstants.RANDOM_SEED);
+
+        benchmarker.run();
+
+        TimeSeriesBenchmarker readBenchmarker = TestUtilities.queryBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
+                queryRunDuratinoSeconds,threadCount,TestConstants.RANDOM_SEED);
+        readBenchmarker.run();
+
+    }
+
 }

@@ -1,19 +1,28 @@
 Deal with retrospective inserts
-Seed real time insert with zero records to avoid all blocks filling up at the same time
 
 Small
 ----
 
-Can I remove the benchmarker code when publishing to maven
-Add a no truncate option
+Publish to mvnrepository
 How do I test the query benchmarker
 Check the benchmarker headers - slightly more info? Thread count?
+Add in updates per second for real time mode
+Add in latency for query mode
 
 Nice To Have
 ------------
 
 International date times
 REPL loop
+
+Nice to have - small
+--------------------
+
+Add a no truncate option
+Use enums for benchmark mode?
+scan-threads - need to increase
+Usage is coming out twice. Sort.
+Can I remove the benchmarker code when publishing to maven
 
 Phase 2
 -------
@@ -69,6 +78,7 @@ Refactor packages
 Find out about 'linting' i.e. looking for un-used methods, incomplete documentation 
 Benchmark client - simulate queries
 Query mode checks
+Seed real time insert with zero records to avoid all blocks filling up at the same time
 
 Notes
 =====
