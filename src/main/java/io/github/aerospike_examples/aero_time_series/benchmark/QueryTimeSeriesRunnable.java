@@ -15,6 +15,7 @@ import java.util.Vector;
 class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
     private final TimeSeriesClient timeSeriesClient;
     private final long runDurationSeconds;
+    private static Vector<TimeSeriesInfo> timeSeriesInfoList = null;
 
     public QueryTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
         super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
@@ -58,12 +59,17 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
      * @param timeSeriesClient timeSeriesClientObject
      * @return Vector<TimeSeriesInfo>
      */
-    static Vector<TimeSeriesInfo> getTimeSeriesDetails(TimeSeriesClient timeSeriesClient){
-        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
-        Vector<TimeSeriesInfo> timeSeriesInfoList = new Vector<>();
+    /*
+        Method is synchronized so the list of time series is only initialised once
+     */
+    static synchronized Vector<TimeSeriesInfo> getTimeSeriesDetails(TimeSeriesClient timeSeriesClient){
+        if(timeSeriesInfoList == null) {
+            Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
+            timeSeriesInfoList = new Vector<TimeSeriesInfo>();
 
-        for(String timeSeriesName : timeSeriesNames) timeSeriesInfoList.add(TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName));
-
+            for (String timeSeriesName : timeSeriesNames)
+                timeSeriesInfoList.add(TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName));
+        }
         return timeSeriesInfoList;
     }
 

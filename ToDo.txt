@@ -6,7 +6,6 @@ Small
 Publish to mvnrepository
 How do I test the query benchmarker
 Check the benchmarker headers - slightly more info? Thread count?
-Add in latency for query mode
 
 Nice To Have
 ------------
@@ -19,7 +18,6 @@ Nice to have - small
 
 Add a no truncate option
 Use enums for benchmark mode?
-scan-threads - need to increase
 Usage is coming out twice. Sort.
 Can I remove the benchmarker code when publishing to maven
 
@@ -79,7 +77,8 @@ Benchmark client - simulate queries
 Query mode checks
 Seed real time insert with zero records to avoid all blocks filling up at the same time
 Add in updates per second for real time mode
-
+Add in latency for query mode
+Avoid the need to increase scan threads by ensuring getTimeSeriesDetails only gets called once per benchmark run
 Notes
 =====
 
