@@ -211,14 +211,16 @@ public class TimeSeriesBenchmarker {
         // While we wait for them to finish, post status messages every STATUS_UPDATE_PERIOD_SECS
         long lastUpdateCount = 0;
         double lastAverageThreadRunTimeMs = 0;
+        long lastCumulativeLatencyMs = 0;
         while(isRunning()){
             // Status message if we are due a status message
             if(System.currentTimeMillis() > nextOutputTime) {
                 // But only if things have started to avoid race conditions
                 if(averageThreadRunTimeMs() >0){
-                    outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,false);
+                    outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,lastCumulativeLatencyMs,false);
                     lastUpdateCount = totalUpdateCount();
                     lastAverageThreadRunTimeMs = averageThreadRunTimeMs();
+                    lastCumulativeLatencyMs = totalLatencyMs();
                 }
                 // Set time a message is next due
                 nextOutputTime+= Constants.MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
@@ -233,7 +235,7 @@ public class TimeSeriesBenchmarker {
         output.println();
         output.println("Run Summary");
         output.println();
-        outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,true);
+        outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,lastCumulativeLatencyMs,true);
         output.println();
     }
 
@@ -241,7 +243,7 @@ public class TimeSeriesBenchmarker {
      * Output current status of simulation
      * Will give a warning if it is running slower than expected
      */
-    private void outputStatus(long lastUpdateCount, double lastAverageThreadRunTimeMs,boolean doSummary){
+    private void outputStatus(long lastUpdateCount, double lastAverageThreadRunTimeMs,long lastCumulativeLatencyMs, boolean doSummary){
         switch (runMode){
             case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
                 outputStatusForRealTimeInserts(lastUpdateCount,lastAverageThreadRunTimeMs,doSummary);
@@ -250,7 +252,7 @@ public class TimeSeriesBenchmarker {
                 outputStatusForBatchInserts();
                 break;
             case OptionsHelper.BenchmarkModes.QUERY:
-                outputStatusForQueries(lastUpdateCount, lastAverageThreadRunTimeMs,doSummary);
+                outputStatusForQueries(lastUpdateCount, lastAverageThreadRunTimeMs,lastCumulativeLatencyMs,doSummary);
                 break;
         }
 
@@ -292,19 +294,23 @@ public class TimeSeriesBenchmarker {
                 totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs(),pctComplete));
     }
 
-    private void outputStatusForQueries(long lastQueryCount, double lastAverageThreadRunTimeMs, boolean doSummary){
+    private void outputStatusForQueries(long lastQueryCount, double lastAverageThreadRunTimeMs, long lastCumulativeLatencyMs, boolean doSummary){
         long queryCount = totalUpdateCount();
         double averageThreadRunTimeMs = averageThreadRunTimeMs();
+        long cumulativeLatencyMs = totalLatencyMs();
         double queryRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (queryCount - lastQueryCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
         double cumulativeQueryRate = (double) Constants.MILLISECONDS_IN_SECOND * queryCount / averageThreadRunTimeMs;
-        double avgLatency = (double)totalLatencyMs() / queryCount / Constants.MILLISECONDS_IN_SECOND;
+        double avgLatency = (queryCount !=0) ? (double) cumulativeLatencyMs / queryCount / Constants.MILLISECONDS_IN_SECOND : 0;
+        double latencySinceLastStatus = (queryCount != lastQueryCount) ?
+                (double)  ((cumulativeLatencyMs - lastCumulativeLatencyMs) / (queryCount - lastQueryCount)) / Constants.MILLISECONDS_IN_SECOND : 0;
 
         if(!doSummary) {
-            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Avg latency %.3fs, Cumulative queries per second %.3f",
-                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus, avgLatency, cumulativeQueryRate));
+            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Current latency %.3fs, Avg latency %.3fs, Cumulative queries per second %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus,
+                    latencySinceLastStatus,avgLatency, cumulativeQueryRate));
         }
         else
-            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f, Avg latency %.3f",
+            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f, Avg latency %.3fs",
                     averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, cumulativeQueryRate, avgLatency));
 
     }

@@ -7,6 +7,7 @@ import io.github.aerospike_examples.aero_time_series.TestUtilities;
 import io.github.aerospike_examples.aero_time_series.Utilities;
 import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
+
 import org.junit.*;
 
 import java.io.*;
@@ -565,8 +566,7 @@ public class BenchmarkerTest {
         String alternativeTimeSeriesSet = "TimeSeriesSet2";
 
         // Keep track of the start time - useful when we retrieve the data points
-        long startTime = System.currentTimeMillis();
-        startTime = startTime - startTime % (24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND);
+        long startTime = Utilities.getTruncatedTimestamp(System.currentTimeMillis());
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
@@ -580,7 +580,7 @@ public class BenchmarkerTest {
                         OptionsHelper.BenchmarkModes.BATCH_INSERT, intervalBetweenUpdates, threadCount, timeSeriesCount,
                         timeSeriesRangeSeconds);
 
-        //TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
 
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
                 TestConstants.AEROSPIKE_NAMESPACE, alternativeTimeSeriesSet,
@@ -598,7 +598,7 @@ public class BenchmarkerTest {
                     "Time series range %d Interval between updates %d, datapoints.length %d",timeSeriesRangeSeconds,intervalBetweenUpdates,dataPoints.length));
             Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates, dataPoints.length, 5));
         }
-        //TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);
+        TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);
     }
 
     /**

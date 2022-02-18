@@ -3,9 +3,7 @@ Deal with retrospective inserts
 Small
 ----
 
-Current latency / average latency
 Publish to mvnrepository
-How do I test the query benchmarker
 Check the benchmarker headers - slightly more info? Thread count?
 Time series output
 Batch summary header is incorrect
@@ -34,7 +32,6 @@ Downsampling
 Other
 -----
 
-Shell script for invocation
 
 Done
 ====
@@ -82,6 +79,10 @@ Seed real time insert with zero records to avoid all blocks filling up at the sa
 Add in updates per second for real time mode
 Add in latency for query mode
 Avoid the need to increase scan threads by ensuring getTimeSeriesDetails only gets called once per benchmark run
+Current latency / average latency
+How do I test the query benchmarker
+Shell script for invocation
+
 Notes
 =====
 
