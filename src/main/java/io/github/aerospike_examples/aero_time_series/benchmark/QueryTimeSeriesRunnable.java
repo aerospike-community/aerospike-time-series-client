@@ -9,6 +9,9 @@ import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
 import java.util.Date;
 import java.util.Vector;
 
+/**
+ * This class is a runnable for running time series queries in order to benchmark query performance
+ */
 class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
     private final TimeSeriesClient timeSeriesClient;
     private final long runDurationSeconds;
@@ -19,17 +22,32 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
         runDurationSeconds = benchmarkClient.runDuration;
     }
 
+    /**
+     * Get a list of all time series
+     * While the run time is within required limits
+     * Run a query vs a randomly selected time series
+     * The query will calculate the average value of the full time series history
+     */
     public void run(){
+        // Need to know when we started to get metrics
         startTime = System.currentTimeMillis();
+        // Need the Time series info details
         Vector<TimeSeriesInfo> timeSeriesInfoList = getTimeSeriesDetails(timeSeriesClient);
-
+        // Now we're running
         isRunning = true;
+        // Loop until run time exceeds run duration seconds
         while(System.currentTimeMillis() - startTime < runDurationSeconds * Constants.MILLISECONDS_IN_SECOND){
+            // Randomly select time series
             TimeSeriesInfo timeSeriesInfo = timeSeriesInfoList.get(random.nextInt(timeSeriesInfoList.size()));
+            // When did the query start
+            long queryRunTimeStart = System.currentTimeMillis();
             timeSeriesClient.runQuery(timeSeriesInfo.getSeriesName(),TimeSeriesClient.QueryOperation.AVG,
                     new Date(timeSeriesInfo.getStartDateTime()),new Date(timeSeriesInfo.getEndDateTime()));
+            // Add total query time to cumulative latency
+            cumulativeLatencyMs+= System.currentTimeMillis() - queryRunTimeStart;
             updateCount++;
         }
+        // Set completion flags
         isFinished = true;
         isRunning = false;
 

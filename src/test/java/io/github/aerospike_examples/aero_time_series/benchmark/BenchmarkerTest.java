@@ -325,7 +325,7 @@ public class BenchmarkerTest {
             if (matcher.find()) runTimeMessageCount++;
         }
 
-        Assert.assertTrue(runTimeMessageCount >= runDurationSeconds+1);
+        Assert.assertTrue(runTimeMessageCount >= runDurationSeconds);
     }
 
     /**

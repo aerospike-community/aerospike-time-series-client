@@ -20,6 +20,8 @@ abstract class TimeSeriesRunnable implements Runnable{
     boolean isFinished = false;
     // How many inserts have been done by this thread
     int updateCount = 0;
+    // Cumulative latency in milliseconds
+    long cumulativeLatencyMs = 0;
     // When did the thread start - to avoid race conditions initialise
     long startTime = System.currentTimeMillis();
     // Randomness generation

@@ -297,14 +297,15 @@ public class TimeSeriesBenchmarker {
         double averageThreadRunTimeMs = averageThreadRunTimeMs();
         double queryRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (queryCount - lastQueryCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
         double cumulativeQueryRate = (double) Constants.MILLISECONDS_IN_SECOND * queryCount / averageThreadRunTimeMs;
+        double avgLatency = (double)totalLatencyMs() / queryCount / Constants.MILLISECONDS_IN_SECOND;
 
         if(!doSummary) {
-            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Cumulative queries per second %.3f",
-                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus, cumulativeQueryRate));
+            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Avg latency %.3fs, Cumulative queries per second %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus, avgLatency, cumulativeQueryRate));
         }
         else
-            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f",
-                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, cumulativeQueryRate));
+            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f, Avg latency %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, cumulativeQueryRate, avgLatency));
 
     }
 
@@ -348,7 +349,17 @@ public class TimeSeriesBenchmarker {
         return totalUpdateCount;
     }
 
-
+    /**
+     * Get the total latency for the operations, so we can figure out average latency
+     * @return
+     */
+    long totalLatencyMs(){
+        int totalLatencyMs = 0;
+        for(TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects){
+            totalLatencyMs += benchmarkClientObject.cumulativeLatencyMs;
+        }
+        return totalLatencyMs;
+    }
     /**
      * Work out the actual number of updates per second for the simulation - allowing for the acceleration
      * Package level access to allow for testing
