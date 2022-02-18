@@ -315,7 +315,9 @@ public class BenchmarkerTest {
         Assert.assertEquals(consoleOutput.get(3), String.format("Updates per second per time series : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates / timeSeriesCount));
 
         // Check we get the expected number of status messages
-        Pattern pattern = Pattern.compile("Run time : \\d+ seconds, Update count : \\d+, Actual updates per second : \\d+.\\d{3}", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(
+                "Run time : \\d+ seconds, Update count : \\d+, Current updates per second : \\d+.\\d{3}, Cumulative updates per second : \\d+.\\d{3}",
+                Pattern.CASE_INSENSITIVE);
 
         int runTimeMessageCount = 0;
         for (String aConsoleOutput : consoleOutput) {
@@ -588,6 +590,8 @@ public class BenchmarkerTest {
             DataPoint[] dataPoints = timeSeriesClient.getPoints(timeSeriesName, new Date(startTime - Constants.MILLISECONDS_IN_SECOND),
                     new Date(startTime + (1 + timeSeriesRangeSeconds) * Constants.MILLISECONDS_IN_SECOND));
 
+            System.out.println(String.format(
+                    "Time series range %d Interval between updates %d, datapoints.length %d",timeSeriesRangeSeconds,intervalBetweenUpdates,dataPoints.length));
             Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates, dataPoints.length, 5));
         }
         TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);

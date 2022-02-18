@@ -6,7 +6,6 @@ Small
 Publish to mvnrepository
 How do I test the query benchmarker
 Check the benchmarker headers - slightly more info? Thread count?
-Add in updates per second for real time mode
 Add in latency for query mode
 
 Nice To Have
@@ -79,6 +78,7 @@ Find out about 'linting' i.e. looking for un-used methods, incomplete documentat
 Benchmark client - simulate queries
 Query mode checks
 Seed real time insert with zero records to avoid all blocks filling up at the same time
+Add in updates per second for real time mode
 
 Notes
 =====

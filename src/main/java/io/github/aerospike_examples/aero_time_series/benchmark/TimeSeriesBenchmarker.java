@@ -167,6 +167,7 @@ public class TimeSeriesBenchmarker {
                 break;
 
         }
+        // If the max update rate per key exceeds the safe level, issue a warning
         if(updatesPerTimeSeriesPerSecond() > Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC){
             output.println(String.format("!!! Single key updates per second rate %.3f exceeds max recommended rate %d",
                     updatesPerTimeSeriesPerSecond(),Constants.SAFE_SINGLE_KEY_UPDATE_LIMIT_PER_SEC));
@@ -178,6 +179,8 @@ public class TimeSeriesBenchmarker {
             timeSeriesClient.getAsClient().truncate(new InfoPolicy(), asNamespace, TimeSeriesClient.timeSeriesIndexSetName(asSet), null);
         }
 
+        // Set up all the runnable objects  - based on how many threads are configured
+        // and start them
         benchmarkClientObjects = new TimeSeriesRunnable[threadCount];
         Random random  = new Random(randomSeed);
         for(int i=0;i<threadCount;i++){
@@ -205,11 +208,22 @@ public class TimeSeriesBenchmarker {
             t.start();
         }
         long nextOutputTime = System.currentTimeMillis();
+        // While we wait for them to finish, post status messages every STATUS_UPDATE_PERIOD_SECS
+        long lastUpdateCount = 0;
+        double lastAverageThreadRunTimeMs = 0;
         while(isRunning()){
+            // Status message if we are due a status message
             if(System.currentTimeMillis() > nextOutputTime) {
-                if(averageThreadRunTimeMs() >0) outputStatus();
+                // But only if things have started to avoid race conditions
+                if(averageThreadRunTimeMs() >0){
+                    outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,false);
+                    lastUpdateCount = totalUpdateCount();
+                    lastAverageThreadRunTimeMs = averageThreadRunTimeMs();
+                }
+                // Set time a message is next due
                 nextOutputTime+= Constants.MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
                 //noinspection CatchMayIgnoreException
+                // Sleep - no point running a tight loop
                 try {
                     Thread.sleep(STATUS_TIMER_CHECK_PERIOD_MS);
                 }
@@ -219,7 +233,7 @@ public class TimeSeriesBenchmarker {
         output.println();
         output.println("Run Summary");
         output.println();
-        outputStatus();
+        outputStatus(lastUpdateCount,lastAverageThreadRunTimeMs,true);
         output.println();
     }
 
@@ -227,32 +241,46 @@ public class TimeSeriesBenchmarker {
      * Output current status of simulation
      * Will give a warning if it is running slower than expected
      */
-    private void outputStatus(){
+    private void outputStatus(long lastUpdateCount, double lastAverageThreadRunTimeMs,boolean doSummary){
         switch (runMode){
             case OptionsHelper.BenchmarkModes.REAL_TIME_INSERT:
-                outputStatusForRealTimeInserts();
+                outputStatusForRealTimeInserts(lastUpdateCount,lastAverageThreadRunTimeMs,doSummary);
                 break;
             case OptionsHelper.BenchmarkModes.BATCH_INSERT:
                 outputStatusForBatchInserts();
                 break;
             case OptionsHelper.BenchmarkModes.QUERY:
-                outputStatusForQueries();
+                outputStatusForQueries(lastUpdateCount, lastAverageThreadRunTimeMs,doSummary);
                 break;
         }
 
     }
 
-    private void outputStatusForRealTimeInserts(){
-        output.println(String.format("Run time : %d seconds, Update count : %d, Actual updates per second : %.3f", averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
-                totalUpdateCount(), (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs()));
+    private void outputStatusForRealTimeInserts(long lastUpdateCount,double lastAverageThreadRunTimeMs, boolean doSummary){
+        long updateCount = totalUpdateCount();
+        double averageThreadRunTimeMs = averageThreadRunTimeMs();
+        double updateRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (updateCount - lastUpdateCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
+        double cumulativeUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * updateCount / averageThreadRunTimeMs;
+
+        if(!doSummary) {
+            output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                    updateCount, updateRateSinceLastStatus, cumulativeUpdateRate));
+        }
+        else
+            output.println(String.format("Run time : %d seconds, Update count : %d, Cumulative updates per second : %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                    updateCount, cumulativeUpdateRate));
+
         // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
         // And we are beyond the first second (can produce anomalous results )
         // show a warning message to that effect
-        double actualUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs();
-        if((averageThreadRunTimeMs() >= Constants.MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > actualUpdateRate)) {
-            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), actualUpdateRate, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
-                output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
-                        expectedUpdatesPerSecond(), actualUpdateRate));
+        if((averageThreadRunTimeMs() >= Constants.MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > updateRateSinceLastStatus)) {
+            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(),updateRateSinceLastStatus, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
+                if(! doSummary) {
+                    output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
+                            expectedUpdatesPerSecond(), updateRateSinceLastStatus));
+                }
             }
         }
     }
@@ -264,9 +292,20 @@ public class TimeSeriesBenchmarker {
                 totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs(),pctComplete));
     }
 
-    private void outputStatusForQueries(){
-        output.println(String.format("Run time : %d seconds, Query count : %d, Queries per second %.3f",averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
-                totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount() / averageThreadRunTimeMs()));
+    private void outputStatusForQueries(long lastQueryCount, double lastAverageThreadRunTimeMs, boolean doSummary){
+        long queryCount = totalUpdateCount();
+        double averageThreadRunTimeMs = averageThreadRunTimeMs();
+        double queryRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (queryCount - lastQueryCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
+        double cumulativeQueryRate = (double) Constants.MILLISECONDS_IN_SECOND * queryCount / averageThreadRunTimeMs;
+
+        if(!doSummary) {
+            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Cumulative queries per second %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus, cumulativeQueryRate));
+        }
+        else
+            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f",
+                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, cumulativeQueryRate));
+
     }
 
     /**
