@@ -7,7 +7,7 @@ import java.util.Random;
  * (X(T2) - X(T1))/X(T1) ~ drift rate * (T2 - T1) + volatility * sqrt(T1- T1) * N(0,1)
  * where N(0,1) is a Gaussian distribution
  *
- * i.e. the fractional differences have a linear drift rate & a noise factor that correctly scales with time
+ * i.e. the fractional differences have a linear drift rate and a noise factor that correctly scales with time
  */
 @SuppressWarnings("WeakerAccess")
 public class TimeSeriesSimulator {
