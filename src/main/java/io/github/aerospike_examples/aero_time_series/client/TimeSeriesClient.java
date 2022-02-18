@@ -750,15 +750,23 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                     )
             );
         }
-        WritePolicy currentRecordExistsPolicy = new WritePolicy(getWritePolicy());
-        currentRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_BIN_NAME));
-
-        // Remove dummy records from the current block
-        getAsClient().operate(currentRecordExistsPolicy, asCurrentKeyForTimeSeries(timeSeriesName),
-                MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE)
-        );
+        // Remove dummy records from the current block if it exists
+        // Turns out we need to do this in a try/catch as can't avoid 'key not found' if not found
+        try {
+            getAsClient().operate(getWritePolicy(), asCurrentKeyForTimeSeries(timeSeriesName),
+                    MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE)
+            );
+        }
+        catch(AerospikeException e){
+            if(e.getResultCode() == ResultCode.KEY_NOT_FOUND_ERROR){
+                /*do nothing*/
+                /* This is OK  - record may not exist */
+            }
+            else {
+                throw e;
+            }
+        }
 
 
     }
-
 }
