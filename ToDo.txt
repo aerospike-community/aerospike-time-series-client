@@ -3,9 +3,12 @@ Deal with retrospective inserts
 Small
 ----
 
+Current latency / average latency
 Publish to mvnrepository
 How do I test the query benchmarker
 Check the benchmarker headers - slightly more info? Thread count?
+Time series output
+Batch summary header is incorrect
 
 Nice To Have
 ------------

@@ -385,7 +385,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param startTimestampForBlock - start timestamp for block
      * @return Aerospike Key for required block
      */
-    private Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long startTimestampForBlock) {
+    public Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long startTimestampForBlock) {
         String historicBlockKey = String.format("%s-%d", timeSeriesName, startTimestampForBlock);
         return new Key(asNamespace, timeSeriesSet, historicBlockKey);
     }
@@ -396,7 +396,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName - time series in question
      * @return - Aerospike Key to index block for that time series
      */
-    private Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
+    public Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesIndexSetName(), timeSeriesName);
     }
 

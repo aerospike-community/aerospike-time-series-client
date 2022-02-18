@@ -3,6 +3,7 @@ package io.github.aerospike_examples.aero_time_series;
 import com.aerospike.client.policy.ScanPolicy;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 
+import java.util.Date;
 import java.util.Vector;
 
 /**
@@ -44,4 +45,21 @@ public class Utilities {
         }
     }
 
+    /**
+     * Return truncated timestamp i.e. timestamp with the time component removed
+     * @param timestamp as long
+     * @return truncted timestamp
+     */
+    public static long getTruncatedTimestamp(long timestamp){
+        return timestamp - timestamp % (24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND);
+    }
+
+    /**
+     *
+     * @param timestamp
+     * @return
+     */
+    public static Date getTruncatedTimestamp(Date timestamp){
+        return new Date(getTruncatedTimestamp(timestamp.getTime()));
+    }
 }

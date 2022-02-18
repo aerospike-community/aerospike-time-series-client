@@ -556,14 +556,17 @@ public class BenchmarkerTest {
      */
     @Test
     public void setFlagCheck() {
+        doTeardown = false;
+        //teardown();
         int intervalBetweenUpdates = 60;
         int threadCount = 5;
         int timeSeriesCount = 1;
-        int timeSeriesRangeSeconds = 24 * 60 * 60;
+        long timeSeriesRangeSeconds = 24 * 60 * 60;
         String alternativeTimeSeriesSet = "TimeSeriesSet2";
 
         // Keep track of the start time - useful when we retrieve the data points
         long startTime = System.currentTimeMillis();
+        startTime = startTime - startTime % (24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND);
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
@@ -577,14 +580,15 @@ public class BenchmarkerTest {
                         OptionsHelper.BenchmarkModes.BATCH_INSERT, intervalBetweenUpdates, threadCount, timeSeriesCount,
                         timeSeriesRangeSeconds);
 
-        TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
+        //TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
 
-        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(TestUtilities.defaultTimeSeriesClient());
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
+                TestConstants.AEROSPIKE_NAMESPACE, alternativeTimeSeriesSet,
+                Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+
+        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
         for (String timeSeriesName : timeSeriesNames) {
             System.out.println(String.format("Checking time series with name %s", timeSeriesName));
-            TimeSeriesClient timeSeriesClient = new TimeSeriesClient(new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT),
-                    TestConstants.AEROSPIKE_NAMESPACE, alternativeTimeSeriesSet,
-                    Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
             // Widen the range slightly to allow for the fact that the benchmarker introduces variability in the sample times of OBSERVATION_INTERVAL_VARIABILITY_PCT
             DataPoint[] dataPoints = timeSeriesClient.getPoints(timeSeriesName, new Date(startTime - Constants.MILLISECONDS_IN_SECOND),
@@ -594,7 +598,7 @@ public class BenchmarkerTest {
                     "Time series range %d Interval between updates %d, datapoints.length %d",timeSeriesRangeSeconds,intervalBetweenUpdates,dataPoints.length));
             Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates, dataPoints.length, 5));
         }
-        TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);
+        //TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);
     }
 
     /**

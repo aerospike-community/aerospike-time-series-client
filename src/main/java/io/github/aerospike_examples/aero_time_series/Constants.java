@@ -19,5 +19,6 @@ public class Constants {
     public final static int DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK = 1000;
 
     // For the avoidance of doubt and clarity
-    public final static int MILLISECONDS_IN_SECOND = 1000;
+    // Type everything as longs - we can get into trouble with overflow when multipling if not
+    public final static long MILLISECONDS_IN_SECOND = 1000;
 }

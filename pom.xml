@@ -30,7 +30,7 @@
         </developer>
     </developers>
 
-    <groupId>io.github.ken-tune</groupId>
+    <groupId>io.github.aerospike-examples</groupId>
     <artifactId>aero-time-series-client</artifactId>
     <version>0.23-SNAPSHOT</version>
     <profiles>

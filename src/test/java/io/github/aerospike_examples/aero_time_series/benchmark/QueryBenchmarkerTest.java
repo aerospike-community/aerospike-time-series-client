@@ -1,11 +1,19 @@
 package io.github.aerospike_examples.aero_time_series.benchmark;
 
+import com.aerospike.client.AerospikeClient;
+import com.aerospike.client.Record;
+import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
+import io.github.aerospike_examples.aero_time_series.Utilities;
+import io.github.aerospike_examples.aero_time_series.client.DataPoint;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
+import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Vector;
 
 public class QueryBenchmarkerTest {
@@ -135,4 +143,31 @@ public class QueryBenchmarkerTest {
 
     }
 
+    @Test
+    public void scratch(){
+        AerospikeClient asClient = new AerospikeClient(TestConstants.AEROSPIKE_HOST,3000);
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient,TestConstants.AEROSPIKE_NAMESPACE,"TimeSeriesSet2",
+                Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
+//        String timeSeriesName = "ZHROKZDMKZ";
+//        Record r = asClient.get(timeSeriesClient.getReadPolicy(),timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName));
+//        System.out.println(r);
+//        Record s = asClient.get(timeSeriesClient.getReadPolicy(),timeSeriesClient.asKeyForTimeSeriesIndexes(timeSeriesName));
+//        System.out.println(s);
+        Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
+        for(String timeSeriesName:timeSeriesNames)
+        {
+            System.out.println(timeSeriesName);
+            TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient,timeSeriesName);
+            System.out.println(timeSeriesInfo);
+            DataPoint[] dataPoints = timeSeriesClient.getPoints(timeSeriesName,new Date(timeSeriesInfo.getStartDateTime()),new Date(timeSeriesInfo.getEndDateTime()));
+            for(DataPoint dataPoint:dataPoints){
+                System.out.println(String.format("%s : %.5f",new Date(dataPoint.getTimestamp()),dataPoint.getValue()));
+            }
+
+        }
+
+
+
+
+    }
 }
