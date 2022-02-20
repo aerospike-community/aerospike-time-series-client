@@ -263,28 +263,31 @@ public class TimeSeriesBenchmarker {
         double averageThreadRunTimeMs = averageThreadRunTimeMs();
         double updateRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (updateCount - lastUpdateCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
         double cumulativeUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * updateCount / averageThreadRunTimeMs;
-        //System.out.println(String.format("isrunningcount %d",isRunningCount()));
-        if(!doSummary) {
-            output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
-                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
-                    updateCount, updateRateSinceLastStatus, cumulativeUpdateRate));
-        }
-        else
-            output.println(String.format("Run time : %d seconds, Update count : %d, Cumulative updates per second : %.3f",
-                    averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
-                    updateCount, cumulativeUpdateRate));
+        if (!inPrepPhase()){
+            if (!doSummary) {
+                output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
+                        averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                        updateCount, updateRateSinceLastStatus, cumulativeUpdateRate));
+            } else
+                output.println(String.format("Run time : %d seconds, Update count : %d, Cumulative updates per second : %.3f",
+                        averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
+                        updateCount, cumulativeUpdateRate));
 
-        // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
-        // And we are beyond the first second (can produce anomalous results )
-        // show a warning message to that effect
-        if((averageThreadRunTimeMs() >= Constants.MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > updateRateSinceLastStatus)) {
-            if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(),updateRateSinceLastStatus, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
-                if(! doSummary) {
-                    output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
-                            expectedUpdatesPerSecond(), updateRateSinceLastStatus));
+            // If the no of updates per second is *less* than expected updates per second (to a given tolerance)
+            // And we are beyond the first second (can produce anomalous results )
+            // show a warning message to that effect
+            if ((averageThreadRunTimeMs() >= Constants.MILLISECONDS_IN_SECOND) && (expectedUpdatesPerSecond() > updateRateSinceLastStatus)) {
+                if (!Utilities.valueInTolerance(expectedUpdatesPerSecond(), updateRateSinceLastStatus, THROUGHPUT_VARIANCE_TOLERANCE_PCT)) {
+                    if (!doSummary) {
+                        output.println(String.format("!!!Update rate should be %.3f, actually %.3f - underflow",
+                                expectedUpdatesPerSecond(), updateRateSinceLastStatus));
+                    }
                 }
             }
         }
+        else
+            System.out.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Preparation in progress..."));
+
     }
 
     private void outputStatusForBatchInserts(){
@@ -327,13 +330,18 @@ public class TimeSeriesBenchmarker {
         return running;
     }
 
-//    private int isRunningCount(){
-//        int isRunningCount = 0;
-//        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
-//            if(benchmarkClientObject.isRunning())  isRunningCount++;
-//        }
-//        return isRunningCount;
-//    }
+    /**
+     * Is the simulation still running - check each of the threads
+     * @return True if at least one thread is still running, else false
+     */
+    private boolean inPrepPhase(){
+        boolean inPrepPhase = false;
+        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
+            inPrepPhase |= benchmarkClientObject.inPrepPhase();
+        }
+        return inPrepPhase;
+    }
+
     /**
      * Compute the simulation duration by looking at the average thread run time
      * Return value is in milliseconds

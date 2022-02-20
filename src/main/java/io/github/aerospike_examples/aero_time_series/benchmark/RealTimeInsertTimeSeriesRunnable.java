@@ -26,6 +26,8 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
     @SuppressWarnings("SameParameterValue")
     RealTimeInsertTimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient){
         this(asClient,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
+        // We need a prep phase
+        inPrepPhase = true;
     }
 
 
@@ -42,6 +44,8 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         super(asClient, asNamespace, asSet, timeSeriesCountPerObject, benchmarkClient, randomSeed);
         this.runDurationSeconds = benchmarkClient.runDuration;
         this.accelerationFactor = benchmarkClient.accelerationFactor;
+        // We need a prep phase
+        inPrepPhase = true;
     }
 
 
@@ -76,7 +80,10 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
                 epochTime-=Constants.MILLISECONDS_IN_SECOND;
             }
             timeSeriesClient.put(timeSeriesName,dataPoints);
+            // Bump the start time here so we don't suddenly go backwards
+            startTime = System.currentTimeMillis();
         }
+        inPrepPhase = false;
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
             for (String timeSeriesName : nextObservationTimes.keySet()) {
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);

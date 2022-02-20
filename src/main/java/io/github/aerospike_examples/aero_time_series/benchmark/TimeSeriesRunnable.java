@@ -16,6 +16,8 @@ abstract class TimeSeriesRunnable implements Runnable{
     // isRunning indicates the simulation is active
     // Set to true at initialisation time. Set to false when finished
     boolean isRunning = true;
+    // Use this flag if any preparation is required
+    boolean inPrepPhase = false;
     // How many inserts have been done by this thread
     int updateCount = 0;
     // Cumulative latency in milliseconds
@@ -43,12 +45,21 @@ abstract class TimeSeriesRunnable implements Runnable{
         this.timeSeriesNameLength = benchmarkClient.timeSeriesNameLength;
         this.random = new Random(randomSeed);
     }
+
     /**
      * Package level access to 'isRunning' for use by the benchmark client
      * @return boolean isRunning parameter
      */
     boolean isRunning() {
         return isRunning;
+    }
+
+    /**
+     * Package level access to 'inPrepPhase' for use by the benchmark client
+     * @return boolean inPrepPhase parameter
+     */
+    boolean inPrepPhase() {
+        return inPrepPhase;
     }
 
     /**
