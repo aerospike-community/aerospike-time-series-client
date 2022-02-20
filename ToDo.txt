@@ -3,10 +3,11 @@ Deal with retrospective inserts
 Small
 ----
 
-Make sure benchmarker doesn't just 'carry on'
+Make sure you can cope with device overload
 Check the benchmarker headers - slightly more info? Thread count?
 Batch summary header is incorrect
 Query spin up time - make it more effecient
+Usage is coming out twice. Sort.
 
 Nice To Have
 ------------
@@ -20,7 +21,6 @@ Nice to have - small
 
 Add a no truncate option
 Use enums for benchmark mode?
-Usage is coming out twice. Sort.
 Can I remove the benchmarker code when publishing to maven
 
 Phase 2
@@ -32,7 +32,6 @@ Downsampling
 
 Other
 -----
-
 
 Done
 ====
