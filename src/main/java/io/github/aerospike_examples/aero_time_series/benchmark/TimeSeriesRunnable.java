@@ -18,6 +18,8 @@ abstract class TimeSeriesRunnable implements Runnable{
     boolean isRunning = true;
     // Use this flag if any preparation is required
     boolean inPrepPhase = false;
+    // Use this variable to keep track of how far through the prep phase we are
+    double prepPhasePctComplete = 100;
     // How many inserts have been done by this thread
     int updateCount = 0;
     // Cumulative latency in milliseconds

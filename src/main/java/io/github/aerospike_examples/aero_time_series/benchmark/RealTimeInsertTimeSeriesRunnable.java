@@ -28,6 +28,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         this(asClient,asNamespace,asSet,timeSeriesCountPerObject,benchmarkClient,new Random().nextLong());
         // We need a prep phase
         inPrepPhase = true;
+        prepPhasePctComplete = 0;
     }
 
 
@@ -46,6 +47,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         this.accelerationFactor = benchmarkClient.accelerationFactor;
         // We need a prep phase
         inPrepPhase = true;
+        prepPhasePctComplete = 0;
     }
 
 
@@ -69,6 +71,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             as far as disk use is concerned
             So blocks are primed initially, and the dummy data is removed at the end of the run
          */
+        prepPhasePctComplete = 0;
         for(String timeSeriesName : lastObservationTimes.keySet()){
             int epochTime = 0;
             // Randomly each initial block to a random extent
@@ -82,6 +85,8 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             timeSeriesClient.put(timeSeriesName,dataPoints);
             // Bump the start time here so we don't suddenly go backwards
             startTime = System.currentTimeMillis();
+            // Bump pct complete
+            prepPhasePctComplete += 100.0 / lastObservationTimes.size();
         }
         inPrepPhase = false;
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){

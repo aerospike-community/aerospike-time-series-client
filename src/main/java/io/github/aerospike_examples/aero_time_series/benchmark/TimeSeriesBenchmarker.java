@@ -258,12 +258,20 @@ public class TimeSeriesBenchmarker {
 
     }
 
+    // Internal variable to track whether we have shown the prep complete message
+    boolean shownPrepCompleteMessage = false;
+
     private void outputStatusForRealTimeInserts(long lastUpdateCount,double lastAverageThreadRunTimeMs, boolean doSummary){
         long updateCount = totalUpdateCount();
         double averageThreadRunTimeMs = averageThreadRunTimeMs();
         double updateRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (updateCount - lastUpdateCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
         double cumulativeUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * updateCount / averageThreadRunTimeMs;
         if (!inPrepPhase()){
+            if(!shownPrepCompleteMessage){
+                output.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Pct complete %.3f",prepPhasePctComplete()));
+                output.println();
+                shownPrepCompleteMessage = true;
+            }
             if (!doSummary) {
                 output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
                         averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
@@ -286,7 +294,7 @@ public class TimeSeriesBenchmarker {
             }
         }
         else
-            System.out.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Preparation in progress..."));
+            output.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Pct complete %.3f",prepPhasePctComplete()));
 
     }
 
@@ -340,6 +348,14 @@ public class TimeSeriesBenchmarker {
             inPrepPhase |= benchmarkClientObject.inPrepPhase();
         }
         return inPrepPhase;
+    }
+
+    double prepPhasePctComplete(){
+        double prepPhasePctCompleteCumulative = 0;
+        for(TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects){
+            prepPhasePctCompleteCumulative+= benchmarkClientObject.prepPhasePctComplete;
+        }
+        return prepPhasePctCompleteCumulative / benchmarkClientObjects.length;
     }
 
     /**
