@@ -57,14 +57,9 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         Map<String,Long> nextObservationTimes = new HashMap<>();
         Map<String,Double> lastObservationValues = new HashMap<>();
 
-        for(int i = 0; i< timeSeriesCountPerObject; i++){
-            String timeSeriesName = randomTimeSeriesName();
-            double observationValue = initTimeSeriesValue();
-            lastObservationTimes.put(timeSeriesName,startTime);
-            lastObservationValues.put(timeSeriesName,observationValue);
-            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
-            nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
-        }
+        Vector<String> timeSeriesNames = new Vector<>();
+        for(int i = 0; i< timeSeriesCountPerObject; i++) timeSeriesNames.add(randomTimeSeriesName());
+
         /*
             Put some dummy data in when running in real time mode
             If we don't all the blocks will fill up at the same time which creates a sawtooth effect
@@ -72,7 +67,7 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             So blocks are primed initially, and the dummy data is removed at the end of the run
          */
         prepPhasePctComplete = 0;
-        for(String timeSeriesName : lastObservationTimes.keySet()){
+        for(String timeSeriesName : timeSeriesNames){
             int epochTime = 0;
             // Randomly each initial block to a random extent
             int dummyRecordCount = random.nextInt(timeSeriesClient.getMaxBlockEntryCount());
@@ -86,9 +81,19 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             // Bump the start time here so we don't suddenly go backwards
             startTime = System.currentTimeMillis();
             // Bump pct complete
-            prepPhasePctComplete += 100.0 / lastObservationTimes.size();
+            prepPhasePctComplete += 100.0 / timeSeriesNames.size();
         }
         inPrepPhase = false;
+
+        // Initialise stored values
+        for(String timeSeriesName: timeSeriesNames){
+            double observationValue = initTimeSeriesValue();
+            lastObservationTimes.put(timeSeriesName,startTime);
+            lastObservationValues.put(timeSeriesName,observationValue);
+            timeSeriesClient.put(timeSeriesName,new DataPoint(new Date(startTime),observationValue));
+            nextObservationTimes.put(timeSeriesName,nextObservationTime(startTime));
+        }
+
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
             for (String timeSeriesName : nextObservationTimes.keySet()) {
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);

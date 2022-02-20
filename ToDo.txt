@@ -6,6 +6,7 @@ Small
 Make sure benchmarker doesn't just 'carry on'
 Check the benchmarker headers - slightly more info? Thread count?
 Batch summary header is incorrect
+Query spin up time - make it more effecient
 
 Nice To Have
 ------------

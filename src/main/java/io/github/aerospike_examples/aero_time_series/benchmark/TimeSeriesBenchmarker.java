@@ -268,7 +268,7 @@ public class TimeSeriesBenchmarker {
         double cumulativeUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * updateCount / averageThreadRunTimeMs;
         if (!inPrepPhase()){
             if(!shownPrepCompleteMessage){
-                output.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Pct complete %.3f",prepPhasePctComplete()));
+                output.println(String.format("In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete %.3f%%",prepPhasePctComplete()));
                 output.println();
                 shownPrepCompleteMessage = true;
             }
@@ -294,7 +294,7 @@ public class TimeSeriesBenchmarker {
             }
         }
         else
-            output.println(String.format("In real time benchmark we prime blocks so they don't fill at the same time. Pct complete %.3f",prepPhasePctComplete()));
+            output.println(String.format("In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete %.3f%%",prepPhasePctComplete()));
 
     }
 
