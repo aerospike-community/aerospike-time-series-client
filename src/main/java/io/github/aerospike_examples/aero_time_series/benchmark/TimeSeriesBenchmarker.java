@@ -224,8 +224,8 @@ public class TimeSeriesBenchmarker {
                 }
                 // Set time a message is next due
                 nextOutputTime+= Constants.MILLISECONDS_IN_SECOND * STATUS_UPDATE_PERIOD_SECS;
-                //noinspection CatchMayIgnoreException
                 // Sleep - no point running a tight loop
+                //noinspection CatchMayIgnoreException
                 try {
                     Thread.sleep(STATUS_TIMER_CHECK_PERIOD_MS);
                 }
@@ -263,7 +263,7 @@ public class TimeSeriesBenchmarker {
         double averageThreadRunTimeMs = averageThreadRunTimeMs();
         double updateRateSinceLastStatus = (double) Constants.MILLISECONDS_IN_SECOND * (updateCount - lastUpdateCount) / (averageThreadRunTimeMs - lastAverageThreadRunTimeMs);
         double cumulativeUpdateRate = (double) Constants.MILLISECONDS_IN_SECOND * updateCount / averageThreadRunTimeMs;
-
+        //System.out.println(String.format("isrunningcount %d",isRunningCount()));
         if(!doSummary) {
             output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
                     averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
@@ -327,6 +327,13 @@ public class TimeSeriesBenchmarker {
         return running;
     }
 
+//    private int isRunningCount(){
+//        int isRunningCount = 0;
+//        for (TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects) {
+//            if(benchmarkClientObject.isRunning())  isRunningCount++;
+//        }
+//        return isRunningCount;
+//    }
     /**
      * Compute the simulation duration by looking at the average thread run time
      * Return value is in milliseconds
@@ -357,9 +364,9 @@ public class TimeSeriesBenchmarker {
 
     /**
      * Get the total latency for the operations, so we can figure out average latency
-     * @return
+     * @return total latency so far
      */
-    long totalLatencyMs(){
+    private long totalLatencyMs(){
         int totalLatencyMs = 0;
         for(TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects){
             totalLatencyMs += benchmarkClientObject.cumulativeLatencyMs;

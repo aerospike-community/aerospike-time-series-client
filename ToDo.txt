@@ -3,9 +3,8 @@ Deal with retrospective inserts
 Small
 ----
 
-Publish to mvnrepository
+Make sure benchmarker doesn't just 'carry on'
 Check the benchmarker headers - slightly more info? Thread count?
-Time series output
 Batch summary header is incorrect
 
 Nice To Have
@@ -13,6 +12,7 @@ Nice To Have
 
 International date times
 REPL loop
+Decent unit test for time series reader
 
 Nice to have - small
 --------------------
@@ -82,6 +82,8 @@ Avoid the need to increase scan threads by ensuring getTimeSeriesDetails only ge
 Current latency / average latency
 How do I test the query benchmarker
 Shell script for invocation
+Publish to mvnrepository
+Time series output
 
 Notes
 =====

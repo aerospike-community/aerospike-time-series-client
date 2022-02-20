@@ -34,8 +34,6 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
         startTime = System.currentTimeMillis();
         // Need the Time series info details
         Vector<TimeSeriesInfo> timeSeriesInfoList = getTimeSeriesDetails(timeSeriesClient);
-        // Now we're running
-        isRunning = true;
         // Loop until run time exceeds run duration seconds
         while(System.currentTimeMillis() - startTime < runDurationSeconds * Constants.MILLISECONDS_IN_SECOND){
             // Randomly select time series
@@ -48,8 +46,6 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
             cumulativeLatencyMs+= System.currentTimeMillis() - queryRunTimeStart;
             updateCount++;
         }
-        // Set completion flags
-        isFinished = true;
         isRunning = false;
 
     }
@@ -65,7 +61,7 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
     static synchronized Vector<TimeSeriesInfo> getTimeSeriesDetails(TimeSeriesClient timeSeriesClient){
         if(timeSeriesInfoList == null) {
             Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
-            timeSeriesInfoList = new Vector<TimeSeriesInfo>();
+            timeSeriesInfoList = new Vector<>();
 
             for (String timeSeriesName : timeSeriesNames)
                 timeSeriesInfoList.add(TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName));

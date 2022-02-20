@@ -26,6 +26,7 @@ public class OptionsHelper {
         public static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
         public static final String TIME_SERIES_RANGE_FLAG = "r";
         public static final String TIME_SERIES_SET_FLAG = "s";
+        public static final String TIME_SERIES_NAME_FLAG = "i";
     }
 
     public static class BenchmarkModes{
@@ -181,6 +182,36 @@ public class OptionsHelper {
         // And set required for the flags that are needed
         clonedOptions.getOption(BenchmarkerFlags.RUN_DURATION_FLAG).setRequired(true);
         return clonedOptions;
+    }
+
+    /**
+     * Command line options for Main class
+     * This function provides the options in general terms, to allow for initial parsing
+     * Separate logic is required to parse the options based on benchmark mode - this is done in getArguments
+     * Utility functions are provided below to return command line options for each mode
+     * @return standardCmdLineOptions
+     */
+    static Options cmdLineOptionsForReader() {
+        Options cmdLineOptions = new Options();
+
+        Option hostOption = new Option(io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper.BenchmarkerFlags.HOST_FLAG, "host", true, "Aerospike seed host. Required");
+        Option namespaceOption = new Option(io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, "namespace", true, "Namespace for time series. Required.");
+        Option setOption = new Option(io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG, "set", true,
+                String.format("Set for time series. Defaults to %s", Constants.DEFAULT_TIME_SERIES_SET));
+        Option timeSeriesNameOption  = new Option(io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper.BenchmarkerFlags.TIME_SERIES_NAME_FLAG,
+                "timeSeriesName",true,"Name of time series");
+
+        // These options are common to all modes
+        hostOption.setRequired(true);
+        namespaceOption.setRequired(true);
+        setOption.setRequired(false);
+        timeSeriesNameOption.setRequired(false);
+
+        cmdLineOptions.addOption(hostOption);
+        cmdLineOptions.addOption(namespaceOption);
+        cmdLineOptions.addOption(setOption);
+        cmdLineOptions.addOption(timeSeriesNameOption);
+        return cmdLineOptions;
     }
 
     /**

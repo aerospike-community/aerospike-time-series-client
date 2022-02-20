@@ -4,6 +4,7 @@ import com.aerospike.client.policy.ScanPolicy;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Vector;
 
 /**
@@ -27,13 +28,23 @@ public class Utilities {
      * @return Vector containing available time series names
      */
     public static Vector<String> getTimeSeriesNames(TimeSeriesClient timeSeriesClient){
-        Vector<String> timeSeriesNames = new Vector<>();
+        HashSet<String> timeSeriesNames = new HashSet<>();
         timeSeriesClient.getAsClient().scanAll(
                 new ScanPolicy(), timeSeriesClient.getAsNamespace(), timeSeriesClient.timeSeriesIndexSetName(),
                 // Callback is a lambda function
                 (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
                 Constants.TIME_SERIES_NAME_FIELD_NAME);
-        return timeSeriesNames;
+        // Need to check for series which haven't yet been indexed
+        timeSeriesClient.getAsClient().scanAll(
+                new ScanPolicy(), timeSeriesClient.getAsNamespace(), timeSeriesClient.getTimeSeriesSet(),
+                // Callback is a lambda function
+                (key, record) -> {
+                    String timeSeriesName = (String)(record.getMap(Constants.METADATA_BIN_NAME).get(Constants.TIME_SERIES_NAME_FIELD_NAME));
+                    timeSeriesNames.add(timeSeriesName);
+                },
+                Constants.METADATA_BIN_NAME);
+
+        return new Vector<>(timeSeriesNames);
     }
 
     /**
@@ -56,9 +67,10 @@ public class Utilities {
 
     /**
      *
-     * @param timestamp
-     * @return
+     * @param timestamp date to truncate
+     * @return truncated date
      */
+    @SuppressWarnings("unused") // method deliberately exposed
     public static Date getTruncatedTimestamp(Date timestamp){
         return new Date(getTruncatedTimestamp(timestamp.getTime()));
     }

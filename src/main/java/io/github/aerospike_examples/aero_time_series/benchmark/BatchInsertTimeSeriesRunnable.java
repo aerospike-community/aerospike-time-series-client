@@ -44,7 +44,6 @@ class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         long recordsToInsertPerSeries = requiredTimeSeriesRangeSeconds / observationIntervalSeconds;
         int iterations = (int)Math.ceil(((double)requiredTimeSeriesRangeSeconds / observationIntervalSeconds) / recordsPerBlock);
         long maxTimestamp = startTime + requiredTimeSeriesRangeSeconds * Constants.MILLISECONDS_IN_SECOND;
-        isRunning = true;
 
         for(int iterationCount = 0;iterationCount < iterations;iterationCount++) {
             for (String timeSeriesName : lastObservationTimes.keySet()) {
@@ -69,7 +68,6 @@ class BatchInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
                 updateCount += recordsInCurrentBatch;
             }
         }
-        isFinished = true;
         isRunning = false;
     }
 }

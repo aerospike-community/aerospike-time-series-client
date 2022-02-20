@@ -77,7 +77,6 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
             }
             timeSeriesClient.put(timeSeriesName,dataPoints);
         }
-        isRunning = true;
         while(getSimulationTime() - startTime < (long)runDurationSeconds * Constants.MILLISECONDS_IN_SECOND * accelerationFactor){
             for (String timeSeriesName : nextObservationTimes.keySet()) {
                 long nextObservationTime = nextObservationTimes.get(timeSeriesName);
@@ -92,11 +91,10 @@ class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
                 }
             }
         }
+        isRunning = false;
+
         // Then remove the dummy records
         for(String timeSeriesName : lastObservationTimes.keySet()) timeSeriesClient.removeDummyRecords(timeSeriesName);
-
-        isFinished = true;
-        isRunning = false;
     }
 
     /**

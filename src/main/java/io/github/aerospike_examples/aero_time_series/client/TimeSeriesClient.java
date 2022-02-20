@@ -6,6 +6,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.policy.*;
 import io.github.aerospike_examples.aero_time_series.Constants;
 
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class TimeSeriesClient implements ITimeSeriesClient {
@@ -385,7 +386,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param startTimestampForBlock - start timestamp for block
      * @return Aerospike Key for required block
      */
-    public Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long startTimestampForBlock) {
+    private Key asKeyForHistoricTimeSeriesBlock(String timeSeriesName, long startTimestampForBlock) {
         String historicBlockKey = String.format("%s-%d", timeSeriesName, startTimestampForBlock);
         return new Key(asNamespace, timeSeriesSet, historicBlockKey);
     }
@@ -396,7 +397,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName - time series in question
      * @return - Aerospike Key to index block for that time series
      */
-    public Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
+    private Key asKeyForTimeSeriesIndexes(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesIndexSetName(), timeSeriesName);
     }
 
@@ -758,6 +759,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             );
         }
         catch(AerospikeException e){
+            //noinspection StatementWithEmptyBody - deliberate
             if(e.getResultCode() == ResultCode.KEY_NOT_FOUND_ERROR){
                 /*do nothing*/
                 /* This is OK  - record may not exist */
@@ -766,7 +768,25 @@ public class TimeSeriesClient implements ITimeSeriesClient {
                 throw e;
             }
         }
-
-
     }
+
+    /**
+     * Utility method to print out a time series
+     * @param timeSeriesName Name of time series to print data for
+     */
+    public void printTimeSeries(String timeSeriesName){
+        String timeSeriesDateFormat = "yyyy-MM-dd HH:mm:ss.SSS";
+        SimpleDateFormat dateFormatter = new SimpleDateFormat(timeSeriesDateFormat);
+
+        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(this,timeSeriesName);
+        System.out.println(timeSeriesInfo);
+        System.out.println();
+        DataPoint[] dataPoints = getPoints(timeSeriesName,new Date(timeSeriesInfo.getStartDateTime()),new Date(timeSeriesInfo.getEndDateTime()));
+        System.out.println("Timestamp,Value");
+        for(DataPoint dataPoint:dataPoints){
+            System.out.println(String.format("%s,%.5f",dateFormatter.format(new Date(dataPoint.getTimestamp())),dataPoint.getValue()));
+        }
+    }
+
+
 }

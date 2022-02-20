@@ -16,8 +16,6 @@ abstract class TimeSeriesRunnable implements Runnable{
     // isRunning indicates the simulation is active
     // Set to true at initialisation time. Set to false when finished
     boolean isRunning = true;
-    // Has the simulation finished (allows us to distinguish between start and end)
-    boolean isFinished = false;
     // How many inserts have been done by this thread
     int updateCount = 0;
     // Cumulative latency in milliseconds
@@ -58,7 +56,7 @@ abstract class TimeSeriesRunnable implements Runnable{
      * @return runTime of thread so far, in milliseconds
      */
     long runTime(){
-        return (isFinished || isRunning()) ? System.currentTimeMillis() - startTime : 0;
+        return System.currentTimeMillis() - startTime;
     }
 
     /**

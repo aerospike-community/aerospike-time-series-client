@@ -687,4 +687,23 @@ public class BenchmarkerTest {
         return consoleOutput;
     }
 
+//    @Test
+//    public void temp() {
+//        int intervalBetweenUpdates = 1;
+//        int runDurationSeconds = 30;
+//        int accelerationFactor = 5;
+//        int threadCount = 100;
+//        int timeSeriesCount = 10000;
+//        int testTolerancePct = 5;
+//
+//        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+//                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
+//
+//        benchmarker.run();
+//        // Check that run time is within tolerance
+//        Assert.assertTrue(Utilities.valueInTolerance(runDurationSeconds * Constants.MILLISECONDS_IN_SECOND, benchmarker.averageThreadRunTimeMs(), testTolerancePct));
+//        // Check that expected updates are within tolerance
+//        Assert.assertTrue(Utilities.valueInTolerance(accelerationFactor * runDurationSeconds * timeSeriesCount, benchmarker.totalUpdateCount(), testTolerancePct));
+//    }
+
 }

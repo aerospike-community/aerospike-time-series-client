@@ -99,6 +99,7 @@ public class TestUtilities {
      * @param randomSeed - seed to use for data generation
      * @return Benchmarker object configured for querying
      */
+    @SuppressWarnings("unused")
     public static TimeSeriesBenchmarker queryBenchmarker(String asHost, String asNamespace, String asSet, int runDurationSeconds, int threadCount, long randomSeed){
         return new TimeSeriesBenchmarker(asHost,asNamespace,asSet,OptionsHelper.BenchmarkModes.QUERY,0,runDurationSeconds,0,threadCount,
                 0,0,0, TimeSeriesBenchmarker.DEFAULT_DAILY_DRIFT_PCT, TimeSeriesBenchmarker.DEFAULT_DAILY_VOLATILITY_PCT,randomSeed);
