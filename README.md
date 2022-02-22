@@ -208,7 +208,7 @@ Aerospike has an upper limit on the number of updates per object of approximatel
 
 The Time Series API ships with a benchmarking tool. Three modes of operation are provided - real time insert, batch insert and query.
 
-To make use of the benchmarked, download this repository and run `mvn assembly:single` to compile. Java 8+ and maven are required.
+To make use of the benchmarker, download **this** repository and run `mvn assembly:single` to compile. Java 8+ and maven are required.
 
 ```bash
 git clone https://github.com/aerospike-examples/aerospike-time-series-client.git
@@ -244,8 +244,6 @@ The benchmarker is found in the project's *bin* directory. Usage is as follows
 -z,--threads <arg>           Thread count required. Optional. Defaults to 1
 ```
 
-
-
 ### Real Time Benchmarking
 
 As a simple example, let's insert 10 seconds of data for a single time series, with observations being made once per second.
@@ -268,11 +266,7 @@ In real time benchmark we prime blocks so they don't all fill at the same time. 
 Run time : 0 sec, Update count : 1, Current updates/sec : 1.029, Cumulative updates/sec : 1.027
 Run time : 1 sec, Update count : 2, Current updates/sec : 1.000, Cumulative updates/sec : 1.013
 Run time : 2 sec, Update count : 2, Current updates/sec : 0.000, Cumulative updates/sec : 0.672
-Run time : 3 sec, Update count : 3, Current updates/sec : 1.001, Cumulative updates/sec : 0.755
-Run time : 4 sec, Update count : 4, Current updates/sec : 1.000, Cumulative updates/sec : 0.804
-Run time : 5 sec, Update count : 6, Current updates/sec : 2.000, Cumulative updates/sec : 1.004
-Run time : 6 sec, Update count : 7, Current updates/sec : 1.000, Cumulative updates/sec : 1.004
-Run time : 7 sec, Update count : 8, Current updates/sec : 1.000, Cumulative updates/sec : 1.003
+...
 Run time : 8 sec, Update count : 9, Current updates/sec : 1.000, Cumulative updates/sec : 1.003
 Run time : 9 sec, Update count : 10, Current updates/sec : 1.000, Cumulative updates/sec : 1.003
 
@@ -306,12 +300,7 @@ Timestamp,Value
 2022-02-22 12:17:13.294,97.37854
 2022-02-22 12:17:14.247,97.34929
 2022-02-22 12:17:15.263,97.33103
-2022-02-22 12:17:16.270,97.35397
-2022-02-22 12:17:17.318,97.34880
-2022-02-22 12:17:18.307,97.37795
-2022-02-22 12:17:19.262,97.33903
-2022-02-22 12:17:20.267,97.30445
-2022-02-22 12:17:21.256,97.28035
+...
 2022-02-22 12:17:22.212,97.31197
 2022-02-22 12:17:23.185,97.29315
 
@@ -319,11 +308,150 @@ Timestamp,Value
 
 We can see that we have had sample points generated over a ten second period, with the series given a random name.
 
-The benchmarker can be run at greater scale using the -c (time series count) flag. You may also wish to make use of 
+The benchmarker can be run at greater scale using the -c (time series count) flag. You may also wish to make use of -z (multi-thread) flag in order to acheive the required throughput. The benchmarker will warn you if the required throughput is not being achieved.
 
+Another real time option is acceleration via the -a flag. This runs the simulation at an accelerated rate. So for instance if you wished to insert points every 30 seconds over a 1 hour period (120 points), you could shorten the time of the run by running using '-a 30'. This will 'speed up' the simulation by a factor of 30, so it will only take 120s. A higher number would also be possible. The benchmarker will indicate the actual update rates. For example
 
+```
+./timeSeriesBenchmarker.sh -h <AEROSPIKE_HOST>  -n <AEROSPIKE_NAMESPACE> -m realTimeWrite -c 5 -p 10 -a 10 -d 10
+Aerospike Time Series Benchmarker running in real time insert mode
+
+Updates per second : 5.000
+Updates per second per time series : 1.000
+```
+
+You will notice messages similar to the following when real time benchmarking is started - particularly if the time series count is high.
+
+```
+In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete 11.231%
+In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete 17.649%
+```
+
+The reason for this is, by default, the 'blocks' will all fill up at the same time when using the real time benchmarked. This will create a saw-tooth like load on the underlying disks. To avoid this, when running in real time benchmark mode, for each series, the first block is initialised with a random number of records so the 'filling up' of blocks happens at a uniform rate. This is the 'priming' that is referred to. The 'dummy' records are removed at the end of the simulation.
+
+### Batch Insertion
+
+A disadvantage of the 'real time' benchmarker is precisely that - the loading occurs in real time. You may wish to build your sample time series as quickly as possible. The batch insert mode is provided for this purpose.
+
+In this mode, data points are loaded a block at a time, effectively as fast as the benchmarker will run. The invocation below will create 1000 sample series (-c flag), over a period of 1 year (-r flag), with 30 seconds between each observation.
+
+```
+./timeSeriesBenchmarker.sh -h <AEROSPIKE_HOST_IP>  -n <AEROSPIKE_NAMESPACE>  -m batchInsert -c 10 -p 30 -r 1Y 
+```
+
+```
+Aerospike Time Series Benchmarker running in batch insert mode
+
+Inserting 864000 records over a period of 8640000 seconds
+
+Run time : 0 sec, Data point insert count : 0, Effective updates/sec : 0.000. Pct complete 0.000%
+Run time : 1 sec, Data point insert count : 70000, Effective updates/sec : 69513.406. Pct complete 0.810%
+Run time : 2 sec, Data point insert count : 204000, Effective updates/sec : 101644.245. Pct complete 2.361%
+Run time : 3 sec, Data point insert count : 387000, Effective updates/sec : 128699.701. Pct complete 4.479%
+Run time : 4 sec, Data point insert count : 589000, Effective updates/sec : 146992.763. Pct complete 6.817%
+...
+
+```
 
 ## Simulation
 
+It is helpful to simulate time series data realistically. The Time Series API contains a *TimeSeriesSimulator* class to help. This is made use of by the Benchmarker classes and may also be used independently.
 
+Many time series over a short period at least, follow a [Brownian Motion](https://en.wikipedia.org/wiki/Brownian_motion). The *TimeSeriesSimulator* allows this to be simulated. The idea is that if we look at the *relative change* in our observed value, then the *expected* mean change should be proportional to the time between observations and the *expected variance* should similarly be proportional to the period in question. Formally, let X(t) be the observation of the subject property X at time &tau;. After a time t let the value of X be X(&tau;+t). The simulation distributes the value of (X(&tau; +t) - X(&tau;)) / X(&tau;) i.e. the relative change in X like a normal distribution with mean &mu;t and variance &sigma;<sup>2</sup>t.
+
+<center>(X(t + &tau;) - X(t)) / X(t) ~ N(&mu;t,&sigma;<sup>2</sup>t.)</center>
+
+We can use the simulator as follows
+
+```java
+// Initialise the simulator - daily drift is 2%, daily volatility is 5%
+// Implies on average, over the course of a day, the value will increase by 2%
+// and with ~70% probability the series will be between -3% and 7% of its original value
+TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(2,5);
+// Initial value
+double seriesCurrentValue = 10;
+// Time between observations
+int timeBetweenObservations = 30;
+// Ten iterations
+for(int i = 0;i<=10;i++){
+  // Print current value
+	System.out.println(String.format(
+    "Series value after %d seconds : %.5f",i*timeBetweenObservations,seriesCurrentValue));
+  // Get next value
+	seriesCurrentValue = timeSeriesSimulator.getNextValue(seriesCurrentValue,timeBetweenObservations);
+}
+```
+
+Sample output
+
+```
+Series value after 0 seconds : 10.00000
+Series value after 30 seconds : 10.00089
+Series value after 60 seconds : 9.99232
+...
+Series value after 270 seconds : 10.01382
+Series value after 300 seconds : 9.99846
+```
+
+### Benchmarker Simulation
+
+The benchmarker uses the following values for daily drift and volatility
+
+```java
+public static final int DEFAULT_DAILY_VOLATILITY_PCT = 10;
+public static final int DEFAULT_DAILY_DRIFT_PCT = 10;
+```
+
+Additionally some variability is introduced into the timing of the observations - the period between observations is varied by up to plus or minus the amount below.
+
+```java
+public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
+```
+
+Let's have a look at some representative output - every 5 minutes over a period of 1 day
+
+```
+./timeSeriesBenchmarker.sh -h 172.28.128.7 -n test -m batchInsert -c 1 -p 300 -r 1D 
+```
+
+Capture this using the reader
+
+```
+./timeSeriesReader.sh -h 172.28.128.7 -n test 
+```
+
+Sample output
+
+```
+Running TimeSeriesReader
+
+No time series specified - selecting series PVLGMUDNKY
+
+Name : PVLGMUDNKY Start Date : 2022-02-21 23:59:51.120 End Date 2022-02-22 23:54:52.027 Data point count : 288
+
+Timestamp,Value
+2022-02-21 23:59:51.120,13.44455
+2022-02-22 00:04:45.720,13.38021
+2022-02-22 00:09:56.460,13.37291
+2022-02-22 00:14:55.110,13.42059
+2022-02-22 00:20:01.020,13.49398
+2022-02-22 00:24:54.240,13.37568
+2022-02-22 00:29:49.260,13.41944
+2022-02-22 00:35:03.750,13.42574
+2022-02-22 00:39:50.220,13.41320
+2022-02-22 00:45:00.510,13.46321
+2022-02-22 00:49:58.020,13.59341
+....
+2022-02-22 23:34:59.227,15.36061
+2022-02-22 23:39:50.467,15.36623
+2022-02-22 23:44:50.497,15.35605
+2022-02-22 23:49:40.387,15.33868
+2022-02-22 23:54:52.027,15.37945
+```
+
+The above shows the deliberately introduced variability in the observation period.
+
+Finally, the chart below, which was created by simply pulling the above data into Excel gives a sample of the qualitative nature of the data that is being generated.
+
+![image-20220222164504014](/Users/ken/Library/Application Support/typora-user-images/image-20220222164504014.png)
 

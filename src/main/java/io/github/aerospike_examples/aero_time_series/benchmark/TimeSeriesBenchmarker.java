@@ -301,7 +301,7 @@ public class TimeSeriesBenchmarker {
     private void outputStatusForBatchInserts(){
         long expectedUpdateCount = timeSeriesCount * timeSeriesRangeSeconds / averageObservationIntervalSeconds;
         double pctComplete = 100 * (double) totalUpdateCount() / expectedUpdateCount;
-        output.println(String.format("Run time : %d seconds, Data point insert count : %d, Effective updates per second : %.3f. Pct complete %.3f%%", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
+        output.println(String.format("Run time : %d sec, Data point insert count : %d, Effective updates/sec : %.3f. Pct complete %.3f%%", averageThreadRunTimeMs()/Constants.MILLISECONDS_IN_SECOND,
                 totalUpdateCount(),(double) Constants.MILLISECONDS_IN_SECOND * totalUpdateCount()/ averageThreadRunTimeMs(),pctComplete));
     }
 

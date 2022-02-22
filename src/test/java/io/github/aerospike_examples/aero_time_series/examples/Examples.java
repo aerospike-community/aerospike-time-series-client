@@ -5,6 +5,7 @@ import io.github.aerospike_examples.aero_time_series.Constants;
 import io.github.aerospike_examples.aero_time_series.TestConstants;
 import io.github.aerospike_examples.aero_time_series.TestUtilities;
 import io.github.aerospike_examples.aero_time_series.Utilities;
+import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesSimulator;
 import io.github.aerospike_examples.aero_time_series.client.DataPoint;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
@@ -56,6 +57,10 @@ public class Examples {
                                 timeSeriesInfo.getStartDateTime(),timeSeriesInfo.getEndDateTime())));
     }
 
+    /**
+     * Batch time series insertion example
+     * @throws ParseException
+     */
     @Test
     public void batchTimeSeriesExample() throws ParseException {
         TestUtilities.removeTimeSeriesTestDataForSet(TestConstants.TIME_SERIES_TEST_SET);
@@ -95,4 +100,21 @@ public class Examples {
 
     }
 
+
+    @Test
+    public void timeSeriesSimulationExample(){
+        // Initialise the simulator - daily drift is 2%, daily volatility is 5%
+        // Implies on average, over the course of a day, the value will increase by 2%
+        // and with ~70% probability the series will be between -3% and 7% of its original value
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(2,5);
+        // Initial value
+        double seriesCurrentValue = 10;
+        // Time between observations
+        int timeBetweenObservations = 30;
+        // Ten iterations
+        for(int i = 0;i<=10;i++){
+            System.out.println(String.format("Series value after %d seconds : %.5f",i*timeBetweenObservations,seriesCurrentValue));
+            seriesCurrentValue = timeSeriesSimulator.getNextValue(seriesCurrentValue,timeBetweenObservations);
+        }
+    }
 }
