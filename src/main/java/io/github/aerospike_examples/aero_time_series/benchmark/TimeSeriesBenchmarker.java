@@ -259,7 +259,7 @@ public class TimeSeriesBenchmarker {
     }
 
     // Internal variable to track whether we have shown the prep complete message
-    boolean shownPrepCompleteMessage = false;
+    private boolean shownPrepCompleteMessage = false;
 
     private void outputStatusForRealTimeInserts(long lastUpdateCount,double lastAverageThreadRunTimeMs, boolean doSummary){
         long updateCount = totalUpdateCount();
@@ -273,11 +273,11 @@ public class TimeSeriesBenchmarker {
                 shownPrepCompleteMessage = true;
             }
             if (!doSummary) {
-                output.println(String.format("Run time : %d seconds, Update count : %d, Current updates per second : %.3f, Cumulative updates per second : %.3f",
+                output.println(String.format("Run time : %d sec, Update count : %d, Current updates/sec : %.3f, Cumulative updates/sec : %.3f",
                         averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
                         updateCount, updateRateSinceLastStatus, cumulativeUpdateRate));
             } else
-                output.println(String.format("Run time : %d seconds, Update count : %d, Cumulative updates per second : %.3f",
+                output.println(String.format("Run time : %d sec, Update count : %d, Cumulative updates/sec : %.3f",
                         averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND,
                         updateCount, cumulativeUpdateRate));
 
@@ -350,7 +350,7 @@ public class TimeSeriesBenchmarker {
         return inPrepPhase;
     }
 
-    double prepPhasePctComplete(){
+    private double prepPhasePctComplete(){
         double prepPhasePctCompleteCumulative = 0;
         for(TimeSeriesRunnable benchmarkClientObject : benchmarkClientObjects){
             prepPhasePctCompleteCumulative+= benchmarkClientObject.prepPhasePctComplete;

@@ -74,4 +74,25 @@ public class Utilities {
     public static Date getTruncatedTimestamp(Date timestamp){
         return new Date(getTruncatedTimestamp(timestamp.getTime()));
     }
+
+    /**
+     * Increment a date by a specified number of milliseconds
+     * @param timestamp date/time to increment
+     * @param incrementInMs magnitude of increment in milliseconds
+     * @return incremented date
+     */
+    @SuppressWarnings("WeakerAccess") // public access required
+    public static Date incrementDateUsingMs(Date timestamp, long incrementInMs){
+        return new Date(timestamp.getTime() + incrementInMs);
+    }
+
+    /**
+     * Increment a date by a specified number of seconds
+     * @param timestemp date/time to increment
+     * @param incrementInSeconds magnitude of increment in seconds
+     * @return incremented date
+     */
+    public static Date incrementDateUsingSeconds(Date timestemp,long incrementInSeconds){
+        return incrementDateUsingMs(timestemp, incrementInSeconds * Constants.MILLISECONDS_IN_SECOND);
+    }
 }

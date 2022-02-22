@@ -317,7 +317,7 @@ public class BenchmarkerTest {
 
         // Check we get the expected number of status messages
         Pattern pattern = Pattern.compile(
-                "Run time : \\d+ seconds, Update count : \\d+, Current updates per second : \\d+.\\d{3}, Cumulative updates per second : \\d+.\\d{3}",
+                "Run time : \\d+ sec, Update count : \\d+, Current updates/sec : \\d+.\\d{3}, Cumulative updates/sec : \\d+.\\d{3}",
                 Pattern.CASE_INSENSITIVE);
 
         int runTimeMessageCount = 0;
@@ -341,6 +341,7 @@ public class BenchmarkerTest {
      */
     @Test
     public void batchModeCheck(){
+        doTeardown = false;
         int intervalBetweenUpdates = 10;
         int threadCount = 10;
         int timeSeriesCount = 10;

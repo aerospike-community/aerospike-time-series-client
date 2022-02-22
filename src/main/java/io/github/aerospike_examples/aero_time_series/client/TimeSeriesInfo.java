@@ -41,7 +41,7 @@ public class TimeSeriesInfo {
      * Timestamp of earliest time series point
      * @return earliest data point timestamp
      */
-    public long getStartDateTime() {
+    public long getStartDateTimestamp() {
         return startDateTime;
     }
 
@@ -49,8 +49,24 @@ public class TimeSeriesInfo {
      * Timestamp of latest time series point
      * @return latest data point timestamp
      */
-    public long getEndDateTime() {
+    public long getEndDateTimestamp() {
         return endDateTime;
+    }
+
+    /**
+     * Date/time of earliest time series point
+     * @return earliest data point date/time
+     */
+    public Date getStartDateTime() {
+        return new Date(startDateTime);
+    }
+
+    /**
+     * Date/time of latest time series point
+     * @return latest data point date/time
+     */
+    public Date getEndDateTime() {
+        return new Date(endDateTime);
     }
 
     /**

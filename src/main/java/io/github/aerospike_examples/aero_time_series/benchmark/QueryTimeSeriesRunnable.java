@@ -41,7 +41,7 @@ class QueryTimeSeriesRunnable extends TimeSeriesRunnable{
             // When did the query start
             long queryRunTimeStart = System.currentTimeMillis();
             timeSeriesClient.runQuery(timeSeriesInfo.getSeriesName(),TimeSeriesClient.QueryOperation.AVG,
-                    new Date(timeSeriesInfo.getStartDateTime()),new Date(timeSeriesInfo.getEndDateTime()));
+                    new Date(timeSeriesInfo.getStartDateTimestamp()),new Date(timeSeriesInfo.getEndDateTimestamp()));
             // Add total query time to cumulative latency
             cumulativeLatencyMs+= System.currentTimeMillis() - queryRunTimeStart;
             updateCount++;

@@ -21,4 +21,4 @@ then
 	exit 1
 fi
 
-java -jar $AERO_TIME_SERIES_JAR_LOCATION "$@"
+java -cp $AERO_TIME_SERIES_JAR_LOCATION io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesReader "$@"

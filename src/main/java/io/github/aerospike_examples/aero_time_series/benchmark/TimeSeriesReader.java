@@ -37,7 +37,7 @@ public class TimeSeriesReader {
         catch(Utilities.ParseException e){
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesReader",OptionsHelper.standardCmdLineOptions());
+            formatter.printHelp("TimeSeriesReader",OptionsHelper.cmdLineOptionsForReader());
         }
     }
 
@@ -60,7 +60,7 @@ public class TimeSeriesReader {
         } catch (ParseException e) {
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesReader", OptionsHelper.standardCmdLineOptions());
+            formatter.printHelp("TimeSeriesReader", OptionsHelper.cmdLineOptionsForReader());
             throw (new Utilities.ParseException(e.getMessage()));
         }
         return timeSeriesReader;

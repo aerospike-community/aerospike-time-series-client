@@ -63,8 +63,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private String timeSeriesSet = Constants.DEFAULT_TIME_SERIES_SET;
 
     // Read and write policies
-    private Policy readPolicy = new Policy();
-    private WritePolicy writePolicy = new WritePolicy();
+    private Policy readPolicy;
+    private WritePolicy writePolicy;
 
     // Max entry count per data block
     private int maxBlockEntryCount = Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK;
@@ -95,6 +95,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         this.asNamespace = asNamespace;
         this.maxBlockEntryCount = maxBlockEntryCount;
         this.timeSeriesSet = timeSeriesSet;
+        this.readPolicy = asClient.readPolicyDefault;
+        this.writePolicy = asClient.writePolicyDefault;
     }
 
     /**
@@ -375,7 +377,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      * @param timeSeriesName name of time series
      * @return Aerospike Key for current block for this time series
      */
-    public Key asCurrentKeyForTimeSeries(String timeSeriesName) {
+    Key asCurrentKeyForTimeSeries(String timeSeriesName) {
         return new Key(asNamespace, timeSeriesSet, timeSeriesName);
     }
 
@@ -781,7 +783,7 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(this,timeSeriesName);
         System.out.println(timeSeriesInfo);
         System.out.println();
-        DataPoint[] dataPoints = getPoints(timeSeriesName,new Date(timeSeriesInfo.getStartDateTime()),new Date(timeSeriesInfo.getEndDateTime()));
+        DataPoint[] dataPoints = getPoints(timeSeriesName,new Date(timeSeriesInfo.getStartDateTimestamp()),new Date(timeSeriesInfo.getEndDateTimestamp()));
         System.out.println("Timestamp,Value");
         for(DataPoint dataPoint:dataPoints){
             System.out.println(String.format("%s,%.5f",dateFormatter.format(new Date(dataPoint.getTimestamp())),dataPoint.getValue()));
