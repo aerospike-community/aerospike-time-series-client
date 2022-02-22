@@ -34,16 +34,17 @@ public class Utilities {
                 // Callback is a lambda function
                 (key, record) -> timeSeriesNames.add(record.getString(Constants.TIME_SERIES_NAME_FIELD_NAME)),
                 Constants.TIME_SERIES_NAME_FIELD_NAME);
-        // Need to check for series which haven't yet been indexed
-        timeSeriesClient.getAsClient().scanAll(
-                new ScanPolicy(), timeSeriesClient.getAsNamespace(), timeSeriesClient.getTimeSeriesSet(),
-                // Callback is a lambda function
-                (key, record) -> {
-                    String timeSeriesName = (String)(record.getMap(Constants.METADATA_BIN_NAME).get(Constants.TIME_SERIES_NAME_FIELD_NAME));
-                    timeSeriesNames.add(timeSeriesName);
-                },
-                Constants.METADATA_BIN_NAME);
-
+        // Need to check for series which haven't yet been indexed if we haven't got any time series yet
+        if(timeSeriesNames.size() == 0) {
+            timeSeriesClient.getAsClient().scanAll(
+                    new ScanPolicy(), timeSeriesClient.getAsNamespace(), timeSeriesClient.getTimeSeriesSet(),
+                    // Callback is a lambda function
+                    (key, record) -> {
+                        String timeSeriesName = (String) (record.getMap(Constants.METADATA_BIN_NAME).get(Constants.TIME_SERIES_NAME_FIELD_NAME));
+                        timeSeriesNames.add(timeSeriesName);
+                    },
+                    Constants.METADATA_BIN_NAME);
+        }
         return new Vector<>(timeSeriesNames);
     }
 
