@@ -340,15 +340,51 @@ In this mode, data points are loaded a block at a time, effectively as fast as t
 ```
 
 ```
+./timeSeriesBenchmarker.sh -h $HOST  -n test  -m batchInsert -c 1000 -p 30 -r 1Y -z 100 
+
 Aerospike Time Series Benchmarker running in batch insert mode
 
-Inserting 864000 records over a period of 8640000 seconds
+Inserting 1051200 records per series for 1000 series, over a period of 31536000 seconds
 
 Run time : 0 sec, Data point insert count : 0, Effective updates/sec : 0.000. Pct complete 0.000%
-Run time : 1 sec, Data point insert count : 70000, Effective updates/sec : 69513.406. Pct complete 0.810%
-Run time : 2 sec, Data point insert count : 204000, Effective updates/sec : 101644.245. Pct complete 2.361%
-Run time : 3 sec, Data point insert count : 387000, Effective updates/sec : 128699.701. Pct complete 4.479%
-Run time : 4 sec, Data point insert count : 589000, Effective updates/sec : 146992.763. Pct complete 6.817%
+Run time : 1 sec, Data point insert count : 1046000, Effective updates/sec : 870216.306. Pct complete 0.100%
+Run time : 2 sec, Data point insert count : 2568000, Effective updates/sec : 1146363.231. Pct complete 0.244%
+Run time : 3 sec, Data point insert count : 4196000, Effective updates/sec : 1308796.007. Pct complete 0.399%
+Run time : 4 sec, Data point insert count : 5806000, Effective updates/sec : 1372576.832. Pct complete 0.552%
+...
+Run time : 577 sec, Data point insert count : 1051077000, Effective updates/sec : 1820986.414. Pct complete 99.988%
+Run time : 578 sec, Data point insert count : 1051158000, Effective updates/sec : 1817977.108. Pct complete 99.996%
+
+Run Summary
+
+Run time : 578 sec, Data point insert count : 1051200000, Effective updates/sec : 1816538.588. Pct complete 100.000%
+```
+
+### Query Benchmarking
+
+Having two different methods for generating data now puts us in the position where we can consider query benchmarking. This is the third and final aspect of the benchmarking toolkit.
+
+Query benchmarking can be invoked via the 'query' mode. We choose how long to run the benchmarker for (-d flag) and the number of threads to use (-z flag).
+
+What the benchmarker does, is scans the database to determine all time series available. Each iteration of the benchmarker selects a series at random and calculates the average value of the series. The necessitates pulling all data points for the series to the client side and doing the necessary calculation. We can ensure the queries are consistent in terms of magnitude by using the batch insert aspect of the benchmarker.
+
+Sample invocation and output
+
+```
+^C[ec2-user@ip-10-0-0-158 bin]$ ./timeSeriesBenchmarker.sh -h $HOST -n test -m query -z 1 -d 120
+Aerospike Time Series Benchmarker running in query mode
+
+Time series count : 956, Average data point count per query 1051200
+
+Run time : 0 seconds, Query count : 0, Current queries per second 0.000, Current latency 0.000s, Avg latency 0.000s, Cumulative queries per second 0.000
+Run time : 1 seconds, Query count : 1, Current queries per second 1.004, Current latency 0.682s, Avg latency 0.682s, Cumulative queries per second 1.000
+Run time : 2 seconds, Query count : 3, Current queries per second 2.002, Current latency 0.579s, Avg latency 0.613s, Cumulative queries per second 1.500
+Run time : 3 seconds, Query count : 4, Current queries per second 1.000, Current latency 0.773s, Avg latency 0.653s, Cumulative queries per second 1.333
+Run time : 4 seconds, Query count : 6, Current queries per second 2.000, Current latency 0.574s, Avg latency 0.627s, Cumulative queries per second 1.500
+Run time : 5 seconds, Query count : 8, Current queries per second 2.000, Current latency 0.497s, Avg latency 0.595s, Cumulative queries per second 1.600
+Run time : 6 seconds, Query count : 9, Current queries per second 1.000, Current latency 0.653s, Avg latency 0.601s, Cumulative queries per second 1.500
+Run time : 7 seconds, Query count : 11, Current queries per second 2.000, Current latency 0.636s, Avg latency 0.607s, Cumulative queries per second 1.571
+Run time : 8 seconds, Query count : 13, Current queries per second 2.000, Current latency 0.508s, Avg latency 0.592s, Cumulative queries per second 1.625
 ...
 
 ```

@@ -316,12 +316,12 @@ public class TimeSeriesBenchmarker {
                 (double)  ((cumulativeLatencyMs - lastCumulativeLatencyMs) / (queryCount - lastQueryCount)) / Constants.MILLISECONDS_IN_SECOND : 0;
 
         if(!doSummary) {
-            output.println(String.format("Run time : %d seconds, Query count : %d, Current queries per second %.3f, Current latency %.3fs, Avg latency %.3fs, Cumulative queries per second %.3f",
+            output.println(String.format("Run time : %d sec, Query count : %d, Current queries/sec %.3f, Current latency %.3fs, Avg latency %.3fs, Cumulative queries/sec %.3f",
                     averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, queryRateSinceLastStatus,
                     latencySinceLastStatus,avgLatency, cumulativeQueryRate));
         }
         else
-            output.println(String.format("Run time : %d seconds, Query count : %d, Cumulative queries per second %.3f, Avg latency %.3fs",
+            output.println(String.format("Run time : %d sec, Query count : %d, Cumulative queries/sec %.3f, Avg latency %.3fs",
                     averageThreadRunTimeMs() / Constants.MILLISECONDS_IN_SECOND, queryCount, cumulativeQueryRate, avgLatency));
 
     }

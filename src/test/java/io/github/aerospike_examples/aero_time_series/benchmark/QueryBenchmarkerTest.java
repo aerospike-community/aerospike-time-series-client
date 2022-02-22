@@ -149,7 +149,7 @@ public class QueryBenchmarkerTest {
 
         // Check we get the expected number of status messages
         Pattern pattern = Pattern.compile(
-                "Run time : \\d+ seconds, Query count : \\d+, Current queries per second \\d+.\\d{3}, Current latency \\d+.\\d{3}s, Avg latency \\d+.\\d{3}s, Cumulative queries per second \\d+.\\d{3}",
+                "Run time : \\d+ sec, Query count : \\d+, Current queries/sec \\d+.\\d{3}, Current latency \\d+.\\d{3}s, Avg latency \\d+.\\d{3}s, Cumulative queries/sec \\d+.\\d{3}",
                 Pattern.CASE_INSENSITIVE);
 
         int runTimeMessageCount = 0;

@@ -4,9 +4,6 @@ Small
 ----
 
 Make sure you can cope with device overload
-Check the benchmarker headers - slightly more info? Thread count?
-Batch summary header is incorrect
-Query spin up time - make it more effecient
 Usage is coming out twice. Sort.
 Check documentation output - e.g. classes and static variable definitions
 
@@ -85,6 +82,9 @@ How do I test the query benchmarker
 Shell script for invocation
 Publish to mvnrepository
 Time series output
+Check the benchmarker headers - slightly more info? Thread count?
+Batch summary header is incorrect
+Query spin up time - make it more effecient
 
 Notes
 =====
