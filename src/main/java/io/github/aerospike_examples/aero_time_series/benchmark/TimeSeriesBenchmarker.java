@@ -156,7 +156,7 @@ public class TimeSeriesBenchmarker {
                 output.println("Aerospike Time Series Benchmarker running in batch insert mode");
                 output.println();
                 long recordCount = timeSeriesRangeSeconds / averageObservationIntervalSeconds;
-                output.println(String.format("Inserting %d records over a period of %d seconds",recordCount,timeSeriesRangeSeconds));
+                output.println(String.format("Inserting %d records per series for %d series, over a period of %d seconds",recordCount,timeSeriesCount, timeSeriesRangeSeconds));
                 output.println();
                 break;
             case OptionsHelper.BenchmarkModes.QUERY:

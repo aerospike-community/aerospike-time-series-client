@@ -16,10 +16,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Examples {
-    @Test
     /**
      * Simple time series insertion example
      */
+    @Test
     public void simpleTimeSeriesExample() throws ParseException {
         TestUtilities.removeTimeSeriesTestDataForSet(TestConstants.TIME_SERIES_TEST_SET);
         AerospikeClient asClient = new AerospikeClient(TestConstants.AEROSPIKE_HOST, Constants.DEFAULT_AEROSPIKE_PORT);
@@ -37,8 +37,9 @@ public class Examples {
         // new TimeSeriesClient(AerospikeClient asClient, String asNamespaceName)
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient, asNamespaceName);
         // Insert our hourly temperature readings
-        for (int i = 0; i < hourlyTemperatureObservations.length; i++) {
-            // The datapoint consists of the base date + the required number of hours
+        for (int i = 0; i < hourlyTemperatureObservations.length; i++) //noinspection SpellCheckingInspection
+        {
+            // The dataPoint consists of the base date + the required number of hours
             DataPoint dataPoint = new DataPoint(
                     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
                     hourlyTemperatureObservations[i]);
@@ -59,7 +60,7 @@ public class Examples {
 
     /**
      * Batch time series insertion example
-     * @throws ParseException
+     * @throws ParseException - in theory, in practice no
      */
     @Test
     public void batchTimeSeriesExample() throws ParseException {
@@ -79,8 +80,9 @@ public class Examples {
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient, asNamespaceName);
         // Insert our hourly temperature readings
         DataPoint[] dataPoints = new DataPoint[hourlyTemperatureObservations.length];
-        for (int i = 0; i < hourlyTemperatureObservations.length; i++) {
-            // The datapoint consists of the base date + the required number of hours
+        for (int i = 0; i < hourlyTemperatureObservations.length; i++) //noinspection SpellCheckingInspection
+        {
+            // The dataPoint consists of the base date + the required number of hours
             dataPoints[i] = new DataPoint(
                     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
                     hourlyTemperatureObservations[i]);
