@@ -4,7 +4,7 @@
 
     <name>Aerospike Time Series Client API</name>
     <description>Time series client API for Aerospike database</description>
-    <url>https://github.com/aerospike-examples/aero-time-series-client</url>
+    <url>https://github.com/aerospike-examples/aerospike-time-series-client</url>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
