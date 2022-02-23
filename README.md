@@ -1,4 +1,17 @@
 # Aerospike Time Series API	
+[Introduction](#introduction)
+[Time Series Data](#time-series-data)
+[Time Series API](#time-series-api)
+[Simple Example](#simple-example)
+[Implementation](#implementation)
+[Additional Control](#additional-control)
+[Sizing](#sizing)
+[Performance Considerations](#performance-considerations)
+[Benchmarking](#benchmarking)
+[Simulation](#simulation)
+[Performance](#performance)
+[Future Directions](#future-directions)
+[Download](#download)
 
 ## Introduction
 
@@ -495,7 +508,7 @@ More complex time series e.g. those seen for temperatures might be simulated by 
 
 ![image-20220222164504014](/Users/ken/Library/Application Support/typora-user-images/image-20220222164504014.png)
 
-## Performance
+## Real Life Performance
 
 As a test, performance was examined on an Aerospike cluster deployed on 3  i3en.2xlarge AWS instances. This instance type was selected as the  [ACT](https://docs.aerospike.com/operations/plan/ssd/ssd_certification) rating of the drives is 300k, making the arithmetic simple.
 
@@ -511,7 +524,7 @@ The cost of such a cluster would be $23k per year using on-demand pricing ($0.90
 
 ### Reads
 
-Queries retrieving 1 million points per query (1 year of observations every 30 seconds) were able to run at the rate of two per second, with end to end latency of ~0.5 seconds for a sustained period using 
+Queries retrieving __1 million points per query__ (1 year of observations every 30 seconds) were able to run at the rate of two per second, with __end to end latency of ~0.5 seconds__ for a sustained period using the benchmarking tool.
 
 ## Future Directions
 
@@ -532,10 +545,4 @@ The Time Series Client is available at Maven Central - [aerospike-time-series-cl
   <version>latest</version>
 </dependency>
 ```
-
-
-
-## 
-
-
 
