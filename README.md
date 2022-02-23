@@ -536,7 +536,7 @@ At the time of writing, this is an initial release of this API. Further developm
 
 ## Download
 
-The Time Series Client is available at Maven Central - [aerospike-time-series-client](https://search.maven.org/artifact/io.github.aerospike-examples/aero-time-series-client). You can download directly or by adding the below to your pom.xml file.
+The Time Series Client is available at Maven Central - [aero-time-series-client](https://search.maven.org/artifact/io.github.aerospike-examples/aero-time-series-client). You can download directly or by adding the below to your pom.xml file.
 
 ```XML
 <dependency>
