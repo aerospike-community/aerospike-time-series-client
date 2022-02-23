@@ -410,7 +410,7 @@ It is helpful to simulate time series data realistically. The Time Series API co
 
 Many time series over a short period at least, follow a [Brownian Motion](https://en.wikipedia.org/wiki/Brownian_motion). The *TimeSeriesSimulator* allows this to be simulated. The idea is that if we look at the *relative change* in our observed value, then the *expected* mean change should be proportional to the time between observations and the *expected variance* should similarly be proportional to the period in question. Formally, let X(&tau;) be the observation of the subject property X at time &tau;. After a time t let the value of X be X(&tau;+t). The simulation distributes the value of (X(&tau; +t) - X(&tau;)) / X(&tau;) i.e. the relative change in X like a normal distribution with mean &mu;t and variance &sigma;<sup>2</sup>t.
 
-<center>(X(t + &tau;) - X(t)) / X(t) ~ N(&mu;t,&sigma;<sup>2</sup>t.)</center>
+<center>(X(t + &tau;) - X(t)) / X(t) ~ N(&mu;t,&sigma;<sup>2</sup>t.)</center>  
 
 We can use the simulator as follows
 
@@ -506,7 +506,7 @@ The chart below, which was created by simply pulling the above data into Excel i
 
 More complex time series e.g. those seen for temperatures might be simulated by concatenating several series together, with different drifts and volatilities, allowing values to trend both up and down. Mean reverting series can be simulated by setting the drift to zero.
 
-![image-20220222164504014](/Users/ken/Library/Application Support/typora-user-images/image-20220222164504014.png)
+![image-20220222164504014](images/image-20220222164504014.png)
 
 ## Real Life Performance
 
