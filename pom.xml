@@ -173,7 +173,7 @@
     <scm>
         <connection>scm:git:git://github.com/aerospike-examples/aerospike-time-series-client.git</connection>
         <developerConnection>scm:git@github.com:aerospike-examples/aerospike-time-series-client.git</developerConnection>
-        <url>https://github.com/aerospike-examples/aerospike-time-series-client</url>
+        <url>https://github.com/aerospike-examples/aerospike-time-series-client.git</url>
         <tag>HEAD</tag>
     </scm>
 </project>
