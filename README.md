@@ -6,7 +6,7 @@ Aerospike is a high performance distributed database, particularly well suited f
 
 Conceptually, Aerospike is most readily categorised as a key value database. In reality however it has a number of bespoke features that make it capable of supporting a much wider set of use cases. A good example is our [document API](https://aerospike.com/blog/aerospike-document-api/) which builds on our [collection data types](https://docs.aerospike.com/guide/data-types/cdt) in order to provide [JsonPath](https://goessner.net/articles/JsonPath/) support for documents.
 
-Another general use case we can consider is support for time series. The combination of [buffered writes](https://docs.aerospike.com/architecture/storage#ssdflash) and efficient [map operations](https://docs.aerospike.com/guide/data-types/cdt-map) allows us to optimise for both read and write of time series data. This API leverages these features to provide a general purpose interface for efficient reading and writing of time series data at scale. Also included is a benchmarking tool allowing performance to be measured.
+Another general use case we can consider is support for time series. The combination of [buffered writes](https://docs.aerospike.com/architecture/storage#ssdflash) and efficient [map operations](https://docs.aerospike.com/guide/data-types/cdt-map) allows us to optimise for both read and write of time series data. The Aerospike Time Series API leverages these features to provide a general purpose interface for efficient reading and writing of time series data at scale. Also included is a benchmarking tool allowing performance to be measured.
 
 ## Time Series Data
 
@@ -24,7 +24,7 @@ Additional conveniences might include
 
 ## Time Series API
 
-The Aerospike API provides the above via the TimeSeriesClient object. The API is as follows
+The Aerospike Time Series API provides the above via the TimeSeriesClient object. The API is as follows
 
 ```java
 // Store a single data point for a named time series
@@ -54,7 +54,7 @@ DataPoint(Date dateTime, double value)
 
 ## Simple Example
 
-The code example below shows us inserting a series of 24 temperature readings, taken in Trafalgar Square, London, on the 14th February 2022. We give the time series a meaningful name - subject/property/units.
+The code example below shows us inserting a series of 24 temperature readings, taken in Trafalgar Square, London, on the 14th February 2022. We give the time series a meaningful and precise name by concatenating subject, property and units.
 
 ```java
 // Let's store some temperature readings taken in Trafalgar Square, London. Readings are Centigrade.
@@ -125,7 +125,7 @@ System.out.println(
 Maximum temperature is 9.900
 ```
 
-Note we could alternatively have used the batch call
+Note we could alternatively have used the batch put operation, which 'puts' all the points in a single operation.
 
 ```java
 // Create an array of DataPoints
@@ -143,7 +143,7 @@ timeSeriesClient.put(timeSeriesName,dataPoints);
 
 ## Implementation
 
-There are two key implementation concepts to grasp. Firstly, rather than store each data point as a separate object, they are inserted into Aerospike maps. Schematically, each time series object looks something like
+There are two key implementation concepts to grasp. Firstly, rather than store each data point as a separate object, they are inserted into Aerospike maps. This minimises network traffic at write time (we only 'send' the new point) and allows large numbers of points to be potentially read at read time as they are encapsulated in a single object. It also helps minimise memory usage as Aerospike has a fixed (64 byte) cost for each object. Schematically, each time series object looks something like
 
 ```
 {
@@ -153,7 +153,7 @@ There are two key implementation concepts to grasp. Firstly, rather than store e
 }
 ```
 
-The maps must not grow to an indefinite extent, so the API ensures that each map will not grow beyond a specified maximum. By default this limit is 1000 points (represented by ``Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK``), although this can be altered. For sizing and performance implications of choice of this value, see elsewhere in this README.
+The maps must not grow to an indefinite extent, so the API ensures that each map will not grow beyond a specified maximum size. By default this limit is 1000 points (represented by ``Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK``), although this can be altered (see later). For sizing and performance implications of choice of maximum size, see elsewhere in this README.
 
 The second implementation point follows on from the first. As there is a limit to the number of points that can be stored in a block, we need to have some mechanism for creating new blocks and keeping track of existing blocks for each time series. This is done, on a per time series basis, by maintaining an index of all blocks created. Conceptually this looks something like the following
 
@@ -180,7 +180,7 @@ The index data is stored in a separate set whose name is formed by adding the su
 
 ### Data Points per block
 
-As per the *Implementation* section, the number of data points per time series object is capped. The default limit is 1000, but this can be changed via the ```maxBlockEntryCount``` constructor argument above. Note that this can be changed dynamically i.e. a new limit can be made use of simply by creating a new `TimeSeriesClient` object. This will not change the sizes of any blocks written previously, it will simply put in place a new upper limit.
+As per the *Implementation* section, the number of data points per time series object is capped. The default limit is 1000, but this can be changed via the ```maxBlockEntryCount``` constructor argument above. Note that this can be changed dynamically i.e. a new limit can be made use of simply by creating a new `TimeSeriesClient` object. This will not change the sizes of any blocks written previously, it will simply put in place a new upper limit. You can have different limits for different series by instantiating TimeSeriesClient objects concurrently.
 
 ### Read / Write policies
 
@@ -188,7 +188,7 @@ Aerospike allows a great deal of fine grained control of behaviour around availa
 
 ## Sizing
 
-Empirically, the storage requirement per data point was found to be 17.33 bytes per data point, having inserted 8.64m data points (one per second, over a 24 hour period for 10 time series). As above, by default there will be one object per 1000 data points by default, although this value can be changed by the user.
+Empirically, the storage requirement per data point was found to be 17.33 bytes per data point via a test inserting 8.64m data points (one per second, over a 24 hour period for 10 time series). This agrees with expectation as we require 2 * 8 = 16 bytes to store a timestamp and a value and a small amount of overhead is expected. As above, by default there will be one Aerospike object per 1000 data points by default, although this value can be changed by the user. Aerospike sizes using number of objects and object size, so the information above allows sizing to be calculated readily.
 
 The index object requires 42 bytes per entry. In theory this imposes an upper limit on the number of entries per time series as Aerospike has an upper limit per object of 1mb by default - see [write-block-size](https://docs.aerospike.com/reference/configuration#write-block-size). The implication is that the maximum number of index entries is 23,800. With a default max entry count of 1000, this implies a limit of 23.8m points per time series at the time of writing. Some options are available however. Firstly, the write-block-size can be increased to a maximum value of 8mb. Secondly, the max entry count value can be increased. Thirdly, this limit may be addressed in a future release.
 
@@ -198,7 +198,7 @@ The throughput (max number of points that can be written per second) is fundamen
 
 On the other hand, reading of a data point block is a single read, and for each read you get maxBlockEntryCount data points. So by increasing this value you improve your read rate.
 
-The selected default value of 1000 points per block is a good compromise therefore. It results in ~16k object sizes.
+The selected default value of 1000 points per block is a good compromise. It results in ~16k object sizes.
 
 Our [ACT](https://docs.aerospike.com/operations/plan/ssd/ssd_certification) method for rating disks can be made use of to determine time series performance. To get the number of 1.5kb reads or updates supported by a device divide the ACT rating by 3 (this because an update is a read and a write). A 300k device such as the  Intel P4610 will then support at least 100 * 1.5 / 16 = 9300 writes per second and 9300 reads per second. The read and write rates needed can be supported by linearly scaling the devices as needed. In practice these numbers can probably be bettered - see later. 
 
@@ -290,6 +290,7 @@ Here is sample output for our simple example
 
 ```
 ./timeSeriesReader.sh -h <AEROSPIKE_HOST_IP>  -n <AEROSPIKE_NAMESPACE>
+
 Running TimeSeriesReader
 
 No time series specified - selecting series AFNJFKSKDV
@@ -327,13 +328,13 @@ In real time benchmark we prime blocks so they don't all fill at the same time. 
 In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete 17.649%
 ```
 
-The reason for this is, by default, the 'blocks' will all fill up at the same time when using the real time benchmarked. This will create a saw-tooth like load on the underlying disks. To avoid this, when running in real time benchmark mode, for each series, the first block is initialised with a random number of records so the 'filling up' of blocks happens at a uniform rate. This is the 'priming' that is referred to. The 'dummy' records are removed at the end of the simulation.
+The reason for this is, by default, the 'blocks' will all fill up at the same time when using the real time benchmarked. This will create a saw-tooth like load on the underlying disks. In practice this would not happen, so to avoid this behaviour, when running in real time benchmark mode, for each series, the first block is initialised with a random number of records so the 'filling up' of blocks happens at a uniform rate. This is the 'priming' that is referred to. The 'dummy' records are removed at the end of the simulation.
 
 ### Batch Insertion
 
 A disadvantage of the 'real time' benchmarker is precisely that - the loading occurs in real time. You may wish to build your sample time series as quickly as possible. The batch insert mode is provided for this purpose.
 
-In this mode, data points are loaded a block at a time, effectively as fast as the benchmarker will run. The invocation below will create 1000 sample series (-c flag), over a period of 1 year (-r flag), with 30 seconds between each observation.
+In this mode, data points are loaded a block at a time, effectively as fast as the benchmarker will run. The invocation below, for example, will create 1000 sample series (-c flag), over a period of 1 year (-r flag), with 30 seconds between each observation.
 
 ```
 ./timeSeriesBenchmarker.sh -h <AEROSPIKE_HOST_IP>  -n <AEROSPIKE_NAMESPACE>  -m batchInsert -c 10 -p 30 -r 1Y 
@@ -366,34 +367,35 @@ Having two different methods for generating data now puts us in the position whe
 
 Query benchmarking can be invoked via the 'query' mode. We choose how long to run the benchmarker for (-d flag) and the number of threads to use (-z flag).
 
-What the benchmarker does, is scans the database to determine all time series available. Each iteration of the benchmarker selects a series at random and calculates the average value of the series. The necessitates pulling all data points for the series to the client side and doing the necessary calculation. We can ensure the queries are consistent in terms of magnitude by using the batch insert aspect of the benchmarker.
+At runtime, the benchmarker scans the database to determine all time series available. Each iteration of the benchmarker selects a series at random and calculates the average value of the series. The necessitates pulling all data points for the series to the client side and doing the necessary calculation so it is a good test of the query capability. We can ensure the queries are consistent in terms of data point value by using the batch insert aspect of the benchmarker which ensures all series have the same number of data points.
 
 Sample invocation and output
 
 ```
-^C[ec2-user@ip-10-0-0-158 bin]$ ./timeSeriesBenchmarker.sh -h $HOST -n test -m query -z 1 -d 120
+./timeSeriesBenchmarker.sh -h $HOST -n test -m query -z 1 -d 120 
+
 Aerospike Time Series Benchmarker running in query mode
 
-Time series count : 956, Average data point count per query 1051200
+Time series count : 1000, Average data point count per query 1051200
 
-Run time : 0 seconds, Query count : 0, Current queries per second 0.000, Current latency 0.000s, Avg latency 0.000s, Cumulative queries per second 0.000
-Run time : 1 seconds, Query count : 1, Current queries per second 1.004, Current latency 0.682s, Avg latency 0.682s, Cumulative queries per second 1.000
-Run time : 2 seconds, Query count : 3, Current queries per second 2.002, Current latency 0.579s, Avg latency 0.613s, Cumulative queries per second 1.500
-Run time : 3 seconds, Query count : 4, Current queries per second 1.000, Current latency 0.773s, Avg latency 0.653s, Cumulative queries per second 1.333
-Run time : 4 seconds, Query count : 6, Current queries per second 2.000, Current latency 0.574s, Avg latency 0.627s, Cumulative queries per second 1.500
-Run time : 5 seconds, Query count : 8, Current queries per second 2.000, Current latency 0.497s, Avg latency 0.595s, Cumulative queries per second 1.600
-Run time : 6 seconds, Query count : 9, Current queries per second 1.000, Current latency 0.653s, Avg latency 0.601s, Cumulative queries per second 1.500
-Run time : 7 seconds, Query count : 11, Current queries per second 2.000, Current latency 0.636s, Avg latency 0.607s, Cumulative queries per second 1.571
-Run time : 8 seconds, Query count : 13, Current queries per second 2.000, Current latency 0.508s, Avg latency 0.592s, Cumulative queries per second 1.625
+Run time : 0 sec, Query count : 0, Current queries/sec 0.000, Current latency 0.000s, Avg latency 0.000s, Cumulative queries/sec 0.000
+Run time : 1 sec, Query count : 1, Current queries/sec 1.003, Current latency 0.604s, Avg latency 0.604s, Cumulative queries/sec 0.999
+Run time : 2 sec, Query count : 3, Current queries/sec 2.002, Current latency 0.585s, Avg latency 0.591s, Cumulative queries/sec 1.499
+Run time : 3 sec, Query count : 5, Current queries/sec 2.000, Current latency 0.515s, Avg latency 0.561s, Cumulative queries/sec 1.666
+Run time : 4 sec, Query count : 7, Current queries/sec 2.000, Current latency 0.583s, Avg latency 0.567s, Cumulative queries/sec 1.750
 ...
+Run time : 120 sec, Query count : 241, Current queries/sec 2.000, Current latency 0.471s, Avg latency 0.496s, Cumulative queries/sec 2.008
 
+Run Summary
+
+Run time : 120 sec, Query count : 242, Cumulative queries/sec 2.016, Avg latency 0.496s
 ```
 
 ## Simulation
 
 It is helpful to simulate time series data realistically. The Time Series API contains a *TimeSeriesSimulator* class to help. This is made use of by the Benchmarker classes and may also be used independently.
 
-Many time series over a short period at least, follow a [Brownian Motion](https://en.wikipedia.org/wiki/Brownian_motion). The *TimeSeriesSimulator* allows this to be simulated. The idea is that if we look at the *relative change* in our observed value, then the *expected* mean change should be proportional to the time between observations and the *expected variance* should similarly be proportional to the period in question. Formally, let X(t) be the observation of the subject property X at time &tau;. After a time t let the value of X be X(&tau;+t). The simulation distributes the value of (X(&tau; +t) - X(&tau;)) / X(&tau;) i.e. the relative change in X like a normal distribution with mean &mu;t and variance &sigma;<sup>2</sup>t.
+Many time series over a short period at least, follow a [Brownian Motion](https://en.wikipedia.org/wiki/Brownian_motion). The *TimeSeriesSimulator* allows this to be simulated. The idea is that if we look at the *relative change* in our observed value, then the *expected* mean change should be proportional to the time between observations and the *expected variance* should similarly be proportional to the period in question. Formally, let X(&tau;) be the observation of the subject property X at time &tau;. After a time t let the value of X be X(&tau;+t). The simulation distributes the value of (X(&tau; +t) - X(&tau;)) / X(&tau;) i.e. the relative change in X like a normal distribution with mean &mu;t and variance &sigma;<sup>2</sup>t.
 
 <center>(X(t + &tau;) - X(t)) / X(t) ~ N(&mu;t,&sigma;<sup>2</sup>t.)</center>
 
@@ -431,7 +433,7 @@ Series value after 300 seconds : 9.99846
 
 ### Benchmarker Simulation
 
-The benchmarker uses the following values for daily drift and volatility
+The benchmarker uses the above simulator with the following values for daily drift and volatility
 
 ```java
 public static final int DEFAULT_DAILY_VOLATILITY_PCT = 10;
@@ -444,7 +446,7 @@ Additionally some variability is introduced into the timing of the observations 
 public static final int OBSERVATION_INTERVAL_VARIABILITY_PCT = 5;
 ```
 
-Let's have a look at some representative output - every 5 minutes over a period of 1 day
+Let's have a look at some representative output - generating a data point every 5 minutes over a period of 1 day
 
 ```
 ./timeSeriesBenchmarker.sh -h 172.28.128.7 -n test -m batchInsert -c 1 -p 300 -r 1D 
@@ -487,7 +489,53 @@ Timestamp,Value
 
 The above shows the deliberately introduced variability in the observation period.
 
-Finally, the chart below, which was created by simply pulling the above data into Excel gives a sample of the qualitative nature of the data that is being generated.
+The chart below, which was created by simply pulling the above data into Excel indicates the qualitative nature of the data that is being generated. We can see it looks very much like the sort of graph we might see for stock prices.
+
+More complex time series e.g. those seen for temperatures might be simulated by concatenating several series together, with different drifts and volatilities, allowing values to trend both up and down. Mean reverting series can be simulated by setting the drift to zero.
 
 ![image-20220222164504014](/Users/ken/Library/Application Support/typora-user-images/image-20220222164504014.png)
+
+## Performance
+
+As a test, performance was examined on an Aerospike cluster deployed on 3  i3en.2xlarge AWS instances. This instance type was selected as the  [ACT](https://docs.aerospike.com/operations/plan/ssd/ssd_certification) rating of the drives is 300k, making the arithmetic simple.
+
+### Writes
+
+In simple terms, this cluster can then support 100k (see *Performance* section) * 1.5kbyte * 3 (number of instances) = 450mb of throughput.
+
+We know our average write is ~8kb. We assume replication factor two for resilience purposes. Sustainable updates per second is then 450mb / 2 (replication factor) / 8kb  = 28,000.
+
+In practice a *50k* update rate was easily sustained using the real time benchmarker. The reason the value is higher is that larger writes do not necessarily have a larger penalty than small writes. Also, the ACT rating guarantees operations are sub 1ms in latency 95% of the time, a guarantee not necessarily needed for time series inserts. 
+
+The cost of such a cluster would be $23k per year using on-demand pricing ($0.90 / hour / instance) or $16k per year ($0.61 / hour/ instance) if using a reserved pricing plan.
+
+### Reads
+
+Queries retrieving 1 million points per query (1 year of observations every 30 seconds) were able to run at the rate of two per second, with end to end latency of ~0.5 seconds for a sustained period using 
+
+## Future Directions
+
+At the time of writing, this is an initial release of this API. Further developments should be expected. Possible further iterations may include
+
+* Data compression following the [Gorilla](https://www.vldb.org/pvldb/vol8/p1816-teller.pdf) approach which potentially allows data footprint to be reduced by 90%
+* Labelling of data to support the easy retrieval of multiple properties for subjects. For example, several sensors may be attached to an industrial machine - it may be convenient to retrieve all this series simultaneously for analysis purposes.
+* A [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) (read/eval/print/loop) capability to support interrogative analysis
+
+## Download
+
+The Time Series Client is available at Maven Central - [aerospike-time-series-client](https://search.maven.org/artifact/io.github.aerospike-examples/aero-time-series-client). You can download directly or by adding the below to your pom.xml file.
+
+```XML
+<dependency>
+  <groupId>io.github.aerospike-examples</groupId>
+  <artifactId>aero-time-series-client</artifactId>
+  <version>latest</version>
+</dependency>
+```
+
+
+
+## 
+
+
 
