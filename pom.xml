@@ -171,9 +171,9 @@
         </repository>
     </distributionManagement>
     <scm>
-        <connection>scm:git:git://github.com/dexecutor/dependent-tasks-executor.git</connection>
-        <developerConnection>scm:git:git@github.com:dexecutor/dexecutor.git</developerConnection>
-        <url>https://github.com/dexecutor/dependent-tasks-executor</url>
+        <connection>scm:git:git://github.com/aerospike-examples/aerospike-time-series-client.git</connection>
+        <developerConnection>scm:git@github.com:aerospike-examples/aerospike-time-series-client.git</developerConnection>
+        <url>https://github.com/aerospike-examples/aerospike-time-series-client</url>
         <tag>HEAD</tag>
     </scm>
 </project>
