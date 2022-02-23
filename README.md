@@ -226,7 +226,7 @@ To make use of the benchmarker, download **this** repository and run `mvn assemb
 ```bash
 git clone https://github.com/aerospike-examples/aerospike-time-series-client.git
 cd aerospike-time-series-client
-mvn assembly:single
+mvn compile assembly:single
 ```
 
 The benchmarker is found in the project's *bin* directory. Usage is as follows
