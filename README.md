@@ -9,7 +9,7 @@
 [Performance Considerations](#performance-considerations)  
 [Benchmarking](#benchmarking)  
 [Simulation](#simulation)  
-[Performance](#real-life-performance)  
+[Real Life Performance](#real-life-performance)  
 [Future Directions](#future-directions)  
 [Download](#download)  
 
