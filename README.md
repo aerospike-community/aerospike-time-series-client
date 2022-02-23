@@ -22,7 +22,7 @@ Additional conveniences might include
 3. The ability to write data in bulk (batch writes)
 4. The ability to query the data e.g. calculate the average, maximum or minimum.
 
-## Time Series API
+## Aerospike Time Series API
 
 The Aerospike Time Series API provides the above via the TimeSeriesClient object. The API is as follows
 
@@ -192,7 +192,7 @@ Empirically, the storage requirement per data point was found to be 17.33 bytes 
 
 The index object requires 42 bytes per entry. In theory this imposes an upper limit on the number of entries per time series as Aerospike has an upper limit per object of 1mb by default - see [write-block-size](https://docs.aerospike.com/reference/configuration#write-block-size). The implication is that the maximum number of index entries is 23,800. With a default max entry count of 1000, this implies a limit of 23.8m points per time series at the time of writing. Some options are available however. Firstly, the write-block-size can be increased to a maximum value of 8mb. Secondly, the max entry count value can be increased. Thirdly, this limit may be addressed in a future release.
 
-## Performance
+## Performance Considerations
 
 The throughput (max number of points that can be written per second) is fundamentally limited by the throughput the underlying disks will support. It should be noted that when a point is written to a block, the full block is re-written. Increasing the max entry count per block will result in larger writes for each data point, ultimately reducing the amount of throughput.
 
@@ -309,7 +309,7 @@ Timestamp,Value
 
 We can see that we have had sample points generated over a ten second period, with the series given a random name.
 
-The benchmarker can be run at greater scale using the -c (time series count) flag. You may also wish to make use of -z (multi-thread) flag in order to acheive the required throughput. The benchmarker will warn you if the required throughput is not being achieved.
+The benchmarker can be run at greater scale using the -c (time series count) flag. You may also wish to make use of -z (multi-thread) flag in order to achieve the required throughput. The benchmarker will warn you if the required throughput is not being achieved.
 
 Another real time option is acceleration via the -a flag. This runs the simulation at an accelerated rate. So for instance if you wished to insert points every 30 seconds over a 1 hour period (120 points), you could shorten the time of the run by running using '-a 30'. This will 'speed up' the simulation by a factor of 30, so it will only take 120s. A higher number would also be possible. The benchmarker will indicate the actual update rates. For example
 
@@ -501,7 +501,7 @@ As a test, performance was examined on an Aerospike cluster deployed on 3  i3en.
 
 ### Writes
 
-In simple terms, this cluster can then support 100k (see *Performance* section) * 1.5kbyte * 3 (number of instances) = 450mb of throughput.
+In simple terms, this cluster can then support 100k (see [Performance Considerations](#performance-considerations)) * 1.5kbyte * 3 (number of instances) = 450mb of throughput.
 
 We know our average write is ~8kb. We assume replication factor two for resilience purposes. Sustainable updates per second is then 450mb / 2 (replication factor) / 8kb  = 28,000.
 
