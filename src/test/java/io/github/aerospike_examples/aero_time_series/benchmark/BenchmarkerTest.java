@@ -288,7 +288,7 @@ public class BenchmarkerTest {
       Should see a status message every second plus an initial status message
      */
     @Test
-    public void correctMainOutput() throws IOException, Utilities.ParseException{
+    public void correctMainOutput() throws IOException, Utilities.ParseException, org.apache.commons.cli.ParseException{
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -533,7 +533,7 @@ public class BenchmarkerTest {
       Check time series range is correctly converted for each possible suffix option
      */
     @Test
-    public void timeSeriesRangeConversionCheck() throws Utilities.ParseException{
+    public void timeSeriesRangeConversionCheck() throws Utilities.ParseException, org.apache.commons.cli.ParseException{
         timeSeriesRangeParsingCheck(20,OptionsHelper.TimeUnitIndicators.SECOND,1);
         timeSeriesRangeParsingCheck(45,OptionsHelper.TimeUnitIndicators.MINUTE,60);
         timeSeriesRangeParsingCheck(12,OptionsHelper.TimeUnitIndicators.HOUR,60*60);
@@ -637,7 +637,7 @@ public class BenchmarkerTest {
      * @param timeUnit - unit e.g. S,M,H,D,Y
      * @param multiplier - multiplier to convert to seconds
      */
-    private void timeSeriesRangeParsingCheck(int timePart, String timeUnit, int multiplier) throws Utilities.ParseException{
+    private void timeSeriesRangeParsingCheck(int timePart, String timeUnit, int multiplier) throws Utilities.ParseException, org.apache.commons.cli.ParseException{
         int intervalBetweenUpdates = 2;
         int threadCount = 5;
         int timeSeriesCount = 1;

@@ -94,7 +94,7 @@ public class TimeSeriesBenchmarker {
             TimeSeriesBenchmarker benchmarker = initBenchmarkerFromStringArgs(args);
             benchmarker.run();
         }
-        catch(Utilities.ParseException e){
+        catch(org.apache.commons.cli.ParseException | Utilities.ParseException e){
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.standardCmdLineOptions());
@@ -102,40 +102,38 @@ public class TimeSeriesBenchmarker {
     }
 
     /**
-     *     Helper method allowing a TimeSeriesBenchmarker to be initialised from an array of Strings - as per main method
-     *     Protected visibility to allow testing use
+     * Helper method allowing a TimeSeriesBenchmarker to be initialised from an array of Strings - as per main method
+     * Protected visibility to allow testing use
+     *
+     * @param args - String[] to be parsed
+     * @return initialised TimeSeriesBenchmarker object
+     * @throws ParseException - if basic parsing checks fail
+     * @throws Utilities.ParseException - if bespoke parsing checks fail
      */
-    static TimeSeriesBenchmarker initBenchmarkerFromStringArgs(String[] args) throws Utilities.ParseException{
+    static TimeSeriesBenchmarker initBenchmarkerFromStringArgs(String[] args) throws org.apache.commons.cli.ParseException, Utilities.ParseException{
         TimeSeriesBenchmarker benchmarker;
-        try {
-            CommandLine cmd = OptionsHelper.getArguments(args);
-            CommandLineParser parser = new DefaultParser();
-            // Check the command line versus options standard for all run modes
-            parser.parse(OptionsHelper.standardCmdLineOptions(), args);
 
-            benchmarker = new TimeSeriesBenchmarker(
-                    OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
-                    OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
-                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG),
-                    OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.MODE_FLAG),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG)),
-                    Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG)),
-                    OptionsHelper.convertTimeStringToSeconds(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG)),
-                    DEFAULT_DAILY_DRIFT_PCT,
-                    DEFAULT_DAILY_VOLATILITY_PCT,
-                    new Random().nextLong()
-            );
-        }
-        catch(ParseException e){
-            System.out.println(e.getMessage());
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesBenchmarker",OptionsHelper.standardCmdLineOptions());
-            throw(new Utilities.ParseException(e.getMessage()));
-        }
+        CommandLine cmd = OptionsHelper.getArguments(args);
+        CommandLineParser parser = new DefaultParser();
+        // Check the command line versus options standard for all run modes
+        parser.parse(OptionsHelper.standardCmdLineOptions(), args);
+
+        benchmarker = new TimeSeriesBenchmarker(
+                OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
+                OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
+                OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG),
+                OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.MODE_FLAG),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG)),
+                Integer.parseInt(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.RECORDS_PER_BLOCK_FLAG)),
+                OptionsHelper.convertTimeStringToSeconds(OptionsHelper.getOptionUsingDefaults(cmd,OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG)),
+                DEFAULT_DAILY_DRIFT_PCT,
+                DEFAULT_DAILY_VOLATILITY_PCT,
+                new Random().nextLong()
+        );
         return benchmarker;
     }
 
