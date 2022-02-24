@@ -30,7 +30,7 @@ public interface ITimeSeriesClient {
      * @param timeSeriesName - time series name
      * @param startDateTime - start time for interval
      * @param endDateTime - end time for interval
-     *
+     * @return Data Points found for timeSeriesName between startDateTime and endDateTime
      */
     DataPoint[] getPoints(String timeSeriesName,Date startDateTime, Date endDateTime);
 
@@ -40,7 +40,7 @@ public interface ITimeSeriesClient {
      *
      * @param timeSeriesName - time series name
      * @param dateTime - date time to look up data point for
-     *
+     * @return DataPoint for timeSeriesName at dateTime if found
      */
     DataPoint getPoint(String timeSeriesName,Date dateTime);
 

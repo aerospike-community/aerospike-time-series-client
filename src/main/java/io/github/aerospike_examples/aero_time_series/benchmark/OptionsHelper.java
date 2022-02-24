@@ -15,23 +15,84 @@ public class OptionsHelper {
      * Flags used at the command line
      */
     public static class BenchmarkerFlags{
+        /**
+         * Flag to indicate host to use for benchmarking : h
+         */
         public static final String HOST_FLAG = "h";
+
+        /**
+         * Flag to indicate namespace to use for benchmarking : n
+         */
         public static final String NAMESPACE_FLAG = "n";
+
+        /**
+         * Flag to indicate mode to use for benchmarking : m
+         */
         public static final String MODE_FLAG = "m";
+
+        /**
+         * Flag to indicate duration to use for benchmarking : d
+         */
         public static final String RUN_DURATION_FLAG = "d";
+
+        /**
+         * Flag to indicate acceleration to use for benchmarking : a
+         */
         public static final String ACCELERATION_FLAG = "a";
+
+        /**
+         * Flag to indicate records per block to use for benchmarking : b
+         */
         public static final String RECORDS_PER_BLOCK_FLAG = "b";
+
+        /**
+         * Flag to indicate thread count to use for benchmarking : z
+         */
         public static final String THREAD_COUNT_FLAG = "z";
+
+        /**
+         * Flag to indicate time series count to use for benchmarking : c
+         */
         public static final String TIME_SERIES_COUNT_FLAG = "c";
+
+        /**
+         * Flag to indicate period between observations to use for benchmarking : p
+         */
         public static final String INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG = "p";
+
+        /**
+         * Flag to indicate time range to use for insert benchmarking : r
+         */
         public static final String TIME_SERIES_RANGE_FLAG = "r";
+
+        /**
+         * Flag to indicate Aerospike set to use for benchmarking : s
+         */
         public static final String TIME_SERIES_SET_FLAG = "s";
+
+        /**
+         * Flag to indicate time series name to use when reading data : i
+         */
         public static final String TIME_SERIES_NAME_FLAG = "i";
     }
 
+    /**
+     * Different benchmarker modes
+     */
     public static class BenchmarkModes{
+        /**
+         * Real time insert mode indicator : realTimeWrite
+         */
         public static final String REAL_TIME_INSERT = "realTimeWrite";
+
+        /**
+         * Batch insert mode indicator : batchInsert
+         */
         public static final String BATCH_INSERT = "batchInsert";
+
+        /**
+         * Query mode indicator : query
+         */
         public static final String QUERY = "query";
     }
 

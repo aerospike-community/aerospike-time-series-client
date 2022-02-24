@@ -1,7 +1,7 @@
 # Aerospike Time Series API	
 [Introduction](#introduction)  
 [Time Series Data](#time-series-data)  
-[Time Series API](#time-series-api)  
+[Time Series API](#aerospike-time-series-api)  
 [Simple Example](#simple-example)  
 [Implementation](#implementation)  
 [Additional Control](#additional-control)  
@@ -84,7 +84,7 @@ double[] hourlyTemperatureObservations =
 TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient,asNamespaceName);
 // Insert our hourly temperature readings
 for(int i=0;i<hourlyTemperatureObservations.length;i++){
-  // The datapoint consists of the base date + the required number of hours
+  // The data point consists of the base date + the required number of hours
   DataPoint dataPoint = new DataPoint(
     Utilities.incrementDateUsingSeconds(observationDate,i * 3600),
     hourlyTemperatureObservations[i]);
@@ -145,7 +145,7 @@ Note we could alternatively have used the batch put operation, which 'puts' all 
 DataPoint[] dataPoints = new DataPoint[hourlyTemperatureObservations.length];
 // Add our observations to the array
 for (int i = 0; i < hourlyTemperatureObservations.length; i++) {
-  // The datapoint consists of the base date + the required number of hours
+  // The data point consists of the base date + the required number of hours
   dataPoints[i] = new DataPoint(
     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
     hourlyTemperatureObservations[i]);
@@ -341,7 +341,7 @@ In real time benchmark we prime blocks so they don't all fill at the same time. 
 In real time benchmark we prime blocks so they don't all fill at the same time. Pct complete 17.649%
 ```
 
-The reason for this is, by default, the 'blocks' will all fill up at the same time when using the real time benchmarked. This will create a saw-tooth like load on the underlying disks. In practice this would not happen, so to avoid this behaviour, when running in real time benchmark mode, for each series, the first block is initialised with a random number of records so the 'filling up' of blocks happens at a uniform rate. This is the 'priming' that is referred to. The 'dummy' records are removed at the end of the simulation.
+The reason for this is, by default, the 'blocks' will all fill up at the same time when using the real time benchmarker. This will create a saw-tooth like load on the underlying disks. In practice this would not happen, so to avoid this behaviour, when running in real time benchmark mode, for each series, the first block is initialised with a random number of records so the 'filling up' of blocks happens at a uniform rate. This is the 'priming' that is referred to. The 'dummy' records are removed at the end of the simulation.
 
 ### Batch Insertion
 

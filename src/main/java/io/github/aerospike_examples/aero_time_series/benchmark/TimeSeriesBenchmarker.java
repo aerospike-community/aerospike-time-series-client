@@ -11,17 +11,48 @@ import io.github.aerospike_examples.aero_time_series.Utilities;
 import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
 import org.apache.commons.cli.*;
 
+/**
+ * Object to facilitate time series benchmarking
+ */
 public class TimeSeriesBenchmarker {
+    /**
+     * Constant : default time series length (=10)
+     */
+    private static final int DEFAULT_TIME_SERIES_NAME_LENGTH = 10;
 
-    // Simulation Defaults
-    @SuppressWarnings("WeakerAccess")
-    public static final int DEFAULT_TIME_SERIES_NAME_LENGTH = 10;
+    /**
+     * Constant : default time series count when creating data (=100)
+     */
     public static final int DEFAULT_TIME_SERIES_COUNT = 100;
+
+    /**
+     * Constant : default period between observations when running insert benchmarks (=1)
+     */
     public static final int DEFAULT_AVERAGE_OBSERVATION_INTERVAL_SECONDS = 1;
+
+    /**
+     * Constant : default acceleration to use in real time insert mode (=1)
+     */
     public static final int DEFAULT_ACCELERATION_FACTOR = 1;
+
+    /**
+     * Constant : default run duration for real time insert and query (=10)
+     */
     public static final int DEFAULT_RUN_DURATION_SECONDS = 10;
+
+    /**
+     * Constant : default thread count when benchmarking (=1)
+     */
     public static final int DEFAULT_THREAD_COUNT = 1;
+
+    /**
+     * Default daily volatility (%) for time series simulations (=10)
+     */
     public static final int DEFAULT_DAILY_VOLATILITY_PCT = 10;
+
+    /**
+     * Default daily drift (%) for time series simulations (=10)
+     */
     public static final int DEFAULT_DAILY_DRIFT_PCT = 10;
 
     // In the simulation we introduce variability into the time of observations
@@ -70,6 +101,23 @@ public class TimeSeriesBenchmarker {
     private static final int THROUGHPUT_VARIANCE_TOLERANCE_PCT = 10;
 
 
+    /**
+     * Benchmarker constructor
+     * @param asHost - Aerospike DB host
+     * @param asNamespace - Aerospike namespace to use when benchmarking
+     * @param asSet - Aerospike set to use to store time series data when benchmarking
+     * @param runMode - Benchmarker run mode
+     * @param observationIntervalSeconds - Period between observations to use when generating data
+     * @param runDurationSeconds - Duration of real time or query benchmark runs
+     * @param accelerationFactor - Acceleration factor to use in real time benchmarking mode
+     * @param threadCount - No of threads to use
+     * @param timeSeriesCount - Time series count to create when running in insert mode
+     * @param recordsPerBlock - Records per block
+     * @param timeSeriesRangeSeconds - Time series range to cover when running in batch insert mode
+     * @param dailyDriftPct - Daily drift(%) to use for time series simulation
+     * @param dailyVolatilityPct - Daily volatility(%) to use for time series simulation
+     * @param randomSeed - Random seed value to use when generating time series data. Allows data to be generated repeatedly if necessary
+     */
     public TimeSeriesBenchmarker(String asHost, String asNamespace, String asSet, String runMode, int observationIntervalSeconds, int runDurationSeconds, int accelerationFactor, int threadCount,
                           int timeSeriesCount,int recordsPerBlock, long timeSeriesRangeSeconds,int dailyDriftPct, int dailyVolatilityPct, long randomSeed){
         this.asHost = asHost;
@@ -89,6 +137,10 @@ public class TimeSeriesBenchmarker {
     }
 
 
+    /**
+     * Main entry point for cmd line running of benchmarker
+     * @param args command line arguments
+     */
     public static void main(String[] args){
         try {
             TimeSeriesBenchmarker benchmarker = initBenchmarkerFromStringArgs(args);

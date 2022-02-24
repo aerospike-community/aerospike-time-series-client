@@ -29,6 +29,10 @@ public class TimeSeriesReader {
         this.timeSeriesName = timeSeriesName;
     }
 
+    /**
+     * Entry point for command line use of the time series reader
+     * @param args command line arguments as String[]
+     */
     public static void main(String[] args){
         try {
             TimeSeriesReader timeSeriesReader = initBenchmarkerFromStringArgs(args);

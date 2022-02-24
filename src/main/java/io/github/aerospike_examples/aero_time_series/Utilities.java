@@ -12,6 +12,10 @@ import java.util.Vector;
  */
 public class Utilities {
     /**
+     * Class has static methods only, so hide constructor
+     */
+    private Utilities(){}
+    /**
      * Utility function to test a value is within tolerance
      * @param expectedValue expected value
      * @param actualValue actual value
@@ -52,6 +56,10 @@ public class Utilities {
      * Throw this error if we have parsing exceptions
      */
     public static class ParseException extends Exception{
+        /**
+         * Parse Exception constructor
+         * @param message error message
+         */
         public ParseException(String message){
             super(message);
         }
@@ -60,7 +68,7 @@ public class Utilities {
     /**
      * Return truncated timestamp i.e. timestamp with the time component removed
      * @param timestamp as long
-     * @return truncted timestamp
+     * @return truncated timestamp
      */
     public static long getTruncatedTimestamp(long timestamp){
         return timestamp - timestamp % (24 * 60 * 60 * Constants.MILLISECONDS_IN_SECOND);
@@ -89,11 +97,11 @@ public class Utilities {
 
     /**
      * Increment a date by a specified number of seconds
-     * @param timestemp date/time to increment
+     * @param timestamp date/time to increment
      * @param incrementInSeconds magnitude of increment in seconds
      * @return incremented date
      */
-    public static Date incrementDateUsingSeconds(Date timestemp,long incrementInSeconds){
-        return incrementDateUsingMs(timestemp, incrementInSeconds * Constants.MILLISECONDS_IN_SECOND);
+    public static Date incrementDateUsingSeconds(Date timestamp,long incrementInSeconds){
+        return incrementDateUsingMs(timestamp, incrementInSeconds * Constants.MILLISECONDS_IN_SECOND);
     }
 }

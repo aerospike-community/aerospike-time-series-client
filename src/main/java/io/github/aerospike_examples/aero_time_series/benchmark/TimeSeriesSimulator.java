@@ -17,6 +17,10 @@ public class TimeSeriesSimulator {
     private final double dailyVolatilityPct;
     private final Random random;
 
+    /**
+     * Allow command line run of a simulator
+     * @param args required for command line use, but not needed in practice
+     */
     public static void main(String[] args){
         TimeSeriesSimulator simulator = new TimeSeriesSimulator(0,0);
         for(int i=0;i<1000;i++) System.out.println(simulator.normallyDistributedSample());

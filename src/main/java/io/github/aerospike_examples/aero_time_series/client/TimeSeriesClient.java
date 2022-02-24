@@ -9,16 +9,39 @@ import io.github.aerospike_examples.aero_time_series.Constants;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+/**
+ * TimeSeriesClient is the fundamental object for writing and reading time series data to Aerospike
+ */
 public class TimeSeriesClient implements ITimeSeriesClient {
+
     /**
      * Enumeration of the types of queries we can run against a time series
      */
     public enum QueryOperation
     {
+        /**
+         * Indicates the MAX operation should be executed across an array of DataPoints
+         */
         MAX("max","maximum value of series"),
+
+        /**
+         * Indicates the MIN operation should be executed across an array of DataPoints
+         */
         MIN("min", "minimum value of series"),
+
+        /**
+         * Indicates the AVG operation should be executed across an array of DataPoints
+         */
         AVG("avg", "average value of series"),
+
+        /**
+         * Indicates the COUNT operation should be executed across an array of DataPoints
+         */
         COUNT("count","number of values in the series"),
+
+        /**
+         * Indicates the VOL operation ( = sqrt(variance) ) should be executed across an array of DataPoints
+         */
         VOL("vol","volatility of values in series");
 
         private final String shortName;
@@ -29,30 +52,37 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             this.description = description;
         }
 
-        @SuppressWarnings("unused")
+        /**
+         * Get short name for operation
+         * @return short name for operation
+         */
+        @SuppressWarnings("unused") // wanted
         public String getShortName() {
             return shortName;
         }
 
-        @SuppressWarnings("unused")
+        /**
+         * Description of operation
+         * @return description of operation
+         */
+        @SuppressWarnings("unused") // wanted
         public String getDescription(){
             return description;
         }
     }
 
-    /*
+    /**
      The code for 'archiving' blocks of data means no data will ever be lost - the current block will only be deleted after
      1) it has been copied
      2) the original block has not changed in the meantime
-     If we detect 2) ( & note that 1) must have occurred before we get to check 2) )
+     If we detect 2) ( &amp; note that 1) must have occurred before we get to check 2) )
      Then we retry a set number of times - governed by the parameter below
      Note that
      If we don't succeed in RETRY_COUNT_FOR_FAILED_BLOCK_COPY times, we still have all the data, but we may have it twice
      Eventually when the code runs all the way through, normal operation will be restored
      In the meantime, we have duplicate resolution built into the 'get' calls
     */
-    @SuppressWarnings("WeakerAccess")
-    public static final int RETRY_COUNT_FOR_FAILED_BLOCK_COPY = 5;
+    private static final int RETRY_COUNT_FOR_FAILED_BLOCK_COPY = 5;
 
     // Aerospike Client required
     final AerospikeClient asClient;
@@ -76,8 +106,11 @@ public class TimeSeriesClient implements ITimeSeriesClient {
 
     // We need a special way of referring to the current record block for a time series - use CURRENT_RECORD_TIMESTAMP
     static final long CURRENT_RECORD_TIMESTAMP = 0;
-    @SuppressWarnings("WeakerAccess")
-    public final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
+
+    /**
+     * Time series indexes are stored in a separate set - this set name is formed by appending this suffix (idx) to the time series set name
+     */
+    private final static String TIME_SERIES_INDEX_SET_SUFFIX = "idx";
 
     // Package level visible parameters allowing testing of correct handling of race conditions
     boolean testMode = false;
