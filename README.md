@@ -542,7 +542,7 @@ The Time Series Client is available at Maven Central - [aero-time-series-client]
 <dependency>
   <groupId>io.github.aerospike-examples</groupId>
   <artifactId>aero-time-series-client</artifactId>
-  <version>0.27</version>
+  <version>LATEST</version>
 </dependency>
 ```
 
