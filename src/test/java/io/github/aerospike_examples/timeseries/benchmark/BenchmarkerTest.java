@@ -1,12 +1,15 @@
-package io.github.aerospike_examples.aero_time_series.benchmark;
+package io.github.aerospike_examples.timeseries.benchmark;
 
 import com.aerospike.client.*;
-import io.github.aerospike_examples.aero_time_series.Constants;
-import io.github.aerospike_examples.aero_time_series.TestConstants;
-import io.github.aerospike_examples.aero_time_series.TestUtilities;
-import io.github.aerospike_examples.aero_time_series.Utilities;
-import io.github.aerospike_examples.aero_time_series.client.DataPoint;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
+import io.github.aerospike_examples.timeseries.util.Constants;
+import io.github.aerospike_examples.timeseries.TestConstants;
+import io.github.aerospike_examples.timeseries.TestUtilities;
+import io.github.aerospike_examples.timeseries.util.Utilities;
+import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
+import io.github.aerospike_examples.timeseries.benchmarker.RealTimeInsertTimeSeriesRunnable;
+import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesBenchmarker;
+import io.github.aerospike_examples.timeseries.DataPoint;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 
 import org.junit.*;
 

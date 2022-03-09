@@ -1,6 +1,7 @@
-package io.github.aerospike_examples.aero_time_series;
+package io.github.aerospike_examples.timeseries.util;
 
-public class Constants {
+public final class Constants {
+
     /**
      * Default Aerospike port
      */

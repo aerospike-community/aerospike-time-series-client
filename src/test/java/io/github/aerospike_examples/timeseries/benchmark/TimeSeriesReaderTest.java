@@ -1,7 +1,9 @@
-package io.github.aerospike_examples.aero_time_series.benchmark;
+package io.github.aerospike_examples.timeseries.benchmark;
 
-import io.github.aerospike_examples.aero_time_series.TestConstants;
-import io.github.aerospike_examples.aero_time_series.TestUtilities;
+import io.github.aerospike_examples.timeseries.TestConstants;
+import io.github.aerospike_examples.timeseries.TestUtilities;
+import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
+import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesReader;
 import org.junit.Test;
 
 public class TimeSeriesReaderTest {

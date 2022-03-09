@@ -1,11 +1,14 @@
-package io.github.aerospike_examples.aero_time_series.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
 import com.aerospike.client.AerospikeClient;
-import io.github.aerospike_examples.aero_time_series.Constants;
-import io.github.aerospike_examples.aero_time_series.Utilities;
-import io.github.aerospike_examples.aero_time_series.benchmark.OptionsHelper;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
-import org.apache.commons.cli.*;
+import io.github.aerospike_examples.timeseries.util.Constants;
+import io.github.aerospike_examples.timeseries.util.Utilities;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.ParseException;
 
 import java.util.Vector;
 
@@ -21,8 +24,7 @@ public class TimeSeriesReader {
     private final String asSet;
     private String timeSeriesName;
 
-
-    private TimeSeriesReader(AerospikeClient asClient, String asNamespace, String asSet, String timeSeriesName){
+    private TimeSeriesReader(AerospikeClient asClient, String asNamespace, String asSet, String timeSeriesName) {
         this.asClient = asClient;
         this.asNamespace = asNamespace;
         this.asSet = asSet;
@@ -31,23 +33,23 @@ public class TimeSeriesReader {
 
     /**
      * Entry point for command line use of the time series reader
+     *
      * @param args command line arguments as String[]
      */
-    public static void main(String[] args){
+    public static void main(String[] args) {
         try {
             TimeSeriesReader timeSeriesReader = initBenchmarkerFromStringArgs(args);
             timeSeriesReader.run();
-        }
-        catch(Utilities.ParseException e){
+        } catch (Utilities.ParseException e) {
             System.out.println(e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("TimeSeriesReader",OptionsHelper.cmdLineOptionsForReader());
+            formatter.printHelp("TimeSeriesReader", OptionsHelper.cmdLineOptionsForReader());
         }
     }
 
     /**
-     *     Helper method allowing a TimeSeriesBenchmarker to be initialised from an array of Strings - as per main method
-     *     Protected visibility to allow testing use
+     * Helper method allowing a TimeSeriesBenchmarker to be initialised from an array of Strings - as per main method
+     * Protected visibility to allow testing use
      */
     private static TimeSeriesReader initBenchmarkerFromStringArgs(String[] args) throws Utilities.ParseException {
         TimeSeriesReader timeSeriesReader;
@@ -56,7 +58,7 @@ public class TimeSeriesReader {
             CommandLine cmd = parser.parse(OptionsHelper.cmdLineOptionsForReader(), args);
 
             timeSeriesReader = new TimeSeriesReader(
-                    new AerospikeClient(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),Constants.DEFAULT_AEROSPIKE_PORT),
+                    new AerospikeClient(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG), Constants.DEFAULT_AEROSPIKE_PORT),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_NAME_FLAG)
@@ -70,15 +72,14 @@ public class TimeSeriesReader {
         return timeSeriesReader;
     }
 
-    private void run(){
+    private void run() {
         System.out.println("Running TimeSeriesReader\n");
-        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient,asNamespace,asSet,
+        TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient, asNamespace, asSet,
                 Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
-        if(timeSeriesName != null){
-            System.out.println(String.format("Running time series reader for %s",timeSeriesName));
-        }
-        else {
+        if (timeSeriesName != null) {
+            System.out.println(String.format("Running time series reader for %s", timeSeriesName));
+        } else {
             Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
             if (timeSeriesNames.size() > 0) {
                 timeSeriesName = timeSeriesNames.get(0);
@@ -87,7 +88,7 @@ public class TimeSeriesReader {
                 System.out.println(String.format("No time series data found in %s.%s\n", asNamespace, asSet));
             }
         }
-        if(timeSeriesName != null){
+        if (timeSeriesName != null) {
             timeSeriesClient.printTimeSeries(timeSeriesName);
         }
     }

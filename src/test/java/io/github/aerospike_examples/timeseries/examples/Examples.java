@@ -1,14 +1,15 @@
-package io.github.aerospike_examples.aero_time_series.examples;
+package io.github.aerospike_examples.timeseries.examples;
 
 import com.aerospike.client.AerospikeClient;
-import io.github.aerospike_examples.aero_time_series.Constants;
-import io.github.aerospike_examples.aero_time_series.TestConstants;
-import io.github.aerospike_examples.aero_time_series.TestUtilities;
-import io.github.aerospike_examples.aero_time_series.Utilities;
-import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesSimulator;
-import io.github.aerospike_examples.aero_time_series.client.DataPoint;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesInfo;
+import io.github.aerospike_examples.timeseries.DataPoint;
+import io.github.aerospike_examples.timeseries.QueryOperation;
+import io.github.aerospike_examples.timeseries.TestConstants;
+import io.github.aerospike_examples.timeseries.TestUtilities;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
+import io.github.aerospike_examples.timeseries.TimeSeriesInfo;
+import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesSimulator;
+import io.github.aerospike_examples.timeseries.util.Constants;
+import io.github.aerospike_examples.timeseries.util.Utilities;
 import org.junit.Test;
 
 import java.text.ParseException;
@@ -16,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Examples {
+    
     /**
      * Simple time series insertion example
      */
@@ -46,7 +48,7 @@ public class Examples {
             // Which we then 'put'
             timeSeriesClient.put(timeSeriesName, dataPoint);
         }
-        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient,timeSeriesName);
+        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName);
         System.out.println(timeSeriesInfo);
 
         timeSeriesClient.printTimeSeries(timeSeriesName);
@@ -54,12 +56,13 @@ public class Examples {
         System.out.println(
                 String.format("Maximum temperature is %.3f",
                         timeSeriesClient.runQuery(timeSeriesName,
-                                TimeSeriesClient.QueryOperation.MAX,
-                                timeSeriesInfo.getStartDateTime(),timeSeriesInfo.getEndDateTime())));
+                                QueryOperation.MAX,
+                                timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime())));
     }
 
     /**
      * Batch time series insertion example
+     *
      * @throws ParseException - in theory, in practice no
      */
     @Test
@@ -87,9 +90,9 @@ public class Examples {
                     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
                     hourlyTemperatureObservations[i]);
         }
-        timeSeriesClient.put(timeSeriesName,dataPoints);
+        timeSeriesClient.put(timeSeriesName, dataPoints);
 
-        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient,timeSeriesName);
+        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName);
         System.out.println(timeSeriesInfo);
 
         timeSeriesClient.printTimeSeries(timeSeriesName);
@@ -97,26 +100,24 @@ public class Examples {
         System.out.println(
                 String.format("Maximum temperature is %.3f",
                         timeSeriesClient.runQuery(timeSeriesName,
-                                TimeSeriesClient.QueryOperation.MAX,
-                                timeSeriesInfo.getStartDateTime(),timeSeriesInfo.getEndDateTime())));
-
+                                QueryOperation.MAX,
+                                timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime())));
     }
-
-
+    
     @Test
-    public void timeSeriesSimulationExample(){
+    public void timeSeriesSimulationExample() {
         // Initialise the simulator - daily drift is 2%, daily volatility is 5%
         // Implies on average, over the course of a day, the value will increase by 2%
         // and with ~70% probability the series will be between -3% and 7% of its original value
-        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(2,5);
+        TimeSeriesSimulator timeSeriesSimulator = new TimeSeriesSimulator(2, 5);
         // Initial value
         double seriesCurrentValue = 10;
         // Time between observations
         int timeBetweenObservations = 30;
         // Ten iterations
-        for(int i = 0;i<=10;i++){
-            System.out.println(String.format("Series value after %d seconds : %.5f",i*timeBetweenObservations,seriesCurrentValue));
-            seriesCurrentValue = timeSeriesSimulator.getNextValue(seriesCurrentValue,timeBetweenObservations);
+        for (int i = 0; i <= 10; i++) {
+            System.out.println(String.format("Series value after %d seconds : %.5f", i * timeBetweenObservations, seriesCurrentValue));
+            seriesCurrentValue = timeSeriesSimulator.getNextValue(seriesCurrentValue, timeBetweenObservations);
         }
     }
 }

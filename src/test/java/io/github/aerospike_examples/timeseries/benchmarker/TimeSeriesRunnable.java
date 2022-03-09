@@ -1,8 +1,7 @@
-package io.github.aerospike_examples.aero_time_series.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
 import com.aerospike.client.AerospikeClient;
-import io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker;
-import io.github.aerospike_examples.aero_time_series.client.TimeSeriesClient;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 
 import java.util.Random;
 
@@ -10,7 +9,8 @@ import java.util.Random;
  * Generalised Runnable to be invoked by the Time Series Benchmarker
  * At this level, contains the data the Time Series Benchmarker will need to collect
  */
-abstract class TimeSeriesRunnable implements Runnable{
+abstract class TimeSeriesRunnable implements Runnable {
+
     final int timeSeriesCountPerObject;
 
     // isRunning indicates the simulation is active
@@ -36,13 +36,15 @@ abstract class TimeSeriesRunnable implements Runnable{
     /**
      * Constructor for a runnable that will generate timeSeriesCount time series for us
      * Package level visibility as this will not be used in isolation
-     * @param asClient - Aerospike Client object
-     * @param asNamespace - Aerospike Namespace
+     *
+     * @param asClient        - Aerospike Client object
+     * @param asNamespace     - Aerospike Namespace
      * @param benchmarkClient - Initialise with a benchmarkClient object - some of the config is taken from this
-     * @param randomSeed - initialise with a specific seed for deterministic results
+     * @param randomSeed      - initialise with a specific seed for deterministic results
      */
-    TimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject, TimeSeriesBenchmarker benchmarkClient, long randomSeed){
-        timeSeriesClient = new TimeSeriesClient(asClient,asNamespace, asSet, benchmarkClient.recordsPerBlock);
+    TimeSeriesRunnable(AerospikeClient asClient, String asNamespace, String asSet, int timeSeriesCountPerObject,
+                       TimeSeriesBenchmarker benchmarkClient, long randomSeed) {
+        timeSeriesClient = new TimeSeriesClient(asClient, asNamespace, asSet, benchmarkClient.recordsPerBlock);
         this.timeSeriesCountPerObject = timeSeriesCountPerObject;
         this.timeSeriesNameLength = benchmarkClient.timeSeriesNameLength;
         this.random = new Random(randomSeed);
@@ -50,6 +52,7 @@ abstract class TimeSeriesRunnable implements Runnable{
 
     /**
      * Package level access to 'isRunning' for use by the benchmark client
+     *
      * @return boolean isRunning parameter
      */
     boolean isRunning() {
@@ -58,6 +61,7 @@ abstract class TimeSeriesRunnable implements Runnable{
 
     /**
      * Package level access to 'inPrepPhase' for use by the benchmark client
+     *
      * @return boolean inPrepPhase parameter
      */
     boolean inPrepPhase() {
@@ -66,14 +70,16 @@ abstract class TimeSeriesRunnable implements Runnable{
 
     /**
      * Package level access to the actual run time of the thread, for use by the benchmark client
+     *
      * @return runTime of thread so far, in milliseconds
      */
-    long runTime(){
+    long runTime() {
         return System.currentTimeMillis() - startTime;
     }
 
     /**
      * Package level access to the update count for the thread, for use by the benchmark client
+     *
      * @return update count for thread
      */
     public int getUpdateCount() {
@@ -86,19 +92,21 @@ abstract class TimeSeriesRunnable implements Runnable{
      *
      * @return String:timeSeriesName
      */
-    String randomTimeSeriesName(){
+    public String randomTimeSeriesName() {
         @SuppressWarnings("SpellCheckingInspection") char[] availableCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
         char[] timeSeriesName = new char[timeSeriesNameLength];
-        for(int i=0;i<timeSeriesNameLength;i++) timeSeriesName[i] = availableCharacters[random.nextInt(availableCharacters.length)];
+        for (int i = 0; i < timeSeriesNameLength; i++)
+            timeSeriesName[i] = availableCharacters[random.nextInt(availableCharacters.length)];
         return String.valueOf(timeSeriesName);
     }
 
     /**
      * Initialise the time series value
      * It will be randomly somewhere between the min and max values below
+     *
      * @return initial time series value
      */
-    double initTimeSeriesValue(){
+    double initTimeSeriesValue() {
         double TIME_SERIES_MIN_START_VALUE = 10.0;
         double TIME_SERIES_MAX_START_VALUE = 100.0;
         return TIME_SERIES_MIN_START_VALUE + random.nextDouble() * (TIME_SERIES_MAX_START_VALUE - TIME_SERIES_MIN_START_VALUE);

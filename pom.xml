@@ -133,7 +133,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesBenchmarker</mainClass>
+                            <mainClass>io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesBenchmarker</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
