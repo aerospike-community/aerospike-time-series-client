@@ -1,13 +1,13 @@
-package io.github.aerospike_examples.timeseries.examples;
+package io.github.aerospike_examples.timeseries.benchmarker.examples;
 
 import com.aerospike.client.AerospikeClient;
 import io.github.aerospike_examples.timeseries.DataPoint;
 import io.github.aerospike_examples.timeseries.QueryOperation;
-import io.github.aerospike_examples.timeseries.TestConstants;
-import io.github.aerospike_examples.timeseries.TestUtilities;
 import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 import io.github.aerospike_examples.timeseries.TimeSeriesInfo;
 import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesSimulator;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestUtilities;
 import io.github.aerospike_examples.timeseries.util.Constants;
 import io.github.aerospike_examples.timeseries.util.Utilities;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class Examples {
-    
+
     /**
      * Simple time series insertion example
      */
@@ -39,8 +39,7 @@ public class Examples {
         // new TimeSeriesClient(AerospikeClient asClient, String asNamespaceName)
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient, asNamespaceName);
         // Insert our hourly temperature readings
-        for (int i = 0; i < hourlyTemperatureObservations.length; i++) //noinspection SpellCheckingInspection
-        {
+        for (int i = 0; i < hourlyTemperatureObservations.length; i++) {
             // The dataPoint consists of the base date + the required number of hours
             DataPoint dataPoint = new DataPoint(
                     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
@@ -83,8 +82,7 @@ public class Examples {
         TimeSeriesClient timeSeriesClient = new TimeSeriesClient(asClient, asNamespaceName);
         // Insert our hourly temperature readings
         DataPoint[] dataPoints = new DataPoint[hourlyTemperatureObservations.length];
-        for (int i = 0; i < hourlyTemperatureObservations.length; i++) //noinspection SpellCheckingInspection
-        {
+        for (int i = 0; i < hourlyTemperatureObservations.length; i++) {
             // The dataPoint consists of the base date + the required number of hours
             dataPoints[i] = new DataPoint(
                     Utilities.incrementDateUsingSeconds(observationDate, i * 3600),
@@ -103,7 +101,7 @@ public class Examples {
                                 QueryOperation.MAX,
                                 timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime())));
     }
-    
+
     @Test
     public void timeSeriesSimulationExample() {
         // Initialise the simulator - daily drift is 2%, daily volatility is 5%

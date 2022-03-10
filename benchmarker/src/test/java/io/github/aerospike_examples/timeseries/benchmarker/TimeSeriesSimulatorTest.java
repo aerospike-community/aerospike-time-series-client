@@ -1,8 +1,7 @@
-package io.github.aerospike_examples.timeseries.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
-import io.github.aerospike_examples.timeseries.TestConstants;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
 import io.github.aerospike_examples.timeseries.util.Utilities;
-import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesSimulator;
 import org.junit.Assert;
 import org.junit.Test;
 

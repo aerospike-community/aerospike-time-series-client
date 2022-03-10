@@ -1,12 +1,11 @@
-package io.github.aerospike_examples.timeseries.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
-import io.github.aerospike_examples.timeseries.TestConstants;
-import io.github.aerospike_examples.timeseries.TestUtilities;
-import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
-import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesReader;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestUtilities;
 import org.junit.Test;
 
 public class TimeSeriesReaderTest {
+
     @Test
     public void goodReaderRun() throws Exception {
 
@@ -18,7 +17,7 @@ public class TimeSeriesReaderTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);

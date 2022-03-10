@@ -1,4 +1,4 @@
-package io.github.aerospike_examples.timeseries;
+package io.github.aerospike_examples.timeseries.benchmarker.util;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.cdt.MapReturnType;
@@ -6,6 +6,7 @@ import com.aerospike.client.exp.Exp;
 import com.aerospike.client.exp.MapExp;
 import com.aerospike.client.policy.InfoPolicy;
 import com.aerospike.client.policy.ScanPolicy;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
 import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesBenchmarker;
 import io.github.aerospike_examples.timeseries.util.Constants;

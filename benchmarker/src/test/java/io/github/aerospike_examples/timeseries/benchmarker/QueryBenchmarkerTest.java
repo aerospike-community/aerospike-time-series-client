@@ -1,9 +1,7 @@
-package io.github.aerospike_examples.timeseries.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
-import io.github.aerospike_examples.timeseries.TestConstants;
-import io.github.aerospike_examples.timeseries.TestUtilities;
-import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
-import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesBenchmarker;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestUtilities;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -14,11 +12,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class QueryBenchmarkerTest {
+
     @SuppressWarnings({"FieldCanBeLocal", "CanBeFinal"}) // Used during development
     private static boolean doTeardown = true;
 
     /**
-     Check acceleration flag presence triggers an error if found in query invocation
+     * Check acceleration flag presence triggers an error if found in query invocation
      */
     @Test
     public void accelerationFlagHandled() throws IOException {
@@ -31,8 +30,8 @@ public class QueryBenchmarkerTest {
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,OptionsHelper.BenchmarkModes.QUERY,
-                        runDuration,accelerationFactor);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.QUERY,
+                        runDuration, accelerationFactor);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -42,7 +41,7 @@ public class QueryBenchmarkerTest {
     }
 
     /**
-        Check timeSeriesCount flag presence triggers an error if found in query invocation
+     * Check timeSeriesCount flag presence triggers an error if found in query invocation
      */
     @Test
     public void timeSeriesCountFlagHandled() throws IOException {
@@ -51,12 +50,12 @@ public class QueryBenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,OptionsHelper.BenchmarkModes.QUERY,
-                        runDuration,timeSeriesCount);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.QUERY,
+                        runDuration, timeSeriesCount);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -66,7 +65,7 @@ public class QueryBenchmarkerTest {
     }
 
     /**
-        Check intervalBetweenObservations flag presence triggers an error if found in query invocation
+     * Check intervalBetweenObservations flag presence triggers an error if found in query invocation
      */
     @Test
     public void intervalBetweenObservationsFlagHandled() throws IOException {
@@ -75,12 +74,12 @@ public class QueryBenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,OptionsHelper.BenchmarkModes.QUERY,
-                        runDuration,intervalBetweenObservations);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.QUERY,
+                        runDuration, intervalBetweenObservations);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -90,21 +89,21 @@ public class QueryBenchmarkerTest {
     }
 
     /**
-        Check timeSeriesRange flag presence triggers an error if found in query invocation
+     * Check timeSeriesRange flag presence triggers an error if found in query invocation
      */
     @Test
     public void timeSeriesRangeFlagHandled() throws IOException {
-        String timeSeriesRange = String.format("%d%s",1, OptionsHelper.TimeUnitIndicators.DAY);
+        String timeSeriesRange = String.format("%d%s", 1, OptionsHelper.TimeUnitIndicators.DAY);
         int runDuration = 1;
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%s",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,OptionsHelper.BenchmarkModes.QUERY,
-                        runDuration,timeSeriesRange);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET, OptionsHelper.BenchmarkModes.QUERY,
+                        runDuration, timeSeriesRange);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -116,10 +115,11 @@ public class QueryBenchmarkerTest {
     /**
      * Check a good query run
      * Do this by matching the messages returned vs a regex
+     *
      * @throws Exception Can throw exception
      */
     @Test
-    public void goodQueryRun() throws Exception{
+    public void goodQueryRun() throws Exception {
         // First set some data up to query - 10 days worth
         int intervalBetweenUpdates = 10;
         int threadCount = 10;
@@ -127,9 +127,9 @@ public class QueryBenchmarkerTest {
         int recordsPerBlock = 1000;
         long timeSeriesRangeSeconds = 86400 * 10;
 
-        TimeSeriesBenchmarker insertBenchmarker = TestUtilities.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,
-                TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,timeSeriesRangeSeconds,
-                threadCount,timeSeriesCount,recordsPerBlock, TestConstants.RANDOM_SEED);
+        TimeSeriesBenchmarker insertBenchmarker = TestUtilities.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,
+                TestConstants.TIME_SERIES_TEST_SET, intervalBetweenUpdates, timeSeriesRangeSeconds,
+                threadCount, timeSeriesCount, recordsPerBlock, TestConstants.RANDOM_SEED);
 
         insertBenchmarker.run();
 
@@ -139,15 +139,15 @@ public class QueryBenchmarkerTest {
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d",
                 OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
-                OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG);
+                OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG);
 
         String commandLineArguments =
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
-                        OptionsHelper.BenchmarkModes.QUERY,threadCount,queryRunDurationSeconds);
+                        OptionsHelper.BenchmarkModes.QUERY, threadCount, queryRunDurationSeconds);
 
         // Run the query benchmarker and capture the console output
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
-        for(String output: consoleOutput) System.out.println(output);
+        for (String output : consoleOutput) System.out.println(output);
 
         // Check we get the expected number of status messages
         Pattern pattern = Pattern.compile(
@@ -161,13 +161,12 @@ public class QueryBenchmarkerTest {
         }
 
         Assert.assertTrue(runTimeMessageCount >= queryRunDurationSeconds);
-
     }
 
     @After
     // Truncate the time series set
-    public void teardown(){
-        if(doTeardown) {
+    public void teardown() {
+        if (doTeardown) {
             TestUtilities.removeTimeSeriesTestDataForSet(TestConstants.TIME_SERIES_TEST_SET);
         }
     }

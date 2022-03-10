@@ -1,20 +1,23 @@
-package io.github.aerospike_examples.timeseries.benchmark;
+package io.github.aerospike_examples.timeseries.benchmarker;
 
-import com.aerospike.client.*;
-import io.github.aerospike_examples.timeseries.util.Constants;
-import io.github.aerospike_examples.timeseries.TestConstants;
-import io.github.aerospike_examples.timeseries.TestUtilities;
-import io.github.aerospike_examples.timeseries.util.Utilities;
-import io.github.aerospike_examples.timeseries.benchmarker.OptionsHelper;
-import io.github.aerospike_examples.timeseries.benchmarker.RealTimeInsertTimeSeriesRunnable;
-import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesBenchmarker;
+import com.aerospike.client.AerospikeClient;
 import io.github.aerospike_examples.timeseries.DataPoint;
 import io.github.aerospike_examples.timeseries.TimeSeriesClient;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
+import io.github.aerospike_examples.timeseries.benchmarker.util.TestUtilities;
+import io.github.aerospike_examples.timeseries.util.Constants;
+import io.github.aerospike_examples.timeseries.util.Utilities;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Test;
 
-import org.junit.*;
-
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -259,18 +262,18 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check that we get a warning message if the simulation is underflowing the expected rate
+     * Check that we get a warning message if the simulation is underflowing the expected rate
      */
     @Test
-    public void checkUnderflowCheck() throws Exception{
+    public void checkUnderflowCheck() throws Exception {
         int intervalBetweenUpdates = 1;
         int runDurationSeconds = 10;
         int accelerationFactor = 100;
         int threadCount = 1;
         int timeSeriesCount = 100;
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,TestConstants.TIME_SERIES_TEST_SET,
-                intervalBetweenUpdates,runDurationSeconds,accelerationFactor, threadCount,timeSeriesCount);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.realTimeInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, TestConstants.TIME_SERIES_TEST_SET,
+                intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
         int warningCount = 0;
@@ -281,17 +284,17 @@ public class BenchmarkerTest {
                 warningCount++;
         }
         // We should get a warning on every second, for rounding reasons the first two may not happen
-        Assert.assertTrue(warningCount >= runDurationSeconds -2);
+        Assert.assertTrue(warningCount >= runDurationSeconds - 2);
     }
 
 
     /**
-      Check output is as expected for a test case
-      Should see updates per second / updates per second per time series header
-      Should see a status message every second plus an initial status message
+     * Check output is as expected for a test case
+     * Should see updates per second / updates per second per time series header
+     * Should see a status message every second plus an initial status message
      */
     @Test
-    public void correctMainOutput() throws IOException, Utilities.ParseException, org.apache.commons.cli.ParseException{
+    public void correctMainOutput() throws IOException, Utilities.ParseException, org.apache.commons.cli.ParseException {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -302,18 +305,18 @@ public class BenchmarkerTest {
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%d -%s %%d",
                 OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
-                OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG, OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
                 String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         // Initialise the benchmarker using the String[]
         TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
         // Capture the console output
         Vector<String> consoleOutput = runBenchmarkerGetOutput(benchmarker);
-        for(String output: consoleOutput) System.out.println(output);
+        for (String output : consoleOutput) System.out.println(output);
         // Check the two header messages
         Assert.assertEquals(consoleOutput.get(2), String.format("Updates per second : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates));
         Assert.assertEquals(consoleOutput.get(3), String.format("Updates per second per time series : %.3f", (double) accelerationFactor * timeSeriesCount / intervalBetweenUpdates / timeSeriesCount));
@@ -333,17 +336,17 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check that when running in batch mode
-      1) The expected number of data points are created
-      2) The number of 'blocks' is as expected
-      3) The drift and variance of the resulting series is as expected
-
-      This is a long running test - it needs to be to get the required convergence on drift and volatility
-
-      We are also running for multiple time series to check that works successfully
+     * Check that when running in batch mode
+     * 1) The expected number of data points are created
+     * 2) The number of 'blocks' is as expected
+     * 3) The drift and variance of the resulting series is as expected
+     * <p>
+     * This is a long running test - it needs to be to get the required convergence on drift and volatility
+     * <p>
+     * We are also running for multiple time series to check that works successfully
      */
     @Test
-    public void batchModeCheck(){
+    public void batchModeCheck() {
         doTeardown = false;
         int intervalBetweenUpdates = 10;
         int threadCount = 10;
@@ -354,9 +357,9 @@ public class BenchmarkerTest {
         // Keep track of the start time - useful when we retrieve the data points
         long startTime = System.currentTimeMillis();
 
-        TimeSeriesBenchmarker benchmarker = TestUtilities.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST,TestConstants.AEROSPIKE_NAMESPACE,
-                TestConstants.TIME_SERIES_TEST_SET,intervalBetweenUpdates,timeSeriesRangeSeconds,
-                threadCount,timeSeriesCount,recordsPerBlock, TestConstants.RANDOM_SEED);
+        TimeSeriesBenchmarker benchmarker = TestUtilities.batchInsertBenchmarker(TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,
+                TestConstants.TIME_SERIES_TEST_SET, intervalBetweenUpdates, timeSeriesRangeSeconds,
+                threadCount, timeSeriesCount, recordsPerBlock, TestConstants.RANDOM_SEED);
 
         benchmarker.run();
 
@@ -388,7 +391,7 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check parse exception is well handled
+     * Check parse exception is well handled
      */
     @Test
     public void cmdLineParseExceptionHandled() throws IOException {
@@ -400,13 +403,13 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
-                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,badThreadCount,timeSeriesCount);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor, badThreadCount, timeSeriesCount);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -414,10 +417,10 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check time series range flag presence triggers an error if found in real time insert invocation
+     * Check time series range flag presence triggers an error if found in real time insert invocation
      */
     @Test
-    public void timeSeriesRangeFlagHandled() throws IOException{
+    public void timeSeriesRangeFlagHandled() throws IOException {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -427,17 +430,17 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
-                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
-                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.REAL_TIME_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount, timeSeriesRange);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
-        for(String output: consoleOutput) System.out.println(output);
+        for (String output : consoleOutput) System.out.println(output);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("-%s flag (%s) should not be used in %s mode", OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG,
                 OptionsHelper.standardCmdLineOptions().getOption(OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG).getLongOpt(),
@@ -445,10 +448,10 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check run duration flag presence triggers an error if found in batch insert invocation
+     * Check run duration flag presence triggers an error if found in batch insert invocation
      */
     @Test
-    public void runDurationFlagHandled() throws IOException{
+    public void runDurationFlagHandled() throws IOException {
         int intervalBetweenUpdates = 2;
         int runDurationSeconds = 10;
         int accelerationFactor = 5;
@@ -458,14 +461,14 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
-                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
-                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount, timeSeriesRange);
 
         TimeSeriesBenchmarker.main(commandLineArguments.split(" "));
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
@@ -476,10 +479,10 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check acceleration flag presence triggers an error if found in batch insert invocation
+     * Check acceleration flag presence triggers an error if found in batch insert invocation
      */
     @Test
-    public void accelerationFlagHandled() throws IOException{
+    public void accelerationFlagHandled() throws IOException {
         int intervalBetweenUpdates = 2;
         int accelerationFactor = 5;
         int threadCount = 5;
@@ -488,14 +491,14 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%s -%s %%d -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
-                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
-                        intervalBetweenUpdates, accelerationFactor,threadCount,timeSeriesCount,timeSeriesRange);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, accelerationFactor, threadCount, timeSeriesCount, timeSeriesRange);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -505,7 +508,7 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check bad run modes are handled well
+     * Check bad run modes are handled well
      */
     @Test
     public void badModeHandling() throws IOException {
@@ -518,37 +521,37 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s -%s %%d",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG, OptionsHelper.BenchmarkerFlags.RUN_DURATION_FLAG,
-                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG,OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
+                OptionsHelper.BenchmarkerFlags.ACCELERATION_FLAG, OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,badMode,
-                        intervalBetweenUpdates, runDurationSeconds,accelerationFactor,threadCount,timeSeriesCount);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, badMode,
+                        intervalBetweenUpdates, runDurationSeconds, accelerationFactor, threadCount, timeSeriesCount);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
         Assert.assertEquals(consoleOutput.get(0), String.format("%s is an invalid run mode. Please use %s, %s or %s", badMode,
-                OptionsHelper.BenchmarkModes.REAL_TIME_INSERT, OptionsHelper.BenchmarkModes.BATCH_INSERT,OptionsHelper.BenchmarkModes.QUERY));
+                OptionsHelper.BenchmarkModes.REAL_TIME_INSERT, OptionsHelper.BenchmarkModes.BATCH_INSERT, OptionsHelper.BenchmarkModes.QUERY));
     }
 
     /**
-      Check time series range is correctly converted for each possible suffix option
+     * Check time series range is correctly converted for each possible suffix option
      */
     @Test
-    public void timeSeriesRangeConversionCheck() throws Utilities.ParseException, org.apache.commons.cli.ParseException{
-        timeSeriesRangeParsingCheck(20,OptionsHelper.TimeUnitIndicators.SECOND,1);
-        timeSeriesRangeParsingCheck(45,OptionsHelper.TimeUnitIndicators.MINUTE,60);
-        timeSeriesRangeParsingCheck(12,OptionsHelper.TimeUnitIndicators.HOUR,60*60);
-        timeSeriesRangeParsingCheck(5,OptionsHelper.TimeUnitIndicators.DAY,24*60*60);
-        timeSeriesRangeParsingCheck(3,OptionsHelper.TimeUnitIndicators.YEAR,365*24*60*60);
-        timeSeriesRangeParsingCheck(20,"",1);
+    public void timeSeriesRangeConversionCheck() throws Utilities.ParseException, org.apache.commons.cli.ParseException {
+        timeSeriesRangeParsingCheck(20, OptionsHelper.TimeUnitIndicators.SECOND, 1);
+        timeSeriesRangeParsingCheck(45, OptionsHelper.TimeUnitIndicators.MINUTE, 60);
+        timeSeriesRangeParsingCheck(12, OptionsHelper.TimeUnitIndicators.HOUR, 60 * 60);
+        timeSeriesRangeParsingCheck(5, OptionsHelper.TimeUnitIndicators.DAY, 24 * 60 * 60);
+        timeSeriesRangeParsingCheck(3, OptionsHelper.TimeUnitIndicators.YEAR, 365 * 24 * 60 * 60);
+        timeSeriesRangeParsingCheck(20, "", 1);
 
     }
 
     /**
-      Check time series range format value matches number followed by one of Y,D,H,M,S or no unit
-      and that we throw an error if not
+     * Check time series range format value matches number followed by one of Y,D,H,M,S or no unit
+     * and that we throw an error if not
      */
     @Test
     public void badTimeSeriesRange() throws IOException {
@@ -557,7 +560,7 @@ public class BenchmarkerTest {
     }
 
     /**
-      Check that if we use a different set name then everything still works
+     * Check that if we use a different set name then everything still works
      */
     @Test
     public void setFlagCheck() {
@@ -574,7 +577,7 @@ public class BenchmarkerTest {
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG,
                 OptionsHelper.BenchmarkerFlags.MODE_FLAG, OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
@@ -600,7 +603,7 @@ public class BenchmarkerTest {
 
             //noinspection SpellCheckingInspection
             System.out.println(String.format(
-                    "Time series range %d Interval between updates %d, datapoints.length %d",timeSeriesRangeSeconds,intervalBetweenUpdates,dataPoints.length));
+                    "Time series range %d Interval between updates %d, datapoints.length %d", timeSeriesRangeSeconds, intervalBetweenUpdates, dataPoints.length));
             Assert.assertTrue(Utilities.valueInTolerance(timeSeriesRangeSeconds / intervalBetweenUpdates, dataPoints.length, 5));
         }
         TestUtilities.removeTimeSeriesTestDataForSet(alternativeTimeSeriesSet);
@@ -609,23 +612,24 @@ public class BenchmarkerTest {
     /**
      * Private function that checks if a given 'bad' time series range string gets the expected error message
      * when calling the Benchmarker
+     *
      * @param badTimeSeriesRangeString the bad string
      */
-    private void badTimeSeriesRangeStringCheck(String badTimeSeriesRangeString) throws IOException{
+    private void badTimeSeriesRangeStringCheck(String badTimeSeriesRangeString) throws IOException {
         int intervalBetweenUpdates = 2;
         int threadCount = 5;
         int timeSeriesCount = 1;
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
-                        intervalBetweenUpdates,threadCount,timeSeriesCount,badTimeSeriesRangeString);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, threadCount, timeSeriesCount, badTimeSeriesRangeString);
 
         Vector<String> consoleOutput = TestUtilities.runBenchmarkerGetOutput(commandLineArguments);
 
@@ -636,47 +640,49 @@ public class BenchmarkerTest {
     /**
      * Utility method checking that the TimeSeriesBenchmarker correctly converts a timeRangeString to the correct number of seconds
      * Do this by looking at the value of timeSeriesRangeSeconds and comparing to the correctly converted value - using the provided multiplier
-     * @param timePart - integer part of time string
-     * @param timeUnit - unit e.g. S,M,H,D,Y
+     *
+     * @param timePart   - integer part of time string
+     * @param timeUnit   - unit e.g. S,M,H,D,Y
      * @param multiplier - multiplier to convert to seconds
      */
-    private void timeSeriesRangeParsingCheck(int timePart, String timeUnit, int multiplier) throws Utilities.ParseException, org.apache.commons.cli.ParseException{
+    private void timeSeriesRangeParsingCheck(int timePart, String timeUnit, int multiplier) throws Utilities.ParseException, org.apache.commons.cli.ParseException {
         int intervalBetweenUpdates = 2;
         int threadCount = 5;
         int timeSeriesCount = 1;
 
         // Create the string argument array
         String formatString = String.format("-%s %%s -%s %%s -%s %%s -%s %%d -%s %%d -%s %%d -%s %%s",
-                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG,OptionsHelper.BenchmarkerFlags.MODE_FLAG,
+                OptionsHelper.BenchmarkerFlags.HOST_FLAG, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG, OptionsHelper.BenchmarkerFlags.MODE_FLAG,
                 OptionsHelper.BenchmarkerFlags.INTERVAL_BETWEEN_OBSERVATIONS_SECONDS_FLAG,
                 OptionsHelper.BenchmarkerFlags.THREAD_COUNT_FLAG, OptionsHelper.BenchmarkerFlags.TIME_SERIES_COUNT_FLAG,
                 OptionsHelper.BenchmarkerFlags.TIME_SERIES_RANGE_FLAG);
 
-        String timeSeriesRangeString = String.format("%d%s",timePart,timeUnit);
+        String timeSeriesRangeString = String.format("%d%s", timePart, timeUnit);
 
         String commandLineArguments =
-                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE,OptionsHelper.BenchmarkModes.BATCH_INSERT,
-                        intervalBetweenUpdates,threadCount,timeSeriesCount,timeSeriesRangeString);
+                String.format(formatString, TestConstants.AEROSPIKE_HOST, TestConstants.AEROSPIKE_NAMESPACE, OptionsHelper.BenchmarkModes.BATCH_INSERT,
+                        intervalBetweenUpdates, threadCount, timeSeriesCount, timeSeriesRangeString);
 
         TimeSeriesBenchmarker benchmarker = TimeSeriesBenchmarker.initBenchmarkerFromStringArgs(commandLineArguments.split(" "));
-        Assert.assertEquals(benchmarker.timeSeriesRangeSeconds, (long)timePart * multiplier);
+        Assert.assertEquals(benchmarker.timeSeriesRangeSeconds, (long) timePart * multiplier);
     }
 
     @After
     // Truncate the time series set
-    public void teardown(){
-        if(doTeardown) {
+    public void teardown() {
+        if (doTeardown) {
             TestUtilities.removeTimeSeriesTestDataForSet(TestConstants.TIME_SERIES_TEST_SET);
         }
     }
 
     /**
      * Private method allowing console output to be grabbed after a benchmarker run
+     *
      * @param benchmarker Benchmarker object whose output will be captured
      * @return Console output as a vector of strings
      * @throws IOException can in theory be thrown by getConsoleOutput, but in practice it can't
      */
-    private static Vector<String> runBenchmarkerGetOutput(TimeSeriesBenchmarker benchmarker) throws IOException{
+    private static Vector<String> runBenchmarkerGetOutput(TimeSeriesBenchmarker benchmarker) throws IOException {
         // Save the existing output stream
         PrintStream currentOut = System.out;
         // Swap stdout for an internal stream

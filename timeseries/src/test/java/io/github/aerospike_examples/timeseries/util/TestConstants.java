@@ -1,12 +1,12 @@
-package io.github.aerospike_examples.timeseries;
+package io.github.aerospike_examples.timeseries.util;
 
 @SuppressWarnings("ALL")
-public class TestConstants {
+public final class TestConstants {
+
     public static String AEROSPIKE_HOST = "localhost";
     public static String AEROSPIKE_NAMESPACE = "test";
 
     public static String TIME_SERIES_TEST_SET = "TimeSeriesTest";
-
 
     // Seed for randomiser so we can acheive deterministic results in testing
     public static final long RANDOM_SEED = 6760187239798559903L;

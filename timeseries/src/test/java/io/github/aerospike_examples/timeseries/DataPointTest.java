@@ -1,6 +1,5 @@
-package io.github.aerospike_examples.timeseries.client;
+package io.github.aerospike_examples.timeseries;
 
-import io.github.aerospike_examples.timeseries.DataPoint;
 import org.junit.Assert;
 import org.junit.Test;
 

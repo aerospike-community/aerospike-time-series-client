@@ -1,15 +1,12 @@
-package io.github.aerospike_examples.timeseries.client;
+package io.github.aerospike_examples.timeseries;
 
 import com.aerospike.client.AerospikeClient;
 import com.aerospike.client.Record;
 import com.aerospike.client.cdt.MapOperation;
 import com.aerospike.client.policy.WritePolicy;
-import io.github.aerospike_examples.timeseries.DataPoint;
-import io.github.aerospike_examples.timeseries.QueryOperation;
-import io.github.aerospike_examples.timeseries.TestConstants;
-import io.github.aerospike_examples.timeseries.TestUtilities;
-import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 import io.github.aerospike_examples.timeseries.util.Constants;
+import io.github.aerospike_examples.timeseries.util.TestConstants;
+import io.github.aerospike_examples.timeseries.util.TestUtilities;
 import io.github.aerospike_examples.timeseries.util.Utilities;
 import org.junit.After;
 import org.junit.Assert;
@@ -271,7 +268,6 @@ public class TimeSeriesClientTest {
         checkCorrectBlocksForTimeRange(30, 30, 1, false);
         checkCorrectBlocksForTimeRange(60, 60, 1, false);
         checkCorrectBlocksForTimeRange(600, 650, 2, true);
-
     }
 
     @Test
@@ -376,9 +372,9 @@ public class TimeSeriesClientTest {
                     ((timestamps.length == 2) && (timestamps[1] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP)));
             Assert.assertTrue(timestamps[indexOfLastRecord] <= endTimeAsTimestamp);
             Assert.assertEquals((timestamps[indexOfLastRecord] == TimeSeriesClient.CURRENT_RECORD_TIMESTAMP), lastBlockZero);
-        } else
+        } else {
             Assert.assertEquals(0, timestamps.length);
-
+        }
     }
 
     /**
@@ -601,7 +597,6 @@ public class TimeSeriesClientTest {
         createTimeSeries(seriesName, intervalInSeconds, iterations, recordsPerBlock);
         Assert.assertEquals(getTestBaseDate().getTime() + intervalInSeconds * (iterations - 1) * Constants.MILLISECONDS_IN_SECOND,
                 timeSeriesClient.endTimeForSeries(seriesName));
-
 
         seriesName = "Sensor-3";
         Assert.assertEquals(Long.MAX_VALUE, timeSeriesClient.endTimeForSeries(seriesName));
