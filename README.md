@@ -52,10 +52,10 @@ DataPoint[] getPoints(String timeSeriesName,Date startDateTime, Date endDateTime
 // Retrieve the observation made at time dateTime for a named time series
 DataPoint getPoint(String timeSeriesName,Date dateTime);
 
-// Execute TimeSeriesClient.QueryOperation versus the observations recorded for a named time series
+// Execute QueryOperation versus the observations recorded for a named time series
 // recorded between startDateTime and endDateTime
 // The operations may be any of COUNT, AVG, MAX, MIN or VOL (volatility)
-double runQuery(String timeSeriesName, TimeSeriesClient.QueryOperation operation, Date fromDateTime, Date toDateTime);
+double runQuery(String timeSeriesName, QueryOperation operation, Date fromDateTime, Date toDateTime);
 
 ```
 
@@ -130,7 +130,7 @@ Finally we can run a basic query
 System.out.println(
   String.format("Maximum temperature is %.3f",
                 timeSeriesClient.runQuery(timeSeriesName,
-                TimeSeriesClient.QueryOperation.MAX,
+                QueryOperation.MAX,
                 timeSeriesInfo.getStartDateTime(),timeSeriesInfo.getEndDateTime())));
 ```
 
