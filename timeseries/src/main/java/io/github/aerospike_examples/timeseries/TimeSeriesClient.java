@@ -17,13 +17,13 @@ import com.aerospike.client.policy.WritePolicy;
 import io.github.aerospike_examples.timeseries.util.Constants;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 /**
  * TimeSeriesClient is the fundamental object for writing and reading time series data to Aerospike
@@ -452,8 +452,13 @@ public class TimeSeriesClient implements ITimeSeriesClient {
      */
     public long[] getTimestampsForTimeSeries(String timeSeriesName, long startTime, long endTime) {
         if (endTime >= startTime) {
-            Record indexListRecord = asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
-                    MapOperation.getByKeyRange(Constants.TIME_SERIES_INDEX_BIN_NAME, null, null, MapReturnType.KEY));
+            Operation mapOperation = MapOperation.getByKeyRange(
+                    Constants.TIME_SERIES_INDEX_BIN_NAME,
+                    null,
+                    null,
+                    MapReturnType.KEY
+            );
+            Record indexListRecord = asClient.operate(writePolicy, asKeyForTimeSeriesIndexes(timeSeriesName), mapOperation);
             if (indexListRecord != null) {
                 @SuppressWarnings("unchecked")  // Can assume below casting works
                 List<Long> timestampList = (List<Long>) indexListRecord.getList(Constants.TIME_SERIES_INDEX_BIN_NAME);
@@ -498,7 +503,8 @@ public class TimeSeriesClient implements ITimeSeriesClient {
             if (startTimesForBlocks[startTimesForBlocks.length - 1] == CURRENT_RECORD_TIMESTAMP) {
                 keysForQuery[startTimesForBlocks.length - 1] = asCurrentKeyForTimeSeries(timeSeriesName);
             } else {
-                keysForQuery[startTimesForBlocks.length - 1] = asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTimesForBlocks[startTimesForBlocks.length - 1]);
+                keysForQuery[startTimesForBlocks.length - 1] = asKeyForHistoricTimeSeriesBlock(timeSeriesName,
+                        startTimesForBlocks[startTimesForBlocks.length - 1]);
             }
         }
         return keysForQuery;
@@ -516,52 +522,21 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private DataPoint[] getPoints(String timeSeriesName, long startTime, long endTime) {
         Key[] keys = getKeysForQuery(timeSeriesName, startTime, endTime);
         Record[] timeSeriesBlocks = asClient.get(new BatchPolicy(readPolicy), keys, Constants.TIME_SERIES_BIN_NAME);
-        // uniqueTimestampMap is used to count the unique timestamps
-        Map<Long, Integer> uniqueTimestampMap = new HashMap<>();
-        // First we need to count timestamps
+        Map<Long, DataPoint> uniqueTimestampMap = new TreeMap<>();
+
         for (Record currentRecord : timeSeriesBlocks) {
             // Null record is a possibility if we have just made the current block a historic block
             if (currentRecord != null) {
-                @SuppressWarnings("unchecked") // Can assume below casting
+                @SuppressWarnings("unchecked")
                 Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
                 for (Long timestamp : timeSeries.keySet()) {
-                    if (timestamp >= startTime && timestamp <= endTime)
-                        uniqueTimestampMap.putIfAbsent(timestamp, 1);
-                }
-            }
-        }
-        // Then initialise an appropriately sized array
-        DataPoint[] dataPoints = new DataPoint[uniqueTimestampMap.size()];
-
-        // Make use of uniqueTimestampMap to make sure we get rid of any duplicate points
-        // These can arise if copyCurrentDataToHistoricBlock does not run to completion
-        // Note the duplicates will eventually be naturally eliminated
-
-        // index is used to track where we are when adding to the returned array
-        int index = 0;
-
-        for (Record currentRecord : timeSeriesBlocks) {
-            // Null record is a possibility if we have just made the current block a historic block
-            if (currentRecord != null) {
-                @SuppressWarnings("unchecked") // Can assume below casting
-                Map<Long, Double> timeSeries = (Map<Long, Double>) currentRecord.getMap(Constants.TIME_SERIES_BIN_NAME);
-                List<Long> sortedList = new ArrayList<>(timeSeries.keySet());
-                Collections.sort(sortedList);
-                for (Long aSortedList : sortedList) {
-                    long timestamp = aSortedList;
-                    if ((startTime <= timestamp) && (timestamp <= endTime)) {
-                        // Only add one point per timestamp to the array returned
-                        // Check below makes sure this happens
-                        if (uniqueTimestampMap.get(timestamp) != null) {
-                            dataPoints[index] = new DataPoint(timestamp, timeSeries.get(timestamp));
-                            uniqueTimestampMap.remove(timestamp);
-                            index++;
-                        }
+                    if (timestamp >= startTime && timestamp <= endTime) {
+                        uniqueTimestampMap.putIfAbsent(timestamp, new DataPoint(timestamp, timeSeries.get(timestamp)));
                     }
                 }
             }
         }
-        return dataPoints;
+        return uniqueTimestampMap.values().toArray(new DataPoint[0]);
     }
 
     /**
