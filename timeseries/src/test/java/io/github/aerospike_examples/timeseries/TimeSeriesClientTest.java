@@ -36,15 +36,17 @@ public class TimeSeriesClientTest {
     // Can we insert a time series data point and retrieve it
     public void singlePointInsert() throws Exception {
         TimeSeriesClient timeSeriesClient = TestUtilities.defaultTimeSeriesClient();
+        String tsName = TEST_TIME_SERIES_NAME + "1";
         double tsValue = RANDOM.nextDouble();
-        timeSeriesClient.put(TEST_TIME_SERIES_NAME, new DataPoint(getTestBaseDate(), tsValue));
+        timeSeriesClient.put(tsName, new DataPoint(getTestBaseDate(), tsValue));
         // Test with the getPoints call
-        DataPoint[] dataPointArray = timeSeriesClient.getPoints(TEST_TIME_SERIES_NAME, getTestBaseDate(), getTestBaseDate());
+        DataPoint[] dataPointArray = timeSeriesClient.getPoints(tsName, getTestBaseDate(), getTestBaseDate());
         Assert.assertEquals(1, dataPointArray.length);
-        Assert.assertTrue(dataPointArray[0].equals(new DataPoint(getTestBaseDate(), tsValue)));
+        DataPoint expected = new DataPoint(getTestBaseDate(), tsValue);
+        Assert.assertTrue(dataPointArray[0].equals(expected));
 
         // Test with getPoint
-        DataPoint dataPoint = timeSeriesClient.getPoint(TEST_TIME_SERIES_NAME, getTestBaseDate());
+        DataPoint dataPoint = timeSeriesClient.getPoint(tsName, getTestBaseDate());
         Assert.assertTrue(dataPoint.equals(new DataPoint(getTestBaseDate(), tsValue)));
     }
 
