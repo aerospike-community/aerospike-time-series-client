@@ -1,17 +1,19 @@
-# Aerospike Time Series API	
-[Introduction](#introduction)  
-[Time Series Data](#time-series-data)  
-[Time Series API](#aerospike-time-series-api)  
-[Simple Example](#simple-example)  
-[Implementation](#implementation)  
-[Additional Control](#additional-control)  
-[Sizing](#sizing)  
-[Performance Considerations](#performance-considerations)  
-[Benchmarking](#benchmarking)  
-[Simulation](#simulation)  
-[Real Life Performance](#real-life-performance)  
-[Future Directions](#future-directions)  
-[Download](#download)  
+# Aerospike Time Series API
+[![Build](https://github.com/aerospike-examples/aerospike-time-series-client/actions/workflows/build.yml/badge.svg)](https://github.com/aerospike-examples/aerospike-time-series-client/actions/workflows/build.yml)
+
+1. [Introduction](#introduction)  
+2. [Time Series Data](#time-series-data)  
+3. [Time Series API](#aerospike-time-series-api)  
+4. [Simple Example](#simple-example)  
+5. [Implementation](#implementation)  
+6. [Additional Control](#additional-control)  
+7. [Sizing](#sizing)  
+8. [Performance Considerations](#performance-considerations)  
+9. [Benchmarking](#benchmarking)  
+10. [Simulation](#simulation)  
+11. [Real Life Performance](#real-life-performance)  
+12. [Future Directions](#future-directions)  
+13. [Download](#download)  
 
 ## Introduction
 
@@ -172,12 +174,12 @@ The second implementation point follows on from the first. As there is a limit t
 
 ```
 {
-	TimeSeriesName : "MyTimeSeries",
-  ListOfDataBlocks : {
- 		StartTimeForBlock1 : {EndTime: <lastTimeStampForBlock1>, EntryCount: <entriesInBlock1>},
- 		StartTimeForBlock1 : {EndTime: <lastTimeStampForBlock1>, EntryCount: <entriesInBlock1>},
-    ...
-  }
+    TimeSeriesName : "MyTimeSeries",
+    ListOfDataBlocks : {
+        StartTimeForBlock1 : {EndTime: <lastTimeStampForBlock1>, EntryCount: <entriesInBlock1>},
+        StartTimeForBlock1 : {EndTime: <lastTimeStampForBlock1>, EntryCount: <entriesInBlock1>},
+        ...
+    }
 }
 ```
 
