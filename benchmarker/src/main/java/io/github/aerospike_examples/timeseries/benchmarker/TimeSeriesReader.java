@@ -1,9 +1,10 @@
 package io.github.aerospike_examples.timeseries.benchmarker;
 
 import com.aerospike.client.AerospikeClient;
+import io.github.aerospike_examples.timeseries.TimeSeriesClient;
+import io.github.aerospike_examples.timeseries.benchmarker.util.ClientUtils;
 import io.github.aerospike_examples.timeseries.util.Constants;
 import io.github.aerospike_examples.timeseries.util.Utilities;
-import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -58,7 +59,9 @@ public class TimeSeriesReader {
             CommandLine cmd = parser.parse(OptionsHelper.cmdLineOptionsForReader(), args);
 
             timeSeriesReader = new TimeSeriesReader(
-                    new AerospikeClient(OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG), Constants.DEFAULT_AEROSPIKE_PORT),
+                    new AerospikeClient(
+                            OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.HOST_FLAG),
+                            Constants.DEFAULT_AEROSPIKE_PORT),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.NAMESPACE_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_SET_FLAG),
                     OptionsHelper.getOptionUsingDefaults(cmd, OptionsHelper.BenchmarkerFlags.TIME_SERIES_NAME_FLAG)
@@ -78,18 +81,18 @@ public class TimeSeriesReader {
                 Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK);
 
         if (timeSeriesName != null) {
-            System.out.println(String.format("Running time series reader for %s", timeSeriesName));
+            System.out.printf("Running time series reader for %s%n", timeSeriesName);
         } else {
             Vector<String> timeSeriesNames = Utilities.getTimeSeriesNames(timeSeriesClient);
             if (timeSeriesNames.size() > 0) {
                 timeSeriesName = timeSeriesNames.get(0);
-                System.out.println(String.format("No time series specified - selecting series %s\n", timeSeriesName));
+                System.out.printf("No time series specified - selecting series %s%n%n", timeSeriesName);
             } else {
-                System.out.println(String.format("No time series data found in %s.%s\n", asNamespace, asSet));
+                System.out.printf("No time series data found in %s.%s%n%n", asNamespace, asSet);
             }
         }
         if (timeSeriesName != null) {
-            timeSeriesClient.printTimeSeries(timeSeriesName);
+            ClientUtils.printTimeSeries(timeSeriesClient, timeSeriesName);
         }
     }
 

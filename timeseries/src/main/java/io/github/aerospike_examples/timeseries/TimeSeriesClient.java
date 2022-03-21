@@ -2,7 +2,6 @@ package io.github.aerospike_examples.timeseries;
 
 import com.aerospike.client.Record;
 import com.aerospike.client.*;
-import com.aerospike.client.cdt.CTX;
 import com.aerospike.client.cdt.MapOperation;
 import com.aerospike.client.cdt.MapOrder;
 import com.aerospike.client.cdt.MapPolicy;
@@ -16,7 +15,6 @@ import com.aerospike.client.policy.Policy;
 import com.aerospike.client.policy.WritePolicy;
 import io.github.aerospike_examples.timeseries.util.Constants;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -43,14 +41,14 @@ public class TimeSeriesClient implements ITimeSeriesClient {
     private final String asNamespace;
 
     // Set for time series
-    private String timeSeriesSet = Constants.DEFAULT_TIME_SERIES_SET;
+    private final String timeSeriesSet;
 
     // Read and write policies
     private Policy readPolicy;
     private WritePolicy writePolicy;
 
     // Max entry count per data block
-    private int maxBlockEntryCount = Constants.DEFAULT_MAX_ENTRIES_PER_TIME_SERIES_BLOCK;
+    private final int maxBlockEntryCount;
 
 
     // Map policy for inserts - these are not modifiable
@@ -712,78 +710,6 @@ public class TimeSeriesClient implements ITimeSeriesClient {
         if (sizeOfCurrentRecord != null) dataPointCount += sizeOfCurrentRecord.getLong(Constants.TIME_SERIES_BIN_NAME);
 
         return dataPointCount;
-    }
-
-    /**
-     * Utility method to remove 'dummy' records
-     * These are inserted by the benchmarker at the start of a run to prevent all the blocks filling up at the same time
-     * After the run, the dummy records are removed using this function
-     *
-     * @param timeSeriesName Time Series to remove dummy records for
-     */
-    public void removeDummyRecords(String timeSeriesName) {
-        long startTime;
-        // Create a policy to make sure, when we look up the first start time from the index that we don't get an error if it doesn't exist
-        WritePolicy blockRecordExistsPolicy = new WritePolicy(getWritePolicy());
-        // Now try and get the earliest start time from the index
-        blockRecordExistsPolicy.filterExp = Exp.build(Exp.binExists(Constants.TIME_SERIES_INDEX_BIN_NAME));
-
-        Record startTimeFromFirstHistoricBlockRecord = getAsClient().operate(blockRecordExistsPolicy,
-                asKeyForTimeSeriesIndexes(timeSeriesName),
-                MapOperation.getByIndex(Constants.TIME_SERIES_INDEX_BIN_NAME, 0, MapReturnType.KEY));
-
-        // If there are historic blocks
-        if (startTimeFromFirstHistoricBlockRecord != null) {
-            startTime = startTimeFromFirstHistoricBlockRecord.getLong(Constants.TIME_SERIES_INDEX_BIN_NAME);
-            // Remove dummy records from the first block
-            Record r = getAsClient().operate(getWritePolicy(), asKeyForHistoricTimeSeriesBlock(timeSeriesName, startTime),
-                    MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE),
-                    MapOperation.size(Constants.TIME_SERIES_BIN_NAME)
-            );
-            // The resulting entry count is returned
-            long entryCount = (Long) (r.getList(Constants.TIME_SERIES_BIN_NAME).get(1));
-
-            getAsClient().operate(blockRecordExistsPolicy, asKeyForTimeSeriesIndexes(timeSeriesName),
-                    MapOperation.put(new MapPolicy(), Constants.TIME_SERIES_INDEX_BIN_NAME,
-                            new Value.StringValue(Constants.ENTRY_COUNT_FIELD_NAME), new Value.LongValue(entryCount),
-                            CTX.mapIndex(0)
-                    )
-            );
-        }
-        // Remove dummy records from the current block if it exists
-        // Turns out we need to do this in a try/catch as can't avoid 'key not found' if not found
-        try {
-            getAsClient().operate(getWritePolicy(), asCurrentKeyForTimeSeries(timeSeriesName),
-                    MapOperation.removeByKeyRange(Constants.TIME_SERIES_BIN_NAME, null, new Value.IntegerValue(1), MapReturnType.NONE)
-            );
-        } catch (AerospikeException e) {
-            //noinspection StatementWithEmptyBody - deliberate
-            if (e.getResultCode() == ResultCode.KEY_NOT_FOUND_ERROR) {
-                /*do nothing*/
-                /* This is OK  - record may not exist */
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    /**
-     * Utility method to print out a time series
-     *
-     * @param timeSeriesName Name of time series to print data for
-     */
-    public void printTimeSeries(String timeSeriesName) {
-        String timeSeriesDateFormat = "yyyy-MM-dd HH:mm:ss.SSS";
-        SimpleDateFormat dateFormatter = new SimpleDateFormat(timeSeriesDateFormat);
-
-        TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(this, timeSeriesName);
-        System.out.println(timeSeriesInfo);
-        System.out.println();
-        DataPoint[] dataPoints = getPoints(timeSeriesName, new Date(timeSeriesInfo.getStartDateTimestamp()), new Date(timeSeriesInfo.getEndDateTimestamp()));
-        System.out.println("Timestamp,Value");
-        for (DataPoint dataPoint : dataPoints) {
-            System.out.println(String.format("%s,%.5f", dateFormatter.format(new Date(dataPoint.getTimestamp())), dataPoint.getValue()));
-        }
     }
 
 }
