@@ -6,6 +6,7 @@ import io.github.aerospike_examples.timeseries.QueryOperation;
 import io.github.aerospike_examples.timeseries.TimeSeriesClient;
 import io.github.aerospike_examples.timeseries.TimeSeriesInfo;
 import io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesSimulator;
+import io.github.aerospike_examples.timeseries.benchmarker.util.ClientUtils;
 import io.github.aerospike_examples.timeseries.benchmarker.util.TestConstants;
 import io.github.aerospike_examples.timeseries.benchmarker.util.TestUtilities;
 import io.github.aerospike_examples.timeseries.util.Constants;
@@ -50,13 +51,12 @@ public class Examples {
         TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName);
         System.out.println(timeSeriesInfo);
 
-        timeSeriesClient.printTimeSeries(timeSeriesName);
+        ClientUtils.printTimeSeries(timeSeriesClient, timeSeriesName);
 
-        System.out.println(
-                String.format("Maximum temperature is %.3f",
-                        timeSeriesClient.runQuery(timeSeriesName,
-                                QueryOperation.MAX,
-                                timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime())));
+        System.out.printf("Maximum temperature is %.3f%n",
+                timeSeriesClient.runQuery(timeSeriesName,
+                        QueryOperation.MAX,
+                        timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime()));
     }
 
     /**
@@ -93,13 +93,12 @@ public class Examples {
         TimeSeriesInfo timeSeriesInfo = TimeSeriesInfo.getTimeSeriesDetails(timeSeriesClient, timeSeriesName);
         System.out.println(timeSeriesInfo);
 
-        timeSeriesClient.printTimeSeries(timeSeriesName);
+        ClientUtils.printTimeSeries(timeSeriesClient, timeSeriesName);
 
-        System.out.println(
-                String.format("Maximum temperature is %.3f",
-                        timeSeriesClient.runQuery(timeSeriesName,
-                                QueryOperation.MAX,
-                                timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime())));
+        System.out.printf("Maximum temperature is %.3f%n",
+                timeSeriesClient.runQuery(timeSeriesName,
+                        QueryOperation.MAX,
+                        timeSeriesInfo.getStartDateTime(), timeSeriesInfo.getEndDateTime()));
     }
 
     @Test
@@ -114,7 +113,7 @@ public class Examples {
         int timeBetweenObservations = 30;
         // Ten iterations
         for (int i = 0; i <= 10; i++) {
-            System.out.println(String.format("Series value after %d seconds : %.5f", i * timeBetweenObservations, seriesCurrentValue));
+            System.out.printf("Series value after %d seconds : %.5f%n", i * timeBetweenObservations, seriesCurrentValue);
             seriesCurrentValue = timeSeriesSimulator.getNextValue(seriesCurrentValue, timeBetweenObservations);
         }
     }

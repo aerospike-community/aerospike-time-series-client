@@ -2,6 +2,7 @@ package io.github.aerospike_examples.timeseries.benchmarker;
 
 import com.aerospike.client.AerospikeClient;
 import io.github.aerospike_examples.timeseries.DataPoint;
+import io.github.aerospike_examples.timeseries.benchmarker.util.ClientUtils;
 import io.github.aerospike_examples.timeseries.util.Constants;
 
 import java.util.Date;
@@ -118,7 +119,9 @@ public class RealTimeInsertTimeSeriesRunnable extends InsertTimeSeriesRunnable {
         isRunning = false;
 
         // Then remove the dummy records
-        for (String timeSeriesName : lastObservationTimes.keySet()) timeSeriesClient.removeDummyRecords(timeSeriesName);
+        for (String timeSeriesName : lastObservationTimes.keySet()) {
+            ClientUtils.removeDummyRecords(timeSeriesClient, timeSeriesName);
+        }
     }
 
     /**

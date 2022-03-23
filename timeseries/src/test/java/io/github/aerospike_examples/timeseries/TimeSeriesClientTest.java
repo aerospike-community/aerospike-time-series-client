@@ -466,7 +466,8 @@ public class TimeSeriesClientTest {
 
         1) Check that we have four blocks and the last block is a current block. Should have two records in the current block.
             Full time range query should retrieve 11 points
-        2) Add one more data point - should have at least four blocks (note checkCurrentBlocks will return 5 here). Should have zero records in current block
+        2) Add one more data point - should have at least four blocks (note checkCurrentBlocks will return 5 here).
+            Should have zero records in current block.
             Full time range query should retrieve 12 points
         3) Should be able to handle a zero length data point array without exception
      */
@@ -506,7 +507,7 @@ public class TimeSeriesClientTest {
     @SuppressWarnings("SameParameterValue") // avoid messages that the test cases always use the same timeSeriesName
     private static int checkCurrentRecordCount(TimeSeriesClient timeSeriesClient, String timeSeriesName) {
         int currentRecordCount = 0;
-        Record r = timeSeriesClient.asClient.operate(new WritePolicy(), timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName),
+        Record r = timeSeriesClient.getAsClient().operate(new WritePolicy(), timeSeriesClient.asCurrentKeyForTimeSeries(timeSeriesName),
                 MapOperation.size(Constants.TIME_SERIES_BIN_NAME));
         if (r != null) currentRecordCount = r.getInt(Constants.TIME_SERIES_BIN_NAME);
         return currentRecordCount;
@@ -629,14 +630,14 @@ public class TimeSeriesClientTest {
         recordsPerBlock = 13;
         iterations = 2 * recordsPerBlock + 5;
         createTimeSeries(seriesName, intervalInSeconds, iterations, recordsPerBlock);
-        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName), (long) iterations);
+        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName), iterations);
         // Series that will not have a historic block
         seriesName = "Sensor-2";
         intervalInSeconds = 15;
         recordsPerBlock = 12;
         iterations = 2 * recordsPerBlock;
         createTimeSeries(seriesName, intervalInSeconds, iterations, recordsPerBlock);
-        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName), (long) iterations);
+        Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName), iterations);
 
         seriesName = "Sensor-3";
         Assert.assertEquals(timeSeriesClient.dataPointCount(seriesName), 0L);
