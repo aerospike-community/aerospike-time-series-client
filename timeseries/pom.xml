@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <name>Aerospike Time Series Client API</name>
@@ -34,7 +33,7 @@
 
     <groupId>io.github.aerospike.examples</groupId>
     <artifactId>time-series-client</artifactId>
-    <version>0.29-SNAPSHOT</version>
+    <version>0.29</version>
 
     <profiles>
         <!-- GPG Signature on release -->
@@ -175,7 +174,7 @@
         <developerConnection>scm:git:ssh://git@github.com:aerospike-examples/aerospike-time-series-client.git
         </developerConnection>
         <url>http://github.com/aerospike-examples/aerospike-time-series-client/tree/main</url>
-        <tag>HEAD</tag>
+        <tag>time-series-client-0.29</tag>
     </scm>
 
 </project>
