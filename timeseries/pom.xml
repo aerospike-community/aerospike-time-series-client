@@ -33,7 +33,7 @@
 
     <groupId>io.github.aerospike-examples</groupId>
     <artifactId>aero-time-series-client</artifactId>
-    <version>0.30-SNAPSHOT</version>
+    <version>0.30</version>
 
     <profiles>
         <!-- GPG Signature on release -->
@@ -174,7 +174,7 @@
         <developerConnection>scm:git:ssh://git@github.com:aerospike-examples/aerospike-time-series-client.git
         </developerConnection>
         <url>http://github.com/aerospike-examples/aerospike-time-series-client/tree/main</url>
-        <tag>HEAD</tag>
+        <tag>aero-time-series-client-0.30</tag>
     </scm>
 
 </project>
