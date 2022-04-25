@@ -1,6 +1,6 @@
 #!/bin/bash
 
-AERO_TIME_SERIES_JAR_LOCATION="../target/aero-time-series-client-*-SNAPSHOT-jar-with-dependencies.jar"
+BENCHMARKER_JAR_PATH="../benchmarker/target/benchmarker-*-SNAPSHOT-jar-with-dependencies.jar"
 
 # Check java is installed
 if [ -z $(which java) ]
@@ -9,10 +9,10 @@ then
 	echo "Java is required to run the time series benchmarker"
 fi
 
-if [ ! -e $AERO_TIME_SERIES_JAR_LOCATION ]
+if [ ! -e $BENCHMARKER_JAR_PATH ]
 then
-	echo "aero-time-series-client-<VERSION>-SNAPSHOT-jar-with-dependencies.jar jar not found in ../target"
-	echo "You need to run mvn assembly:single to build"
+	echo "benchmarker-<VERSION>-SNAPSHOT-jar-with-dependencies.jar jar not found in ../target"
+	echo "You need to run mvn package -Dmaven.test.skip"
 
 	if [ -z $(which mvn)]
 	then
@@ -21,4 +21,4 @@ then
 	exit 1
 fi
 
-java -cp $AERO_TIME_SERIES_JAR_LOCATION io.github.aerospike_examples.aero_time_series.benchmark.TimeSeriesReader "$@"
+java -cp $BENCHMARKER_JAR_PATH io.github.aerospike_examples.timeseries.benchmarker.TimeSeriesReader "$@"
