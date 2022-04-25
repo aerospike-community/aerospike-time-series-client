@@ -223,12 +223,12 @@ Aerospike has an upper limit on the number of updates per object of approximatel
 
 The Time Series API ships with a benchmarking tool. Three modes of operation are provided - real time insert, batch insert and query.
 
-To make use of the benchmarker, download **this** repository and run `mvn assembly:single` to compile. Java 8+ and maven are required.
+To make use of the benchmarker, download **this** repository and run `mvn package -Dmaven.test.skip` to compile. Java 8+ and maven are required.
 
 ```bash
 git clone https://github.com/aerospike-examples/aerospike-time-series-client.git
 cd aerospike-time-series-client
-mvn compile assembly:single
+mvn package -Dmaven.test.skip
 ```
 
 The benchmarker is found in the project's *bin* directory. Usage is as follows
