@@ -18,9 +18,9 @@
             <version>5.1.11</version>
         </dependency>
         <dependency>
-            <groupId>io.github.aerospike.examples</groupId>
-            <artifactId>time-series-client</artifactId>
-            <version>0.29-SNAPSHOT</version>
+            <groupId>io.github.aerospike-examples</groupId>
+            <artifactId>aero-time-series-client</artifactId>
+            <version>LATEST</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

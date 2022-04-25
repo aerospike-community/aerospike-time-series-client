@@ -31,8 +31,8 @@
         </developer>
     </developers>
 
-    <groupId>io.github.aerospike.examples</groupId>
-    <artifactId>time-series-client</artifactId>
+    <groupId>io.github.aerospike-examples</groupId>
+    <artifactId>aero-time-series-client</artifactId>
     <version>0.30-SNAPSHOT</version>
 
     <profiles>
